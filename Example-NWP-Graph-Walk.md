@@ -25,13 +25,13 @@ In NWP (NPS-2 §11), a **Complex Node** is a node that can recursively delegate 
 When an Agent issues `POST /query` with `X-NWP-Depth: N`, the Complex Node:
 
 1. Answers its own query locally (depth `N`).
-2. For every declared `graph.refs[<rel>]`, issues a child `POST /query` with `X-NWP-Depth: N-1` and appends its own NID to `X-NWP-Trace`.
+2. For every declared `graph.refs[<rel>]`, issues a child `POST /query` with `X-NWP-Depth: N-1`, passing traversal context sufficient for cycle detection (mechanism is implementation-defined).
 3. Inlines each child's CapsFrame under `graph[<rel>].data` in its response.
 
 Two hard safety gates apply at every hop:
 
-- **`graph_max_depth` (NWP §11.3):** A node's NWM may cap the maximum depth it is willing to serve. A request exceeding this is rejected *before* any child call with `NWP-DEPTH-EXCEEDED` (HTTP 400 / NPS-CLIENT-BAD-REQUEST). The check is pre-fanout — a malicious Agent cannot amplify load by requesting depth 100.
-- **Cycle detection via `X-NWP-Trace` (NWP §11.4):** Each hop appends the serving node's NID to `X-NWP-Trace`. If an incoming request already lists the current NID in the trace, the node returns `NWP-GRAPH-CYCLE` (HTTP 422 / NPS-CLIENT-UNPROCESSABLE). The parent surfaces the error under `graph[].error` without failing its own response — the traversal continues and the useful data is preserved.
+- **`max_depth` in the NWM `graph` block (NWP §11):** A node's NWM may cap the maximum depth it is willing to serve. A request exceeding this is rejected *before* any child call with `NWP-DEPTH-EXCEEDED` (HTTP 400 / NPS-CLIENT-BAD-REQUEST). The check is pre-fanout — a malicious Agent cannot amplify load by requesting depth 100.
+- **Cycle detection (NWP §11):** The spec requires nodes to detect circular references and emit `NWP-GRAPH-CYCLE` (HTTP 422 / NPS-CLIENT-UNPROCESSABLE). The detection mechanism is implementation-defined. The parent surfaces the error under `graph[].error` without failing its own response — the traversal continues and the useful data is preserved.
 
 ---
 
@@ -45,7 +45,7 @@ Five in-process loopback nodes:
                 └────────▲─────────┘
                          │  graph.refs[customer]
                 ┌────────┴─────────┐
-                │   orders :17450  │  (Complex Node, graph_max_depth=2)
+                │   orders :17450  │  (Complex Node, max_depth=2)
                 └────────┬─────────┘
                          │  graph.refs[product]
                 ┌────────▼─────────┐
@@ -125,7 +125,7 @@ POST http://127.0.0.1:17450/query   X-NWP-Depth: 9
 }
 ```
 
-Frame type 254 = ErrorFrame (0xFE). The check happens before any child call is made. The `orders` node's NWM declares `graph_max_depth: 2`; the request for depth 9 is rejected immediately. There is no amplification risk.
+Frame type 254 = ErrorFrame (0xFE). The check happens before any child call is made. The `orders` node's NWM declares `graph.max_depth: 2`; the request for depth 9 is rejected immediately. There is no amplification risk.
 
 ### Scene D — mutual reference, cycle caught
 
