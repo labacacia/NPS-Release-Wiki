@@ -1,43 +1,128 @@
 # Release Process
 
-> **Audience:** Release shepherds + contributors who watch a release land
-> **Status:** STUB — to be authored by nps-main session
-> **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
 
-## Scope
+This page documents how an NPS suite release is prepared and published. The process is designed around a single-oracle version model: one file is authoritative, and all other files must match it.
 
-Whole-suite release flow: how a new alpha.N (or alpha.N.M hotfix) ships across all 17 repos. Single source of truth, version oracle, alignment invariants.
+---
 
-## What this page should contain
+## Single-Source-of-Truth Model
 
-- The single-source-of-truth model: NPS-Dev is truth; everything is sync'd out
-- Single oracle rule: `NPS-Release/version.yaml` `suite_version` is THE machine-readable version. CHANGELOG is the human notification medium, not the oracle.
-- No-per-protocol-versions rule: any change → whole-suite bump. Per-package alpha.5 / alpha.5.1 / alpha.5.2 lattice is forbidden (lessons from the alpha.5.2 incident).
-- The whole-suite release sequence (15+ steps): impl/<lang> bump → daemon source csproj → publish-overlay → docker-compose tag → CHANGELOGs → spec → version.yaml → sync scripts → CI green → tag.
-- Per-tool release flow: see [`NPS-Dev/docs/release-process.md`](https://github.com/labacacia/NPS-Dev/blob/main/docs/release-process.md) (the existing per-tool SOP)
-- Pre-flight alignment checklist (mirror the table the docs-update prompt asked for)
-- The drift-prevention CI: `check-version-sync.py` + `check-source-of-truth.py` (Assertions A–E)
-- Past incidents: alpha.5.2 hotfix lattice (now guarded by Assertion B/C/D)
-- Hotfix flow: minor patch releases (e.g. alpha.5.1, alpha.5.2) still bump the entire suite together
+NPS-Dev is the authoring source for everything. Distribution repos (`labacacia/NPS-sdk-py`, `labacacia/NPS-sdk-ts`, `labacacia/nps-daemons`, etc.) receive one-way sync pushes from NPS-Dev via the scripts in `tools/release/`. **Never make breaking changes directly in a distribution repo** — they will be overwritten on the next sync.
 
-## Source material to draw from
+### The Single Oracle Rule
 
-- `NPS-Dev/docs/release-process.md` (per-tool flow)
-- `NPS-Dev/tools/release/sync-*.sh` (sync scripts)
-- `NPS-Dev/tools/scripts/check-version-sync.py` + `check-source-of-truth.py`
-- `NPS-Release/version.yaml` (the oracle)
-- Past audit memos in `NPS-Dev/log/audits/` (if maintained)
+`NPS-Release/version.yaml` — specifically the `suite_version` field — is **the one machine-readable source of truth for the NPS suite version**. The CI tooling (`check-version-sync.py`, `check-source-of-truth.py`) reads the version from this file and only this file.
 
-## Cross-links
+Rules:
+1. Bumping `suite_version` here is the **last step** of a release.
+2. No other file (CHANGELOG, README, csproj, `pyproject.toml`, etc.) may serve as the version oracle. Those files MUST match this value, not the other way around.
+3. `CHANGELOG.md` files are the **human notification medium** — they must be updated as part of the same release commit but are never consulted by CI for the authoritative version.
 
-- [Repository Topology](Repository-Topology)
-- [Contributing Guide](Contributing-Guide)
+---
 
-## TODO checklist
+## No Per-Protocol Versioning
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+Any protocol or package change bumps the **whole-suite version uniformly**. Per-package or per-protocol sub-versions are forbidden.
+
+This rule was codified after the alpha.5.2 incident, where some distribution repos were tagged at `1.0.0-alpha.5` while others had `1.0.0-alpha.5.1`. The drift caused operator confusion about which repos were in sync. Assertion B in `check-source-of-truth.py` now guards against this by verifying that all SDK manifests match `suite_version`.
+
+---
+
+## Version Schema
+
+| Type | Format | When used |
+|------|--------|-----------|
+| Alpha release | `1.0.0-alpha.N` | Regular alpha milestones |
+| Hotfix within an alpha | `1.0.0-alpha.N.M` | Patch on top of an alpha without advancing to the next N |
+
+Both types bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
+
+---
+
+## Release Sequence
+
+The full release follows these steps in order:
+
+1. **Bump impl/ package versions.** Update all language SDK manifests in NPS-Dev: `pyproject.toml`, `package.json`, `Cargo.toml`, `gradle.properties`, all `.csproj` files under `impl/dotnet/src/`.
+
+2. **Bump daemon source csproj versions.** Update the `<Version>` element in each daemon's source csproj (`tools/daemons/*/\*.csproj`).
+
+3. **Bump publish-overlay csproj versions.** Update the `<Version>` element in each daemon's `publish-overlay/*.csproj` to match. (Assertion A checks this parity.)
+
+4. **Update docker-compose image tags.** Update `image: labacacia/<name>:VERSION` lines in `tools/daemons/bundle-overlay/docker-compose.yml` and in `nps-orchestrator/docker-compose.yml` (external repo, resolved via `--ext-root`).
+
+5. **Update all CHANGELOG.md files.** Each sub-project has its own `CHANGELOG.md`; the umbrella `CHANGELOG.md` in NPS-Dev also receives a `## [<version>]` entry. Sub-project changelogs tracked by Assertion D: all daemons, `tools/nip-ca-server/`, and the monorepo root.
+
+6. **Update spec version numbers** if any spec files changed in this release. Bump the `**Version**:` field in the relevant `spec/NPS-*.md` files and update the tables in `spec/NPS-0-Overview.md` and in `CLAUDE.md`.
+
+7. **Bump `NPS-Release/version.yaml` `suite_version`.** This is the last write step in NPS-Dev before running CI.
+
+8. **Run CI — Assertions A–E must all pass** (Assertion E is warn-only; A–D are hard failures):
+   - **Assertion A:** Each daemon source csproj `<Version>` equals its publish-overlay `<Version>`
+   - **Assertion B:** All SDK manifests (`pyproject.toml`, `package.json`, `Cargo.toml`, `gradle.properties`, all `.csproj` files) match `suite_version`
+   - **Assertion C:** All `image: labacacia/<name>:VERSION` lines in docker-compose files match `suite_version`
+   - **Assertion D:** Every CHANGELOG.md listed in `source-allowlist.yaml` contains a `## [<suite_version>]` entry
+   - **Assertion E:** README banner drift scan (warn-only — CI never fails on E alone)
+
+9. **Run sync scripts** for each distribution repo:
+   - `tools/release/sync-nps-daemons.sh` → `labacacia/nps-daemons` (+ Gitee mirror)
+   - `tools/release/sync-nip-ca-server.sh` → `labacacia/nip-ca-server` (+ Gitee mirror)
+   - `tools/release/sync-nps-cloud-ca.sh` → `innolotus/nps-cloud-ca` (private)
+   - `tools/release/sync-nps-ledger.sh` → `innolotus/nps-ledger` (private)
+   - SDK sync scripts for each of the six language SDK distribution repos
+   - Ingress sync scripts for `NPS-mcp-ingress`, `NPS-a2a-ingress`, `NPS-grpc-ingress`
+
+10. **Tag the release in NPS-Release.** Create a `v{suite_version}` git tag in `labacacia/NPS-Release`. The tag is the public release marker.
+
+### Required Env Vars for Sync Scripts
+
+| Variable | Used by |
+|----------|---------|
+| `GITHUB_TOKEN` | All sync scripts — PAT with `repo` scope on the target labacacia/innolotus repos |
+| `GITEE_TOKEN` | Sync scripts that mirror to Gitee — PAT with `projects` scope |
+
+Use `DRY_RUN=1` to execute all steps except the final pushes. Use `SKIP_GITEE=1` to push only to GitHub and skip Gitee mirroring.
+
+---
+
+## Drift-Prevention CI: Assertions A–E
+
+The CI script `tools/scripts/check-source-of-truth.py` reads `NPS-Release/version.yaml` (via `--suite-version`) and verifies five assertions:
+
+| Assertion | What it checks | Failure mode |
+|-----------|---------------|--------------|
+| A | Each daemon source csproj `<Version>` == its publish-overlay `<Version>` | Hard fail — blocks release |
+| B | All SDK manifests match `suite_version` | Hard fail — the alpha.5.2 incident motivator |
+| C | docker-compose image tags match `suite_version` | Hard fail |
+| D | Each CHANGELOG.md in `assertion_d_changelog_entries` contains `## [<suite_version>]` | Hard fail |
+| E | README banners don't contain stale version strings | Warn only — never blocks |
+
+The list of files checked by Assertions A–D is defined in `tools/scripts/source-allowlist.yaml`.
+
+---
+
+## Hotfix Flow
+
+A hotfix (e.g. `1.0.0-alpha.5` → `1.0.0-alpha.5.1`) follows the same sequence as a full release. There are **no partial hotfixes** — every distribution repo must be bumped and synced together. A hotfix that touches only one SDK still requires bumping all other SDK manifests (even if their content is unchanged) so that Assertion B passes.
+
+---
+
+## Past Incident: alpha.5.2 Version Drift
+
+During the transition from alpha.5 to alpha.5.1, some repos were synced with version `1.0.0-alpha.5` while others received `1.0.0-alpha.5.1`. This caused operator confusion about which packages were compatible.
+
+Root cause: the sync scripts were invoked in a non-atomic order and one was re-run with an old version value.
+
+Fix: Assertion B in `check-source-of-truth.py` now blocks the release if any SDK manifest does not match `suite_version`. The `version.yaml` bump is now explicitly the last authoring step (step 7 above), ensuring CI catches drift before any sync scripts run.
+
+---
+
+## Related Pages
+
+- [Repository Topology](Repository-Topology) — the full map of repos and sync-script assignments
+- [Contributing Guide](Contributing-Guide) — PR conventions and CHANGELOG requirements
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

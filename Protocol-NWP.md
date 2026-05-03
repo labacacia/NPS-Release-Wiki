@@ -1,44 +1,248 @@
-# Protocol: NWP (Neural Web Protocol)
+# Protocol: NWP — Neural Web Protocol
 
-> **Audience:** SDK developers + protocol designers
-> **Status:** STUB — to be authored by nps-main session
-> **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
 
-## Scope
+**Spec**: `spec/NPS-2-NWP.md` v0.10 · **Port**: 17433 (shared) / 17434 (optional dedicated)
 
-The HTTP-equivalent surface for Agent ↔ Node interaction. Covers NWM, QueryFrame/ActionFrame/SubscribeFrame, and the alpha.5 topology query namespace.
+NWP is the HTTP-equivalent for Agent-to-Node interaction in NPS. Where HTTP defines how browsers and servers exchange web pages, NWP defines how AI Agents query data, invoke actions, and subscribe to changes on Neural Nodes — with responses that are directly machine-understandable, requiring no semantic parsing layer. NWP runs on top of [Protocol NCP](Protocol-NCP) the same way HTTP semantics run on top of TCP.
 
-## What this page should contain
+Related: [Protocol NCP](Protocol-NCP) | [Protocol NIP](Protocol-NIP) | [Protocol NDP](Protocol-NDP) | [Reference: Cognon Budget](Reference-Cognon-Budget)
 
-- 1-paragraph intro: NWP is to NPS what HTTP is to TCP
-- NWM (Neural Web Manifest) — what it declares, where it lives
-- The three workhorse frames: QueryFrame (0x10), ActionFrame (0x11), SubscribeFrame (0x12)
-- Streaming queries & subscriptions; relationship to DiffFrame (0x02)
-- The §12 reserved query namespace and `topology.snapshot` / `topology.stream` (added alpha.4 by CR-0002)
-- The `topology:read` capability gate (alpha.5 M6 fix; `X-NWP-Capabilities` header)
-- The `min_assurance_level` field at NWM and per-ActionSpec
-- The CGN cost model and how `cgn_est` flows through (renamed from `estimated_npt` in alpha.5.2)
-- Common errors: `NWP-RESERVED-TYPE-UNSUPPORTED`, `NWP-TOPOLOGY-*`, `NWP-AUTH-ASSURANCE-TOO-LOW`
+---
 
-## Source material to draw from
+## Node Types
 
-- `spec/NPS-2-NWP.md` (canonical)
-- `spec/cr/NPS-CR-0002-anchor-topology-queries.md`
-- `spec/services/NPS-AaaS-Profile.md` for L2-08/L2-09 cross-references
-- `spec/error-codes.md` for the NWP-* code family
+| Type | Role | Typical data sources |
+|------|------|---------------------|
+| **Memory Node** | Data storage and retrieval, no compute logic | RDS, NoSQL, file systems, vector databases |
+| **Action Node** | Executes operations, returns results or side effects | Functions, external APIs, message queues |
+| **Complex Node** | Mixed data and operations, with sub-node references | All of the above plus sub-node graph |
+| **Anchor Node** | Cluster control plane and external entry point — routes inbound frames to member nodes via NOP; optionally maintains member topology | AaaS platforms, multi-agent service gateways |
+| **Bridge Node** | Translates between NPS frames and non-NPS protocols (HTTP/HTTPS, gRPC, MCP, A2A) | Legacy REST APIs, gRPC services, Model Context Protocol servers |
 
-## Cross-links
+**Anchor Node** and **Bridge Node** were introduced by NPS-CR-0001, replacing the retired `Gateway Node` type. Anchor Node inherits the cluster-entry and NOP-routing role; Bridge Node is a new type responsible for NPS-to-external-protocol translation. The legacy wire value `"gateway"` is rejected with `NWP-MANIFEST-NODE-TYPE-REMOVED`.
 
-- [Protocol NCP](Protocol-NCP)
-- [Operator AaaS Profile](Operator-AaaS-Profile)
-- [SDK Building an Anchor Node](SDK-Building-an-Anchor-Node)
-- [Reference: Cognon Budget](Reference-Cognon-Budget)
+A node MAY carry multiple roles simultaneously (e.g., `["anchor", "memory"]`). The full role set is declared in the NDP `AnnounceFrame.node_roles` field (discovery layer). The NWM `node_type` field (single string) declares which role this particular `/.nwm` endpoint is serving; it MUST be one of the values in `node_roles`.
 
-## TODO checklist
+---
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+## Neural Web Manifest (NWM)
+
+Every node MUST expose a machine-readable manifest at `/.nwm` with `Content-Type: application/nwp-manifest+json`. The NWM is the single source of truth for what a node can do, what it requires from callers, and where its endpoints live.
+
+### Key NWM Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `nwp` | string | NWP version, currently `"0.4"` |
+| `node_id` | string | Node NID, format `urn:nps:node:{host}:{path}` |
+| `node_type` | string | Operative role at this endpoint: `"memory"` / `"action"` / `"complex"` / `"anchor"` / `"bridge"` |
+| `wire_formats` | array | Supported encodings: `["ncp-capsule", "msgpack", "json"]` |
+| `schema_anchors` | object | Pre-declared schemas as `{name: anchor_id}` — Agents SHOULD preload all on first connection |
+| `capabilities` | object | Boolean flags: `query`, `stream_query`, `aggregate`, `subscribe`, `vector_search`, `token_budget_hint`, `ext_frame`, `e2e_enc`, `inline_anchor` |
+| `auth` | object | Authentication requirements: `required`, `identity_type` (`"nip-cert"` / `"bearer"` / `"none"`), `trusted_issuers`, `required_capabilities` |
+| `min_assurance_level` | string | Node-level minimum: `"anonymous"` (default) / `"attested"` / `"verified"`. Requests below this level are rejected with `NWP-AUTH-ASSURANCE-TOO-LOW`. (NPS-RFC-0003) |
+| `reputation_policy` | object | Phase 2 field (NWP v0.8+): defines `reject_on` rules against reputation log entries. Produces `NWP-AUTH-REPUTATION-BLOCKED`. (NPS-RFC-0004) |
+| `actions` | object | `{action_id: ActionSpec}` registry — required for Action and Complex nodes |
+| `endpoints` | object | URLs for each sub-path (`query`, `stream`, `invoke`, `subscribe`, `actions`, `schema`) |
+| `tokenizer_support` | array | Tokenizers the node can use for CGN estimation |
+
+The NWM may be conditionally requested using `If-None-Match: {manifest_version}` (HTTP mode). If unchanged, the server returns `304 Not Modified`.
+
+### Actions: ActionSpec
+
+Each entry in the `actions` map is an `ActionSpec` describing a callable operation:
+
+| Field | Description |
+|-------|-------------|
+| `description` | Human-readable description |
+| `params_anchor` | Schema `anchor_id` for input parameters |
+| `result_anchor` | Schema `anchor_id` for the result |
+| `async` | Whether async execution is supported |
+| `idempotent` | Whether safe to retry |
+| `timeout_ms_default` / `timeout_ms_max` | Timeout bounds in milliseconds |
+| `required_capability` | NIP capability required (e.g. `"nwp:invoke"`) |
+| `min_assurance_level` | **Per-action override**: `"anonymous"` / `"attested"` / `"verified"`. Takes precedence over the top-level NWM value for requests targeting this action. (NPS-RFC-0003) |
+
+---
+
+## QueryFrame (0x10)
+
+Used for structured data queries on Memory Nodes. Returns a `CapsFrame` (single response) or a `StreamFrame` sequence (streaming mode).
+
+### Key Fields
+
+| Field | Description |
+|-------|-------------|
+| `anchor_ref` | Schema `anchor_id` to use for this query |
+| `type` | Reserved query type identifier (see Reserved Query Types section); absent = normal per-anchor query |
+| `auto_anchor` | If true and anchor is stale, node attaches updated schema inline in response. Default: true |
+| `stream` | If true, triggers streaming mode; response is a `StreamFrame` sequence |
+| `filter` | Filter conditions using `$eq`, `$ne`, `$lt`, `$lte`, `$gt`, `$gte`, `$in`, `$nin`, `$contains`, `$between`, `$exists`, `$regex`, `$and`, `$or`, `$not` |
+| `fields` | Field projection list; omit to return all fields |
+| `limit` | Max records (default 20, max 1000) |
+| `cursor` | Pagination cursor from previous response `next_cursor` |
+| `order` | Sort rules: `[{field, dir: "ASC"/"DESC"}]` |
+| `vector_search` | Vector similarity search: `{field, vector, top_k, threshold, metric}` |
+| `token_budget` | CGN budget limit (native mode equivalent of `X-NWP-Budget`) |
+| `depth` | Node graph traversal depth (default 1, max 5) |
+| `aggregate` | Aggregation operations: `{operations: [{func, field, alias}], group_by, having}` |
+| `request_id` | UUID v4 for tracing; echoed in response |
+| `cgn_est` | (formerly `estimated_npt` until alpha.5.2) Estimated Cognon cost per event in streaming scenarios |
+
+### Sync vs Async Behavior
+
+QueryFrame is synchronous by default: the node responds immediately with a `CapsFrame`. When `stream: true` is set, the node pushes a sequence of `StreamFrame` chunks, with the first chunk carrying `estimated_total` and `request_id` metadata. To cancel an in-flight streaming query, send a `SubscribeFrame` with `action="unsubscribe"` and `stream_id` set to the original `request_id`.
+
+---
+
+## ActionFrame (0x11)
+
+Used for operation invocation on Action Nodes and Complex Nodes.
+
+### Key Fields
+
+| Field | Description |
+|-------|-------------|
+| `action_id` | Operation identifier, format `{domain}.{verb}` |
+| `params` | Input parameters; validated against `ActionSpec.params_anchor` |
+| `idempotency_key` | UUID v4; valid for 24 hours; safe to repeat on retry |
+| `timeout_ms` | Timeout in milliseconds (default 5000, max 300000) |
+| `async` | If true, execute asynchronously; response returns `task_id` + `poll_url` |
+| `callback_url` | `https://` URL for async task completion notification |
+| `priority` | `"low"` / `"normal"` / `"high"` |
+| `cgn_est` | Estimated Cognon cost (carried through async task tracking, replaces `estimated_npt` from alpha.4) |
+
+### Async Task Flow
+
+When `async: true`, the node immediately returns a `CapsFrame` carrying `{task_id, status: "pending", poll_url, estimated_ms}`. The task progresses through `PENDING → RUNNING → COMPLETED / FAILED / CANCELLED`. Poll via `system.task.status` with `{task_id}`, or receive completion notification via `callback_url`.
+
+All nodes supporting async actions MUST implement `system.task.status` and `system.task.cancel` as reserved `action_id` values.
+
+---
+
+## Streaming: StreamFrame and Subscriptions
+
+### Streaming Query (stream: true on QueryFrame)
+
+The node pushes `StreamFrame (0x03)` chunks with increasing `seq` values. The final chunk has `is_last=true` (FINAL flag set). The Agent MAY send a cancellation `SubscribeFrame` at any time to stop the stream.
+
+### SubscribeFrame (0x12) — Change Subscriptions
+
+Used to establish continuous change subscriptions on Memory Nodes. The node pushes incremental updates as `DiffFrame (0x02)` events.
+
+Key fields: `action` (`"subscribe"` / `"unsubscribe"` / `"ping"`), `stream_id` (client-generated UUID v4), `anchor_ref`, optional `filter`, `heartbeat_interval`, `resume_from_seq` (for reconnection).
+
+Each pushed `DiffFrame` carries subscription-specific extensions: `stream_id`, a monotonically increasing per-stream `seq` (starting at 1), `event_type` (`"create"` / `"update"` / `"delete"` for standard subscriptions), and `timestamp`. If the Agent detects a `seq` gap, it SHOULD re-subscribe using `resume_from_seq`.
+
+**Cancellation:** send `SubscribeFrame(action="unsubscribe", stream_id=...)`.
+
+---
+
+## Reserved Query Types (§12)
+
+The `type` field on `QueryFrame` and `SubscribeFrame` opts a request into a reserved query type with specification-defined semantics. Implementations that do not recognise a reserved `type` value MUST reject the request with `NWP-RESERVED-TYPE-UNSUPPORTED` (HTTP 501) — added in alpha.5 to distinguish "unknown reserved operation" from "action not found."
+
+### topology.snapshot (QueryFrame)
+
+One-shot retrieval of an Anchor Node's cluster topology. Added in alpha.4 via NPS-CR-0002. Mandatory for all Anchor Nodes at NPS-AaaS Profile L2 and above.
+
+**Request:** `QueryFrame` with `type: "topology.snapshot"` and a nested `topology` object:
+- `topology.scope`: `"cluster"` (Anchor's own cluster) or `"member"` (with `topology.target_nid`)
+- `topology.include`: subset of `["members", "capabilities", "tags", "metrics"]`. Default: `["members"]`
+- `topology.depth`: sub-Anchor recursion depth (default 1; depth >= 2 is OPTIONAL at L2)
+
+**Response:** `CapsFrame` with `anchor_ref: "nps:system:topology:snapshot"`, single-element `data` array containing `{version, anchor_nid, cluster_size, members[], truncated}`. The `version` field is a monotonically increasing integer that correlates the snapshot with subsequent `topology.stream` events.
+
+### topology.stream (SubscribeFrame)
+
+Continuous topology change feed. Mandatory at Profile L2 and above.
+
+**Request:** `SubscribeFrame` with `type: "topology.stream"` and a nested `topology` object:
+- `topology.scope`: `"cluster"` (default)
+- `topology.filter`: `{tags_any, tags_all, node_roles}` — reduces event volume
+- `topology.since_version`: resume from a previous version (supersedes `resume_from_seq` when both present)
+
+**Events** are pushed as `DiffFrame (0x02)` with `event_type` from an extended enum:
+
+| event_type | Trigger |
+|------------|---------|
+| `member_joined` | New NDP `AnnounceFrame` naming this Anchor as `cluster_anchor` |
+| `member_left` | Member left or exceeded NDP liveness TTL |
+| `member_updated` | Existing member metadata changed (field-level diff in `changes`) |
+| `anchor_state` | Anchor Node internal state change (e.g. version counter rebase after restart) |
+| `resync_required` | Subscriber's `topology.since_version` is no longer replayable; client MUST issue a fresh `topology.snapshot` |
+
+The `seq` on each event is the post-event topology version.
+
+### topology:read Capability Gate (alpha.5)
+
+Anchor Nodes MUST require the requesting NID to declare `topology:read` in `IdentFrame.capabilities` before serving any `topology.*` request. Absent capability produces `NWP-TOPOLOGY-UNAUTHORIZED`. This is enforced by `AnchorNodeMiddleware` in the .NET reference implementation. The `topology:read` capability is self-declared and key-signed at Phase 1–2; CA-attested role binding is deferred to Phase 3.
+
+---
+
+## HTTP Headers (HTTP Mode)
+
+### Request Headers
+
+| Header | Description |
+|--------|-------------|
+| `X-NWP-Agent` | Agent NID (required when `auth.required=true`) |
+| `X-NWP-Budget` | CGN budget limit (uint32) |
+| `X-NWP-Tokenizer` | Tokenizer the Agent is using |
+| `X-NWP-Depth` | Graph traversal depth (default 1, max 5) |
+| `X-NWP-Encoding` | Request encoding tier: `json` / `msgpack` |
+| `X-NWP-Request-ID` | UUID v4 for tracing; echoed in response |
+| `X-NWP-Capabilities` | Agent capability list (used by `AnchorNodeMiddleware` for capability gate, alpha.5) |
+| `Content-Type` | MUST be `application/nwp-frame` |
+
+### Response Headers
+
+| Header | Description |
+|--------|-------------|
+| `X-NWP-Schema` | `anchor_id` used in the response |
+| `X-NWP-Tokens` | Actual CGN consumed |
+| `X-NWP-Tokenizer-Used` | Tokenizer actually applied |
+| `X-NWP-Cached` | `"true"` indicates cache hit |
+| `X-NWP-Node-Type` | Node type |
+| `X-NWP-Rate-Limit` / `X-NWP-Rate-Remaining` / `X-NWP-Rate-Reset` | Rate limit state |
+
+---
+
+## min_assurance_level (NPS-RFC-0003)
+
+Nodes and individual actions may require a minimum assurance level from the calling Agent. The three levels are `anonymous` (default, L0), `attested` (L1), and `verified` (L2). The check is ordered: `anonymous < attested < verified`.
+
+- **Node-level:** declared as `min_assurance_level` in the top-level NWM. All requests to this node must meet the threshold.
+- **Per-action override:** declared as `min_assurance_level` on an individual `ActionSpec`. When present, takes precedence over the node-level value for requests targeting that action.
+
+Requests presenting a level below the threshold are rejected with `NWP-AUTH-ASSURANCE-TOO-LOW` (`NPS-AUTH-FORBIDDEN`). The response SHOULD include a `hint` pointing to a CA enrolment URL.
+
+---
+
+## NWP-RESERVED-TYPE-UNSUPPORTED (alpha.5)
+
+When a `QueryFrame` or `SubscribeFrame` carries a `type` field that the node does not recognise as a supported reserved type, the node MUST return `NWP-RESERVED-TYPE-UNSUPPORTED` with HTTP status 501. This is intentionally distinct from `NWP-ACTION-NOT-FOUND` — the unknown operand is `type`, not `action_id`. This allows callers to distinguish "this node does not implement topology queries at all" from "this action_id does not exist on this node."
+
+---
+
+## Error Codes (Selected)
+
+| Error Code | NPS Status | Description |
+|------------|------------|-------------|
+| `NWP-AUTH-ASSURANCE-TOO-LOW` | `NPS-AUTH-FORBIDDEN` | Agent's assurance level below `min_assurance_level` |
+| `NWP-AUTH-REPUTATION-BLOCKED` | `NPS-AUTH-FORBIDDEN` | Reputation policy matched a `reject_on` rule (NPS-RFC-0004, Phase 2) |
+| `NWP-MANIFEST-NODE-TYPE-REMOVED` | `NPS-CLIENT-BAD-FRAME` | NWM `node_type` contains retired `"gateway"` (NPS-CR-0001) |
+| `NWP-RESERVED-TYPE-UNSUPPORTED` | `NPS-SERVER-UNSUPPORTED` | Unrecognised reserved `type` value (HTTP 501) |
+| `NWP-TOPOLOGY-UNAUTHORIZED` | `NPS-AUTH-FORBIDDEN` | Caller lacks `topology:read` capability |
+| `NWP-TOPOLOGY-FILTER-UNSUPPORTED` | `NPS-CLIENT-BAD-PARAM` | `topology.filter` contains unrecognised key |
+| `NWP-ACTION-NOT-FOUND` | `NPS-CLIENT-NOT-FOUND` | `action_id` does not exist on this node |
+| `NWP-ACTION-PARAMS-INVALID` | `NPS-CLIENT-UNPROCESSABLE` | Parameter schema validation failed |
+| `NWP-BUDGET-EXCEEDED` | `NPS-LIMIT-BUDGET` | Response would exceed the CGN token budget |
+| `NWP-RATE-LIMIT-EXCEEDED` | `NPS-LIMIT-RATE` | Per-Agent rate limit exceeded |
+| `NWP-QUERY-REGEX-UNSAFE` | `NPS-CLIENT-BAD-PARAM` | `$regex` pattern rejected (ReDoS risk or too long) |
+| `NWP-SUBSCRIBE-SEQ-TOO-OLD` | `NPS-CLIENT-CONFLICT` | `resume_from_seq` outside node's buffer range; full re-query required |
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

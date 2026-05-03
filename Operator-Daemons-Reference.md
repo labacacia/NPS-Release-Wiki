@@ -1,41 +1,385 @@
-# Operator Reference: Daemons
+# Operator Daemons Reference
 
-> **Audience:** Operators
-> **Status:** STUB — to be authored by nps-main session
+> **Audience:** Operators (devops / SREs deploying NPS infrastructure)
+> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-## Scope
+This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/nps-daemons` bundle; two additional daemons are private to the NPS Cloud platform.
 
-One page that documents every daemon (npsd, nps-runner, nps-gateway, nps-registry, nps-ledger, nps-cloud-ca, nip-ca-server). Each gets a sub-section: purpose, deployment topology, required state, env vars, ports, /health shape, scaling notes.
+---
 
-## What this page should contain
+## npsd — NPS Daemon (Layer 1)
 
-- `## npsd` — the orchestration runtime
-- `## nps-runner` — task executor
-- `## nps-gateway` — ingress
-- `## nps-registry` — node registry
-- `## nps-ledger` — reputation log + STH gossip (alpha.5 Phase 3)
-- `## nps-cloud-ca` — private NPS Cloud CA
-- `## nip-ca-server` — NIP CA Server (OSS, public)
-- For each: required env vars (table), exposed ports, /health JSON example, scaling/HA notes
-- Cross-link each to its CHANGELOG and source overlay
+| Property | Value |
+|----------|-------|
+| **Port** | `17433` (default, loopback) |
+| **Distribution** | `labacacia/nps-daemons` (public) |
+| **Docker image** | `labacacia/npsd:{suite_version}` |
+| **Layer** | L1 — host-local NCP/NIP/NDP/NWP |
 
-## Source material to draw from
+### Purpose
 
-- `NPS-Dev/tools/daemons/<name>/README.md` for each
-- `NPS-Dev/tools/daemons/<name>/Program.cs` for /health shape
-- `NPS-Dev/tools/release/sync-*.sh` to know what gets distributed where
+`npsd` is the host-local NPS daemon. It is the foundation of every NPS deployment:
 
-## Cross-links
+- Binds `127.0.0.1:17433` by default. Direct Internet exposure is `nps-gateway`'s job.
+- Generates and persists the host's root Ed25519 keypair on first start (`root.ed25519.pkcs8`, mode `0600`). This satisfies Node-Profile L1 conformance case `TC-N1-NIP-01`.
+- Issues **sub-NIDs** for agents hosted on this machine, signed with the root key. Sub-NID records are stored in a SQLite database.
+- Maintains a **per-NID inbox queue** with long-poll, ack, priority, TTL, and depth caps.
+- Serves `GET /.nwm` (daemon-self Neural Web Manifest) and `GET /health`.
 
-- [Operator Quickstart Bundle](Operator-Quickstart-Bundle)
-- [Operator Reputation Log](Operator-Reputation-Log) (deep-dive on nps-ledger)
+### Required environment variables
 
-## TODO checklist
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NPSD_PORT` | `17433` | TCP port to bind. |
+| `NPSD_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` only inside an isolated network namespace. |
+| `NPSD_DATA_DIR` | `~/.local/share/npsd` | Persistent state: root keypair file + sub-NID SQLite database. |
+| `NPSD_HOST_NID_PREFIX` | `urn:nps:host:{HostFingerprint}` | NID prefix when minting sub-NIDs. Override only if the host is registered under a different NID with an upstream CA. |
+| `NPSD_SUB_NID_VALIDITY_DAYS` | `7` | Default validity window for issued sub-NIDs. |
+| `NPSD_MAX_INBOX_DEPTH_PER_NID` | `1024` | Max pending messages per NID before deposits return `429`. |
+| `NPSD_MAX_INBOX_MESSAGE_BYTES` | `65536` | Per-message payload cap (matches NCP default frame size). |
+| `NPSD_MAX_INBOX_WAIT_SECONDS` | `30` | Maximum long-poll wait duration. Larger request values are clamped. |
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+### `/health` response
+
+```json
+{
+  "status": "ok",
+  "daemon": "npsd",
+  "version": "1.0.0-alpha.5.2",
+  "layer": "L1",
+  "role": "node",
+  "port": 17433,
+  "host_nid": "urn:nps:host:example.com:host-01",
+  "host_nid_fpr": "a1b2c3d4e5f6...",
+  "uptime_s": 3842
+}
+```
+
+### Key API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/agents` | Issue a new sub-NID. Body: `{identifier?, capabilities[], scope?, agent_pub_key?, metadata?}`. If `agent_pub_key` is omitted, npsd mints an Ed25519 keypair and returns the private half **once**. |
+| `GET` | `/v1/agents` | List issued sub-NIDs (newest first). Query: `?limit=N&offset=M`. |
+| `GET` | `/v1/agents/{nid}` | Return the persisted record for a NID. |
+| `POST` | `/v1/agents/{nid}/revoke` | Revoke a sub-NID. Body: `{reason?}`. |
+| `POST` | `/v1/inbox/{nid}` | Deposit a message to a NID's inbox. |
+| `GET` | `/v1/inbox/{nid}` | Long-poll for messages. Query: `?wait=N&batch=B`. |
+| `DELETE` | `/v1/inbox/{nid}/{message_id}` | Ack and remove a message. Idempotent. |
+| `GET` | `/v1/inbox/{nid}/depth` | Current pending message count. |
+| `GET` | `/.nwm` | Daemon-self Neural Web Manifest. |
+| `GET` | `/health` | Liveness probe. |
+
+### Scaling
+
+- **Development**: single instance is sufficient.
+- **HA**: `npsd` is a host-local daemon by design. Run one instance per machine. For shared state across instances, configure `NPSD_DATA_DIR` to point at a shared volume (SQLite WAL mode) or replace the storage backend with an external store. Sub-NID records are append-only so WAL mode performs well in most cases.
+
+### Not yet implemented (alpha.5+)
+
+- Push delivery from inbox to resident agent sockets.
+- `AnnounceFrame` emission to the local NDP registry.
+- Sub-NID renewal (current path: revoke + reissue).
+
+---
+
+## nps-runner — Task Executor
+
+| Property | Value |
+|----------|-------|
+| **Port** | None (connects outbound to npsd) |
+| **Distribution** | `labacacia/nps-daemons` (public, bundled with npsd) |
+| **Docker image** | `labacacia/nps-runner:{suite_version}` |
+
+### Purpose
+
+`nps-runner` is the task scheduler and FaaS runtime. It watches the local npsd inbox for JSON spawn-spec messages, spawns worker subprocesses on demand, and manages their full lifecycle — stdout/stderr capture, idle timeout, max-runtime deadline, concurrency cap, and completion notifications. It does not bind a server port; all communication is outbound to npsd.
+
+Typical ratio: **1 npsd : N runners** (N = number of machines or worker pools).
+
+### Required environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NPSD_URL` | `http://127.0.0.1:17433` | npsd base URL this runner connects to. In Docker Compose use the service name: `http://npsd:17433`. |
+| `NPS_RUNNER_AGENT_ID` | `nps-runner` | Identifier used when self-registering the runner's sub-NID with npsd. |
+| `NPS_RUNNER_POLL_INTERVAL_MS` | `1000` | Inbox poll interval and long-poll `wait` window in milliseconds. |
+| `NPS_RUNNER_MAX_CONCURRENT_WORKERS` | `8` | Cap on simultaneously running worker processes. Messages are re-queued when the cap is reached. |
+| `NPS_RUNNER_LOG_DIR` | `/tmp/nps-runner-logs` | Directory for per-worker `{task_id}.log` capture files. |
+
+### Liveness
+
+nps-runner does not expose an HTTP port. Liveness is inferred from the npsd sub-NID heartbeat. Check that the runner's NID exists via `GET /v1/agents` on the connected npsd instance.
+
+### Spawn-spec message format
+
+Deposit a JSON message to the runner's inbox (`POST /v1/inbox/{runner-nid}`, `Content-Type: application/json`):
+
+```json
+{
+  "task_id": "abc123",
+  "reply_to": "<nid-to-notify>",
+  "command": "my-tool",
+  "args": ["--flag", "value"],
+  "work_dir": "/home/user/project",
+  "env": { "MY_ENV_VAR": "value" },
+  "idle_timeout_seconds": 600,
+  "max_runtime_seconds": 3600
+}
+```
+
+On completion, nps-runner posts a notification JSON to `reply_to` containing `task_id`, `exit_code`, `killed_reason`, `log_path`, `started_at`, and `finished_at`. `killed_reason` is `null` for a clean exit, or one of `"idle_timeout"`, `"max_runtime"`, `"shutdown"`, `"exception"`.
+
+### Concurrency
+
+Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WORKERS`. If the cap is reached, the inbox message stays unacked and re-appears on the next poll cycle. Scale horizontally by running multiple nps-runner instances against the same npsd — each self-registers with a unique sub-NID.
+
+---
+
+## nps-gateway — HTTP-mode Ingress
+
+| Property | Value |
+|----------|-------|
+| **Port** | `8080` (HTTP; `443` in production via reverse proxy) |
+| **Distribution** | `labacacia/nps-daemons` (public) |
+| **Docker image** | `labacacia/nps-gateway:{suite_version}` |
+
+### Purpose
+
+`nps-gateway` is the public-facing NPS Internet ingress. It terminates NCP HTTP-mode traffic from the Internet and routes it upstream to the local `npsd`. When fully implemented, it handles TLS termination, rate limiting, NeuronHub-customer authentication, CGN debit triggering, and NPS-RFC-0004 reputation checks.
+
+> **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-gateway` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring is in progress as of alpha.5.
+
+### Current status (alpha.5)
+
+Phase 1 skeleton: public-facing HTTP listener with `/health`. Real ingress logic (TLS termination, rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is being phased in at alpha.5+. The deployment surface (process name, Docker image tag) is stable.
+
+### Required environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NPSGATEWAY_HOST` | `0.0.0.0` | Bind address. The gateway is intentionally Internet-facing, unlike npsd. |
+| `NPSGATEWAY_PORT` | `8080` | TCP port. Production deployments terminate TLS on `:443` via a reverse proxy. |
+
+### TLS termination
+
+The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or Traefik for TLS. Set `NPSGATEWAY_PORT` on the host side to control the exposed port; the container always binds 8080 internally.
+
+### `/health` response
+
+```json
+{
+  "status": "ok",
+  "daemon": "nps-gateway",
+  "version": "1.0.0-alpha.5.2",
+  "uptime_s": 120
+}
+```
+
+---
+
+## nps-registry — Node Registry
+
+| Property | Value |
+|----------|-------|
+| **Port** | `17436` |
+| **Distribution** | `labacacia/nps-daemons` (public) |
+| **Docker image** | `labacacia/nps-registry:{suite_version}` |
+
+### Purpose
+
+`nps-registry` is the cross-machine NDP discovery registry. Each per-host `npsd` only knows its local agents. Cross-machine `Resolve` and `Graph` queries go to `nps-registry`. It aggregates `AnnounceFrame` registrations from multiple machines and exposes the full cluster topology.
+
+Required for **AaaS L2-08**: the `topology.snapshot` / `topology.stream` reserved query types (NPS-2 §12) on an Anchor Node that maintains a member registry depend on data served by this daemon.
+
+### Storage backend
+
+By default, `nps-registry` runs with an ephemeral in-memory store. Set `NPSREGISTRY_SQLITE_PATH` to a persistent file path for production. Announcements are stored with TTL-based lazy expiry. A monotonic per-cluster `seq` counter bumps on every `Announce` or eviction, enabling clients to detect incremental changes efficiently.
+
+### Required environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NPSREGISTRY_PORT` | `17436` | TCP port to bind (NDP optional-dedicated per NPS-4). |
+| `NPSREGISTRY_HOST` | `0.0.0.0` | Bind address. The registry is intentionally network-facing. |
+| `NPSREGISTRY_SQLITE_PATH` | *(in-memory)* | Path to the SQLite database file for persistent storage. |
+
+### Key API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/announce` | Register or refresh a node announcement. Accepts an NDP `AnnounceBody`. TTL defaults to the announced value (or 300 s if unset). |
+| `GET` | `/v1/resolve?nid=<nid>` | Resolve a single NID to its current announcement. Returns `404` if unknown or expired. |
+| `GET` | `/v1/graph` | Return all live announcements as a JSON array plus a `seq` monotonic counter. |
+| `GET` | `/health` | Liveness probe. |
+
+### `/health` response
+
+```json
+{
+  "status": "ok",
+  "daemon": "nps-registry",
+  "version": "1.0.0-alpha.5.2",
+  "storage": "sqlite",
+  "seq": 17,
+  "uptime_s": 3600
+}
+```
+
+### Scaling
+
+Run one `nps-registry` instance per cluster, fronted by an internal load balancer. L2 cross-machine federation (gossip / HA cluster mode) is planned for alpha.6+.
+
+---
+
+## nps-ledger — NID Reputation Log
+
+| Property | Value |
+|----------|-------|
+| **Port** | `17440` |
+| **Distribution** | `innolotus/nps-ledger` (PRIVATE — NPS Cloud) |
+| **Docker image** | Private registry |
+
+### Purpose
+
+`nps-ledger` implements the Certificate-Transparency-style append-only NID reputation log defined by [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md). Entries are signed behavioral observations (rate-limit violations, revocations, scraping patterns, etc.) about specific NIDs, committed to a Merkle tree.
+
+`nps-ledger` is **not** part of the public OSS bundle. It ships as a private image with NPS Cloud. OSS operators who need a reputation log can implement the RFC-0004 HTTP API independently.
+
+### Phase feature set
+
+| Phase | Suite version | Capability |
+|-------|--------------|-----------|
+| 1 | alpha.3 | HTTP API: `POST /v1/log/entries` (submit) + `GET /v1/log/entries` (query). No Merkle proofs. |
+| 2 | alpha.4 | RFC 9162 Merkle tree, operator-signed STH (`GET /v1/log/sth`), inclusion proofs (`GET /v1/log/proof?seq=N`). Operator keypair generated on first boot at `${NPSLEDGER_DATA_DIR}/operator.ed25519.pkcs8`. |
+| 3 | alpha.5 | STH Gossip Protocol. `GET /v1/log/gossip/sth` returns `own_sth` + `peer_sths`. Background gossip push-pull cycle with fork detection. |
+
+### Required environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NPSLEDGER_PORT` | `17440` | TCP port to bind. |
+| `NPSLEDGER_HOST` | `0.0.0.0` | Bind address. |
+| `NPSLEDGER_DATA_DIR` | *(current dir)* | Directory for the operator keypair (`operator.ed25519.pkcs8`) and default SQLite file. |
+| `NPSLEDGER_SQLITE_PATH` | *(in-memory)* | SQLite database path. Unset → ephemeral (useful for dev/test). |
+| `NPSLEDGER_LOG_ID` | *(derived from keypair)* | Override the `log_id` in STH responses. Default: `urn:nps:log:operator-{8-byte-fpr-hex}`. |
+| `NPSLEDGER_PEERS` | *(empty)* | Comma-separated `host:port` list of peer ledger operators for STH gossip. |
+| `NPSLEDGER_GOSSIP_INTERVAL_S` | `30` | Gossip push-pull cycle interval in seconds (min 10, max 3600). |
+
+### `/health` response
+
+```json
+{
+  "status": "ok",
+  "daemon": "nps-ledger",
+  "version": "1.0.0-alpha.5.2",
+  "phase": 3,
+  "storage": "sqlite",
+  "log_id": "urn:nps:log:operator-a1b2c3d4e5f6g7h8",
+  "operator_pub_key": "ed25519:<base64url>",
+  "gossip_peers": 2,
+  "uptime_s": 7200
+}
+```
+
+For full operating instructions, see [Operator Reputation Log](Operator-Reputation-Log).
+
+---
+
+## nps-cloud-ca — NPS Cloud Certificate Authority
+
+| Property | Value |
+|----------|-------|
+| **Port** | `17435` |
+| **Distribution** | `innolotus/nps-cloud-ca` (PRIVATE — NPS Cloud) |
+| **GA target** | 2027 Q1+ |
+
+### Purpose
+
+`nps-cloud-ca` is the managed NIP Certificate Authority for NPS Cloud customers. It issues, renews, and revokes Ed25519 NID certificates for Agents and Nodes at cloud scale. It is not available in the OSS distribution.
+
+**OSS alternative**: for a self-hosted NIP CA, use `nip-ca-server` (see below).
+
+---
+
+## nip-ca-server — OSS NIP Certificate Authority
+
+| Property | Value |
+|----------|-------|
+| **Port** | `17435` (default via Docker Compose) |
+| **Distribution** | `labacacia/nip-ca-server` (PUBLIC) |
+| **Repository** | [github.com/labacacia/nip-ca-server](https://github.com/labacacia/nip-ca-server) |
+| **Docker image** | `ghcr.io/labacacia/nip-ca-server:{suite_version}` |
+
+### Purpose
+
+`nip-ca-server` is the self-hostable NIP Certificate Authority — a single-binary ASP.NET Core service that issues, renews, and revokes Ed25519 NID certificates for NPS Agents and Nodes per NPS-3 §8.
+
+### Storage backends
+
+| Backend | How to enable |
+|---------|--------------|
+| **PostgreSQL** (production) | Set `CONNECTIONSTRINGS__POSTGRES`; the bundled `docker-compose.yml` ships a Postgres 16 sidecar. |
+| **SQLite** (embedded / single-binary) | Use `AddNipCaWithSqlite()` in startup configuration (alpha.5.2). |
+
+### Required environment variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `NIPCA__CANID` | yes | CA NID, e.g. `urn:nps:org:ca.example.com` |
+| `NIPCA__KEYPASSPHRASE` | yes | Passphrase for the AES-256-GCM + PBKDF2 encrypted CA key file |
+| `NIPCA__BASEURL` | yes | Public HTTPS base URL of this CA |
+| `CONNECTIONSTRINGS__POSTGRES` | yes (Postgres mode) | Postgres connection string |
+| `NIPCA__OPERATORAPIKEY` | no | Bearer token for write endpoints; omit to disable auth (dev only) |
+| `NIPCA__ACMEENABLED` | no | `true` to enable ACME RFC 8555 + `agent-01` challenge (NPS-RFC-0002, EXPERIMENTAL) |
+| `NIPCA__AGENTCERTVALIDITYDAYS` | no | Agent certificate validity window (default `30`) |
+| `NIPCA__NODECERTVALIDITYDAYS` | no | Node certificate validity window (default `90`) |
+| `NIPCA__ALLOWEDCAPABILITIES` | no | Comma-separated capability allowlist; unlisted caps return `403` |
+
+### Key API endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/v1/agents/register` | Register Agent, issue `IdentFrame` (Ed25519) |
+| `POST` | `/v1/agents/register-x509` | Register Agent, dual-trust frame (Ed25519 + X.509, NPS-RFC-0002) |
+| `POST` | `/v1/agents/{nid}/renew` | Renew Agent certificate |
+| `POST` | `/v1/agents/{nid}/revoke` | Revoke Agent certificate |
+| `GET` | `/v1/agents/{nid}/verify` | Verify / OCSP for an Agent NID |
+| `POST` | `/v1/nodes/register` | Register Node, issue `IdentFrame` |
+| `POST` | `/v1/nodes/register-x509` | Register Node, dual-trust frame |
+| `GET` | `/v1/ca/cert` | CA public key |
+| `GET` | `/v1/crl` | Certificate Revocation List |
+| `GET` | `/.well-known/nps-ca` | CA discovery document |
+| `GET` | `/health` | Liveness probe |
+
+Write endpoints require `Authorization: Bearer <token>` when `NIPCA__OPERATORAPIKEY` is set.
+
+### Quick start
+
+```bash
+git clone https://github.com/labacacia/nip-ca-server.git && cd nip-ca-server
+
+cat > .env <<'EOF'
+NIPCA__CANID=urn:nps:org:ca.example.com
+NIPCA__BASEURL=https://ca.example.com
+NIPCA__KEYPASSPHRASE=change-me-to-a-long-random-string
+POSTGRES_PASSWORD=change-me-too
+EOF
+
+docker compose up -d
+curl http://localhost:17435/health
+```
+
+---
+
+## See also
+
+- [Operator Quickstart: Daemon Bundle](Operator-Quickstart-Bundle) — getting the four OSS daemons running end-to-end
+- [Operator AaaS Profile](Operator-AaaS-Profile) — compliance levels for services exposing NPS endpoints to agents
+- [Operator Reputation Log](Operator-Reputation-Log) — operating nps-ledger and the STH gossip federation
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*
+

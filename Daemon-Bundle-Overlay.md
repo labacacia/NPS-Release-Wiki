@@ -1,40 +1,146 @@
 # Daemon: bundle-overlay
 
-> **Audience:** Operators + release shepherds
-> **Status:** STUB — to be authored by nps-main session
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+
+> **Audience:** Operators and release shepherds
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-## Scope
+`bundle-overlay` is not a runtime daemon. It is the distribution-packaging meta-layer that produces the public `labacacia/nps-daemons` repository. It contains the top-level `docker-compose.yml`, `README.md`, `CHANGELOG.md`, and `NOTICE` that aggregate across the four OSS daemons. Operators who clone `labacacia/nps-daemons` are consuming the output of this layer.
 
-The `bundle-overlay` is not a runtime daemon but the meta-package that produces the public `labacacia/nps-daemons` distribution. Documents what it bundles, how its docker-compose is structured, and image-tag pinning.
+- **Source:** `NPS-Dev/tools/daemons/bundle-overlay/`
+- **Distribution:** the root of `labacacia/nps-daemons` (public)
+- **Sync script:** `NPS-Dev/tools/release/sync-nps-daemons.sh`
 
-## What this page should contain
+---
 
-- Purpose: assembly + distribution of 4 OSS daemons (npsd, runner, gateway, registry) as one git repo + docker-compose
-- Source: `NPS-Dev/tools/daemons/bundle-overlay/`
-- Distribution: roots of `labacacia/nps-daemons` after `sync-nps-daemons.sh` runs
-- The docker-compose.yml: one service per daemon, image tags pinned to suite_version
-- Image-tag-vs-suite_version invariant (now CI-checked by Assertion C)
-- Supplementary CHANGELOG that aggregates the 4 daemon CHANGELOGs
-- Where it lives in the publish-overlay model (vs per-daemon publish-overlay/)
+## Contents
 
-## Source material to draw from
+| File | Role |
+|------|------|
+| `docker-compose.yml` | Top-level compose file; four services (`npsd`, `nps-runner`, `nps-gateway`, `nps-registry`), each pinned to `labacacia/<name>:VERSION` |
+| `README.md` | Public-facing README for `labacacia/nps-daemons`; describes the three-layer architecture and quick-start instructions |
+| `CHANGELOG.md` | Aggregated daemon changelog; single place for operators to track all daemon changes across releases |
+| `NOTICE` | Copyright and license attribution |
 
-- `NPS-Dev/tools/daemons/bundle-overlay/` (Dockerfile, docker-compose.yml, README, CHANGELOG, etc.)
-- `NPS-Dev/tools/release/sync-nps-daemons.sh` (the sync script that uses this)
-- `NPS-Dev/docs/release-process.md` for the bundle-vs-single-repo decision
+---
+
+## docker-compose.yml (at v1.0.0-alpha.5.2)
+
+```yaml
+version: "3.9"
+
+services:
+
+  npsd:
+    image: labacacia/npsd:1.0.0-alpha.5.2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:17433:17433"
+    volumes:
+      - npsd-data:/data
+    environment:
+      NPSD_HOST: 0.0.0.0
+      NPSD_PORT: 17433
+      NPSD_DATA_DIR: /data
+
+  nps-runner:
+    image: labacacia/nps-runner:1.0.0-alpha.5.2
+    restart: unless-stopped
+    depends_on:
+      - npsd
+
+  nps-gateway:
+    image: labacacia/nps-gateway:1.0.0-alpha.5.2
+    restart: unless-stopped
+    ports:
+      - "${NPS_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - npsd
+
+  nps-registry:
+    image: labacacia/nps-registry:1.0.0-alpha.5.2
+    restart: unless-stopped
+    ports:
+      - "${NPS_REGISTRY_PORT:-17436}:17436"
+
+volumes:
+  npsd-data:
+```
+
+Key notes:
+
+- `npsd` binds host-side to `127.0.0.1` (loopback only) even though the container uses `0.0.0.0`. Public ingress goes through `nps-gateway`.
+- `nps-runner` has no port mappings — it has no HTTP surface.
+- Gateway and registry host ports are configurable via `NPS_GATEWAY_PORT` and `NPS_REGISTRY_PORT` at compose launch time.
+
+---
+
+## Image-tag-vs-suite_version invariant
+
+Every image tag in `docker-compose.yml` must equal the suite version oracle. CI Assertion C enforces this:
+
+- CI reads the suite version from the oracle (e.g. `1.0.0-alpha.5.2`).
+- It scans every `image:` line in `docker-compose.yml` for tags.
+- It fails if any tag does not match the oracle.
+
+This catches the common mistake of updating one daemon's image tag while forgetting to update the others, or bumping the suite version without updating the compose file. The assertion runs as part of the release CI gate before any push to `labacacia/nps-daemons`.
+
+---
+
+## Publish-overlay model
+
+The monorepo uses a two-level publish-overlay pattern:
+
+```
+NPS-Dev/tools/daemons/
+├── bundle-overlay/          ← root-level files for labacacia/nps-daemons
+│   ├── docker-compose.yml   ← references all four daemons
+│   ├── README.md
+│   └── CHANGELOG.md
+└── npsd/
+│   ├── publish-overlay/     ← npsd-specific files for its slot in the bundle
+│   │   ├── NpsdPublish.csproj
+│   │   ├── Dockerfile
+│   │   └── nuget.config
+│   └── ...
+└── nps-runner/
+    ├── publish-overlay/     ← runner-specific overrides
+    └── ...
+```
+
+`sync-nps-daemons.sh` first copies `bundle-overlay/` to the root of `labacacia/nps-daemons`, then overlays each daemon's `publish-overlay/` into the corresponding subdirectory. The result is a self-contained distribution repo where each subdirectory is buildable independently.
+
+---
+
+## Aggregated CHANGELOG
+
+`bundle-overlay/CHANGELOG.md` is the operator-facing change log for the entire `labacacia/nps-daemons` distribution. It aggregates entries from each of the four daemon subdirectory CHANGELOGs into a single chronological list, so operators do not need to check four separate files to understand what changed in a release.
+
+The per-daemon `CHANGELOG.md` files remain the source of truth for individual daemon changes. The aggregated file is regenerated by `sync-nps-daemons.sh` at release time.
+
+---
+
+## What is NOT in the bundle
+
+The two private trust-anchor daemons are excluded:
+
+- `nps-cloud-ca` → published separately to `innolotus/nps-cloud-ca`
+- `nps-ledger` → published separately to `innolotus/nps-ledger`
+
+Operators who need those daemons must have NPS Cloud access. See [Daemon NPS-Cloud-CA](Daemon-NPS-Cloud-CA) and [Daemon NPS-Ledger](Daemon-NPS-Ledger).
+
+---
 
 ## Cross-links
 
-- [Operator Quickstart Bundle](Operator-Quickstart-Bundle)
+- [Operator Quickstart Bundle](Operator-Quickstart-Bundle) — end-to-end quickstart using this docker-compose
+- [Release Process](Release-Process) — how `sync-nps-daemons.sh` and the publish-overlay model work
+- [Daemon NPSd](Daemon-NPSd) — npsd details
+- [Daemon NPS-Runner](Daemon-NPS-Runner) — nps-runner details
+- [Daemon NPS-Gateway](Daemon-NPS-Gateway) — nps-gateway details
+- [Daemon NPS-Registry](Daemon-NPS-Registry) — nps-registry details
 - [Operator Daemons Reference](Operator-Daemons-Reference)
-- [Release Process](Release-Process)
 
-## TODO checklist
+---
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

@@ -1,35 +1,126 @@
 # Glossary
 
 > **Audience:** Anyone (reference)
-> **Status:** STUB — to be authored by nps-main session
+> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+>
+> Each entry: one-sentence definition followed by the primary spec reference in parentheses.
+> See also: [What Is NPS](What-Is-NPS) for a prose introduction, [Protocol Stack Architecture](Protocol-Stack-Architecture) for layer relationships.
 
-## Scope
+---
 
-Definitions of every domain term used across the suite. Alphabetical. Each term: one-sentence definition + a "defined in" pointer to the canonical spec section.
+## A
 
-## What this page should contain
+**Agent** — An AI entity (typically an LLM-driven process) that holds a NIP-issued NID certificate, declares capabilities in an `IdentFrame`, and communicates with NWP nodes and other agents over the NPS suite. ([NPS-0 §4.5](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
 
-- Definitions for: Agent, Anchor Node, Bridge Node, Capability, CGN (Cognon), Complex Node, DAG (orchestration), DiffFrame, Frame, NCP, NDP, NID (Neural ID), NIP, NOP, Node Roles, NWM (Neural Web Manifest), NWP, NPT (legacy alias for CGN — note deprecation), Reputation Log, STH (Signed Tree Head), Suite Version, Topology Stream
-- Each entry format: `**Term** — one-sentence definition. ([defined in spec/X.md §Y](link))`
-- A "Renamed in alpha.5/5.2" sub-section listing: `node_kind → node_roles`; `NPT/estimated_npt → CGN/cgn_est`; `Gateway Node → Anchor + Bridge`
+**Agent Node** — An NWP node type that is itself an AI executor; speaks NWP + NOP, carries an NID, and participates in NOP DAG executions as a Worker Agent. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
 
-## Source material to draw from
+**AlignFrame** — A deprecated NCP frame type (0x05) for multi-agent state alignment; superseded by `AlignStream` (0x43) and MUST NOT be used in new implementations. ([NPS-1 §4.5](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
 
-- All `spec/NPS-*.md` Terminology sections (§1 in each)
-- `spec/cr/NPS-CR-0001-anchor-bridge-split.md` for the Anchor/Bridge naming history
-- CHANGELOG entries that introduced renames
+**AlignStream** — The NOP frame type (0x43) that replaces `AlignFrame`; a directed task stream carrying DAG context (`task_id` + `subtask_id`), NID binding, and token-level backpressure control in CGN units. ([NPS-5 §3.4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md))
 
-## Cross-links
+**Anchor Node** — An NWP node type serving as the stateless cluster entry point; authenticates callers via NIP, routes inbound NWP `Action`/`Query` frames to member nodes via NOP, and optionally maintains a member-node topology registry exposed through `topology.snapshot` and `topology.stream`. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md))
 
-- [What Is NPS](What-Is-NPS)
-- Each protocol page links back to its terms here
+**AnchorFrame** — The NCP frame type (0x01) published by a node to broadcast its full data schema; content-addressed by a SHA-256 `anchor_id` so that agents can cache it once and eliminate schema retransmission for 30–60% token savings per session. ([NPS-1 §4.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
 
-## TODO checklist
+**AssuranceLevel** — A field on `IdentFrame` (and corresponding X.509 certificate extension `id-nid-assurance-level`) indicating the identity-verification strength of a NID; one of `"anonymous"`, `"attested"`, or `"verified"`; absent field MUST be treated as `"anonymous"` for backward compatibility. ([NPS-3 §5.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md), [NPS-RFC-0003](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0003-agent-identity-assurance-levels.md))
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+---
+
+## B
+
+**Bridge Node** — An NWP node type that translates outbound NPS frames into non-NPS external protocols (HTTP/REST, gRPC, MCP, A2A) and maps responses back into NWP frames; stateless per request and does not participate in cluster topology. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md))
+
+---
+
+## C
+
+**Capability** — A string token (e.g., `nwp:query`, `nop:delegate`, `topology:read`) declared in an agent's `IdentFrame` or an `AnnounceFrame`; nodes enforce capability gates at the protocol layer before processing frames. ([NPS-3 §5.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md))
+
+**CapsFrame** — The NCP frame type (0x04) used as the standard response envelope; wraps a response body with an anchor reference and pagination cursor, and is also used by the server during native-mode capability negotiation. ([NPS-1 §4.4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
+
+**CGN (Cognon)** — The standardized cross-model token accounting unit in NPS; agents declare a maximum CGN budget per request via `X-NWP-Budget` and nodes use the tokenizer resolution chain to enforce truncation or rejection. ([spec/token-budget.md](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
+
+**Complex Node** — An NWP node type that combines data storage and callable operations; may include sub-node references and serves both `QueryFrame` and `ActionFrame` requests. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
+
+---
+
+## D
+
+**DAG** — A Directed Acyclic Graph; the execution model for NOP `TaskFrame` workflows, with up to 32 nodes (agent sub-tasks) connected by directed data-flow edges; cycles are rejected with `NOP-TASK-DAG-CYCLE`. ([NPS-5 §3.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md))
+
+**DiffFrame** — The NCP frame type (0x02) for incremental schema evolution and streaming change notifications; supports `json_patch` (RFC 6902) and `binary_bitset` patch formats; extended by NPS-CR-0002 with topology-stream event types (`member_joined`, `member_left`, `member_updated`). ([NPS-1 §4.2](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
+
+---
+
+## E
+
+**ErrorFrame** — The unified NPS error frame (0xFE) used by all protocol layers; carries an NPS status code, a structured protocol error code in `DOMAIN-CATEGORY-DETAIL` format, and optional detail fields. ([NPS-1 §4.7](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md), [spec/error-codes.md](https://github.com/labacacia/NPS-Release/blob/main/spec/error-codes.md))
+
+---
+
+## F
+
+**Frame** — The fundamental unit of NPS communication; standard frames have a 4-byte header (1 B frame type + 1 B flags + 2 B payload length) supporting up to 64 KB, while EXT-flag frames use an 8-byte header supporting up to 4 GB. ([NPS-1 §3](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
+
+---
+
+## M
+
+**Memory Node** — An NWP node type that owns a data anchor and serves read queries from agents; the most common node type, analogous to a REST data endpoint, accessed via `QueryFrame`. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
+
+---
+
+## N
+
+**NCP (Neural Communication Protocol)** — The framing and base-layer protocol of NPS; defines the frame format, two encoding tiers (Tier-1 JSON, Tier-2 MsgPack), and five core frame types; all higher-level protocols are carried as NCP frames. ([NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
+
+**NDP (Neural Discovery Protocol)** — The NPS discovery layer analogous to DNS; agents and nodes use it to resolve `nwp://` addresses to physical (host, port, protocol) tuples, broadcast capabilities via signed `AnnounceFrame`, and subscribe to topology graph changes. ([NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md))
+
+**NID (Neural Identity Descriptor)** — The globally unique identity URN for any agent, node, or organization in NPS; takes the form `urn:nps:{entity-type}:{issuer-domain}:{identifier}` and is backed by an Ed25519 keypair and a NIP CA-issued certificate. ([NPS-3 §3](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md))
+
+**NIP (Neural Identity Protocol)** — The NPS identity layer analogous to TLS/PKI; issues verifiable NID certificates to agents and nodes, defines a three-tier CA hierarchy with OCSP/CRL revocation, and specifies `IdentFrame`, `TrustFrame`, and `RevokeFrame`. ([NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md))
+
+**NOP (Neural Orchestration Protocol)** — The NPS orchestration layer analogous to SMTP + message queues + workflow engines; provides wire-level DAG task dispatch (`TaskFrame`), agent delegation (`DelegateFrame`), K-of-N sync barriers (`SyncFrame`), and streaming progress (`AlignStream`). ([NPS-5 NOP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md))
+
+**NPT (Neural Processing Token)** — **Deprecated.** Legacy alias for CGN (Cognon); the associated wire field `estimated_npt` was renamed to `cgn_est` in v1.0-alpha.5.2 — do not use in new code or new spec text. ([spec/token-budget.md](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
+
+**NWM (Neural Web Manifest)** — A machine-readable JSON manifest served at `GET /.nwm` on every NWP node; declares node type, capabilities, available actions, AnchorFrame reference, trusted CA issuers, and (at AaaS Profile L2+) topology query endpoint availability. ([NPS-2 §4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
+
+**NWP (Neural Web Protocol)** — The NPS request/response layer analogous to HTTP; defines how agents access data and invoke operations on Memory, Action, Anchor, Bridge, and Complex nodes using `QueryFrame` (0x10) and `ActionFrame` (0x11). ([NPS-2 NWP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
+
+---
+
+## R
+
+**Reputation Log** — An append-only, Merkle-tree-backed log of NID behavioral incidents (rate-limit violations, revocations, ToS violations, positive attestations, etc.) defined by NPS-RFC-0004; analogous to Certificate Transparency logs, allowing any node to assess both the identity and the historical track record of an agent. ([NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md))
+
+---
+
+## S
+
+**STH (Signed Tree Head)** — A signed commitment to the current state of a Reputation Log's Merkle tree (current tree size + root hash + timestamp), published by a log operator and gossiped between peer logs at a default 30-second interval so that any fork or tampering is detectable via STH divergence. ([NPS-RFC-0004 §4.4–4.5](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md))
+
+**Suite Version** — The top-level version identifier for an NPS release as a whole (e.g., `v1.0.0-alpha.5`); distinct from individual sub-protocol versions (NCP v0.6, NWP v0.10, NIP v0.6, NDP v0.6, NOP v0.4) which are tracked per spec document. ([NPS-0 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
+
+---
+
+## T
+
+**Topology Stream** — A real-time subscription feed of cluster membership change events (`member_joined`, `member_left`, `member_updated`) pushed from an Anchor Node as `DiffFrame` messages; subscribed to via a `SubscribeFrame` with `type = "topology.stream"`, mandatory at AaaS Profile L2 and above. ([NPS-2 §12.2](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [NPS-CR-0002](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0002-anchor-topology-queries.md))
+
+---
+
+## Renamed in alpha.5 / alpha.5.2
+
+The table below records field and term renames that affect wire compatibility. During the alpha transition window, parsers encountering old names SHOULD accept them as aliases; new publishers MUST use the new names.
+
+| Old name | New name | Changed in | Scope |
+|----------|----------|------------|-------|
+| `node_kind` | `node_roles` | v1.0-alpha.5 (NDP v0.6, NPS-CR-0001) | NDP `AnnounceFrame` field; parsers MUST accept `node_kind` as alias through the alpha.5 window |
+| `estimated_npt` / NPT | `cgn_est` / CGN (Cognon) | v1.0-alpha.5.2 | Token-budget field on `TopologyEventEnvelope` and `AlignStream`; `NPT` and `estimated_npt` are fully deprecated |
+| `Gateway Node` (`"gateway"`) | `Anchor Node` (`"anchor"`) + `Bridge Node` (`"bridge"`) | v1.0-alpha.3 (NPS-CR-0001) | NWP node type — single Gateway role split into stateless cluster entry (Anchor) and protocol translator (Bridge); wire value `"gateway"` is removed; parsers MUST reject it with `NWP-MANIFEST-NODE-TYPE-REMOVED` |
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

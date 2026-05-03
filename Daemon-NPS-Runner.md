@@ -1,39 +1,174 @@
 # Daemon: nps-runner
 
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+
 > **Audience:** Operators
-> **Status:** STUB — to be authored by nps-main session
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-## Scope
+`nps-runner` is the NPS FaaS task executor. It watches the local [Daemon NPSd](Daemon-NPSd) inbox for JSON spawn-spec messages, spawns worker subprocesses on demand, and manages their full lifecycle: stdout/stderr capture, idle-timeout and max-runtime enforcement, concurrency cap, and completion notifications back into the inbox.
 
-`nps-runner` — task executor daemon. Walks DAG steps dispatched via NOP.
+- **Source:** `NPS-Dev/tools/daemons/nps-runner/`
+- **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
+- **Docker image:** `labacacia/nps-runner:1.0.0-alpha.5.2`
+- **Exposed port:** none — `nps-runner` has no HTTP surface; it communicates entirely through the `npsd` inbox
+- **Layer:** L1
 
-## What this page should contain
+---
 
-- Purpose
-- Source: `NPS-Dev/tools/daemons/nps-runner/`
-- Distribution: bundled into `labacacia/nps-daemons`
-- Required env vars
-- /health shape
-- Concurrency model + scaling
-- Relationship to npsd (typically 1 npsd : N runner)
-- NOP DAG execution semantics: how it handles delegate, condition, async actions
+## Relationship to npsd
 
-## Source material to draw from
+`nps-runner` is architecturally subordinate to `npsd`. On startup it self-registers a sub-NID (identifier `NPS_RUNNER_AGENT_ID`, capabilities `["spawn"]`) via `POST /v1/agents` on the local `npsd`. Spawn requests are delivered as inbox messages to that NID; `nps-runner` polls `GET /v1/inbox/{runner-nid}` on a configurable long-poll cycle.
 
-- `NPS-Dev/tools/daemons/nps-runner/`
-- `spec/NPS-5-NOP.md` for the orchestration semantics it implements
+This design provides failure isolation: a worker crash cannot take down the protocol layer. `npsd` must be running before `nps-runner` starts; in docker-compose the `depends_on: npsd` relationship enforces this.
+
+One `npsd` may serve any number of `nps-runner` instances. Each registers its own sub-NID (configured by `NPS_RUNNER_AGENT_ID`), so names must be unique per host when running multiple runners.
+
+---
+
+## Spawn-spec message format
+
+To dispatch a task, deposit a message to the runner's inbox NID:
+
+```
+POST /v1/inbox/{runner-nid}
+Content-Type: application/json
+X-Nps-Inbox-Ttl-Seconds: 3600
+```
+
+Body:
+
+```json
+{
+  "task_id": "abc123",
+  "reply_to": "urn:nps:agent:host:caller-nid",
+  "command": "claude",
+  "args": ["remote-control", "--port", "1380", "--permission-mode", "bypassPermissions"],
+  "work_dir": "/home/wind/project",
+  "env": {
+    "ANTHROPIC_API_KEY": "...",
+    "CLAUDE_CODE_SANDBOXED": "1"
+  },
+  "idle_timeout_seconds": 600,
+  "max_runtime_seconds": 3600
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `task_id` | string | no | Caller-supplied ID; auto-generated (UUID) if absent |
+| `reply_to` | string | no | NID that receives the completion notification on worker exit |
+| `command` | string | **yes** | Executable name or absolute path |
+| `args` | string[] | no | Positional arguments |
+| `work_dir` | string | no | Working directory; defaults to nps-runner's CWD |
+| `env` | object | no | Extra env vars merged on top of the inherited environment |
+| `idle_timeout_seconds` | int | no | Kill worker after N seconds with no stdout/stderr output |
+| `max_runtime_seconds` | int | no | Hard wall-clock limit; ceiling is 4 hours |
+
+---
+
+## Worker lifecycle
+
+1. Message arrives in inbox → deserialize spawn spec → check concurrency cap.
+2. If at cap (`NPS_RUNNER_MAX_CONCURRENT_WORKERS`): message stays unacked and reappears on the next poll cycle.
+3. Otherwise: spawn subprocess with the given `command` / `args` / `env` / `work_dir`.
+4. stdout + stderr are captured to `NPS_RUNNER_LOG_DIR/{task_id}.log`.
+5. Monitor loop (5 s tick) enforces `idle_timeout_seconds` and `max_runtime_seconds`.
+6. On exit (any cause): ack the inbox message. If `reply_to` is set, POST a completion notification to that NID.
+
+### Completion notification payload
+
+```json
+{
+  "task_id": "abc123",
+  "exit_code": 0,
+  "killed_reason": null,
+  "log_path": "/tmp/nps-runner-logs/abc123.log",
+  "started_at": "2026-05-03T10:00:00.000Z",
+  "finished_at": "2026-05-03T10:05:00.000Z"
+}
+```
+
+`killed_reason` is one of `"idle_timeout"`, `"max_runtime"`, `"shutdown"`, `"exception"`, or `null` (clean exit).
+
+---
+
+## Concurrency model
+
+`nps-runner` maintains a counter of simultaneously running worker processes. When the count reaches `NPS_RUNNER_MAX_CONCURRENT_WORKERS` (default 8), new spawn-spec messages are left unacked in the inbox and retried on the next poll interval. This backpressure is cooperative — there is no separate thread pool; each worker is a child process managed by the daemon.
+
+---
+
+## Configuration (env vars)
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `NPSD_URL` | `http://127.0.0.1:17433` | no | `npsd` base URL used for self-registration and inbox polling. |
+| `NPS_RUNNER_AGENT_ID` | `nps-runner` | no | Identifier used when self-registering the runner's sub-NID. Must be unique per host when running multiple instances. |
+| `NPS_RUNNER_POLL_INTERVAL_MS` | `1000` | no | Inbox poll interval in milliseconds; also sets the long-poll `wait` window. |
+| `NPS_RUNNER_MAX_CONCURRENT_WORKERS` | `8` | no | Maximum simultaneously running worker processes. |
+| `NPS_RUNNER_LOG_DIR` | `/tmp/nps-runner-logs` | no | Directory for per-worker `{task_id}.log` files. |
+
+### docker-compose.yml service definition (bundle-overlay)
+
+```yaml
+nps-runner:
+  image: labacacia/nps-runner:1.0.0-alpha.5.2
+  restart: unless-stopped
+  depends_on:
+    - npsd
+```
+
+`nps-runner` needs no port mappings. Its only external interface is the `npsd` inbox.
+
+---
+
+## Health check
+
+`nps-runner` has no HTTP surface and no `/health` endpoint. Liveness is observable via its log output — look for the `nps-runner ready` startup line and the periodic poll/spawn log lines.
+
+```
+nps-runner ready — NID=urn:nps:agent:host:nps-runner  npsd=http://127.0.0.1:17433 ...
+```
+
+When running in Docker, monitor with `docker compose logs -f nps-runner`.
+
+---
+
+## Why nps-runner is a separate daemon
+
+Resource profile, failure isolation, and trust boundary all differ significantly between the protocol layer and the worker scheduler:
+
+- A worker crash must not take the NCP layer (`npsd`) down.
+- `nps-runner` executes user-supplied commands; `npsd` must not have a permission surface for that.
+- Horizontal scaling is independent — you may run more runners on a machine without touching `npsd`.
+
+See `docs/daemons/architecture.md` in the `labacacia/nps-daemons` distribution for the full rationale.
+
+---
+
+## Common operational issues
+
+**nps-runner exits immediately**
+
+`npsd` is not running or `NPSD_URL` is misconfigured. Start `npsd` first and verify `curl http://127.0.0.1:17433/health` returns `200`.
+
+**Workers queue up but never start**
+
+The concurrency cap (`NPS_RUNNER_MAX_CONCURRENT_WORKERS`) has been reached. Either increase the cap or wait for running workers to finish. Check `NPS_RUNNER_LOG_DIR` for log files from long-running workers.
+
+**Sub-NID registration returns 409 on restart**
+
+This is expected and harmless. The `409 Conflict` from `POST /v1/agents` means the NID was already issued on a previous run. `nps-runner` treats this as success and reuses the existing NID.
+
+---
 
 ## Cross-links
 
-- [Daemon NPSd](Daemon-NPSd)
-- [Protocol NOP](Protocol-NOP)
+- [Protocol NOP](Protocol-NOP) — NPS Orchestration Protocol; tasks dispatched through nps-runner often execute NOP DAG steps
+- [Daemon NPSd](Daemon-NPSd) — the inbox host that nps-runner polls
+- [Operator Daemons Reference](Operator-Daemons-Reference)
+- [Operator Quickstart Bundle](Operator-Quickstart-Bundle)
 
-## TODO checklist
+---
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

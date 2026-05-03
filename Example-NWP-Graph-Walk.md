@@ -1,37 +1,207 @@
-# Example: nwp-graph-walk
+# Example: NWP Graph Walk
 
-> **Audience:** Developers learning NWP Complex Node graph traversal
-> **Status:** STUB — to be authored by nps-main session
-> **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
 
-## Scope
+**Repo:** `labacacia/NPS-examples`, directory: `nwp-graph-walk/` (source in NPS-Dev `demos/nwp-graph-walk/`)
 
-`nwp-graph-walk` — example showing NWP Complex Node graph traversal, depth control, and aggregation queries.
+This demo demonstrates NWP Complex Node graph traversal — how an agent issues one request and receives aggregated results from a multi-hop graph of nodes, with server-enforced depth control and cycle detection.
 
-## What this page should contain
+---
 
-- Purpose: demonstrate Complex Node behavior (NWP §11)
-- Directory layout in `NPS-examples/nwp-graph-walk/`
-- How to run
-- What it demonstrates: graph depth control (default 1, max 5), aggregation queries (NWP §6.7), filter syntax
-- Expected output
-- Snapshot refresh expectation per suite version
+## Purpose
 
-## Source material to draw from
+If you are evaluating NPS as a foundation for Agent-native knowledge graphs, you need to answer three practical questions before adopting it:
 
-- `labacacia/NPS-examples/nwp-graph-walk/`
-- `spec/NPS-2-NWP.md` §11 (Complex Node), §6.7 (Aggregation Queries)
+1. **Does one query really hit the whole graph?** This demo proves the typed-ref fanout end-to-end with a Memory Node + a Complex Node.
+2. **Can I bound blast radius?** Graph walks are trivially DoS-able without a depth cap and a cycle detector. This demo exercises both safety gates.
+3. **What does an Agent actually see?** The response is one deterministic JSON shape, not a multiplexed stream of fragments — which means it can be cached by `anchor_ref`.
 
-## Cross-links
+---
 
-- [Protocol NWP](Protocol-NWP)
-- [SDK Common Patterns](SDK-Common-Patterns)
+## What Complex Node Behavior Means
 
-## TODO checklist
+In NWP (NPS-2 §11), a **Complex Node** is a node that can recursively delegate sub-queries to other NWP nodes and aggregate the results into a single response. It does this by declaring `graph.refs` in its Neural Web Manifest (NWM) — each `ref` is a labeled edge to another NWP node URL.
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+When an Agent issues `POST /query` with `X-NWP-Depth: N`, the Complex Node:
+
+1. Answers its own query locally (depth `N`).
+2. For every declared `graph.refs[<rel>]`, issues a child `POST /query` with `X-NWP-Depth: N-1` and appends its own NID to `X-NWP-Trace`.
+3. Inlines each child's CapsFrame under `graph[<rel>].data` in its response.
+
+Two hard safety gates apply at every hop:
+
+- **`graph_max_depth` (NWP §11.3):** A node's NWM may cap the maximum depth it is willing to serve. A request exceeding this is rejected *before* any child call with `NWP-DEPTH-EXCEEDED` (HTTP 400 / NPS-CLIENT-BAD-REQUEST). The check is pre-fanout — a malicious Agent cannot amplify load by requesting depth 100.
+- **Cycle detection via `X-NWP-Trace` (NWP §11.4):** Each hop appends the serving node's NID to `X-NWP-Trace`. If an incoming request already lists the current NID in the trace, the node returns `NWP-GRAPH-CYCLE` (HTTP 422 / NPS-CLIENT-UNPROCESSABLE). The parent surfaces the error under `graph[].error` without failing its own response — the traversal continues and the useful data is preserved.
+
+---
+
+## Demo Topology
+
+Five in-process loopback nodes:
+
+```
+                ┌──────────────────┐
+                │ customers :17451 │  (Memory Node)
+                └────────▲─────────┘
+                         │  graph.refs[customer]
+                ┌────────┴─────────┐
+                │   orders :17450  │  (Complex Node, graph_max_depth=2)
+                └────────┬─────────┘
+                         │  graph.refs[product]
+                ┌────────▼─────────┐
+                │  products :17452 │  (Memory Node)
+                └──────────────────┘
+
+ ┌──────────────────┐        ┌──────────────────┐
+ │  hub-a :17460    │ ◄────► │  hub-b :17461    │   (cycle pair)
+ │  graph.refs[peer]│        │  graph.refs[peer]│
+ └──────────────────┘        └──────────────────┘
+```
+
+---
+
+## How to Run
+
+```bash
+git clone https://github.com/labacacia/nps.git
+cd nps
+dotnet run --project demos/nwp-graph-walk
+```
+
+Requires .NET 10 SDK. All five nodes and the client run inside one process; nothing binds beyond `127.0.0.1`.
+
+---
+
+## Scenes and Expected Output
+
+### Scene A — depth=0, no fanout
+
+```
+POST http://127.0.0.1:17450/query   X-NWP-Depth: 0
+→ HTTP 200 OK
+{
+  "anchor_ref": "sha256:8a68d6e3…",
+  "count": 3,
+  "data": [ {"id":1001, "customer_id":501, "product_id":301, …}, … ]
+}
+```
+
+No `graph` key. A Complex Node at depth 0 behaves exactly like a Memory Node — it answers only its own data.
+
+### Scene B — depth=1, one hop
+
+```
+POST http://127.0.0.1:17450/query   X-NWP-Depth: 1
+→ HTTP 200 OK
+{
+  "anchor_ref": "sha256:8a68d6e3…",
+  "count": 3,
+  "data": [ … ],
+  "graph": [
+    { "rel": "customer",
+      "node": "http://127.0.0.1:17451",
+      "data": { "anchor_ref": "sha256:ec903485…", "count": 2, "data": [ … ] } },
+    { "rel": "product",
+      "node": "http://127.0.0.1:17452",
+      "data": { "anchor_ref": "sha256:a734e8fa…", "count": 3, "data": [ … ] } }
+  ]
+}
+```
+
+One round trip from the Agent, two child calls (`customers` + `products`) issued by the Complex Node, two distinct anchor refs returned. The Agent caches each child node independently.
+
+**Key learning — how `cgn_est` accumulates across graph hops:** The `cgn_est` field (Cognon estimate, formerly called `estimated_npt` in pre-alpha.3 versions) in the top-level CapsFrame represents the token budget consumed by the entire response, including the inlined child frames. Each child CapsFrame also carries its own `cgn_est`. An Agent tracking token budget across a graph traversal should sum the `cgn_est` values from each distinct CapsFrame it receives — the top-level `cgn_est` does not automatically aggregate the children's values.
+
+### Scene C — depth=9, rejected before fanout
+
+```
+POST http://127.0.0.1:17450/query   X-NWP-Depth: 9
+→ HTTP 400 Bad Request
+{
+  "frame_type": 254,
+  "status": "NPS-CLIENT-BAD-REQUEST",
+  "error": "NWP-DEPTH-EXCEEDED",
+  "message": "X-NWP-Depth 9 exceeds node max_depth 2."
+}
+```
+
+Frame type 254 = ErrorFrame (0xFE). The check happens before any child call is made. The `orders` node's NWM declares `graph_max_depth: 2`; the request for depth 9 is rejected immediately. There is no amplification risk.
+
+### Scene D — mutual reference, cycle caught
+
+Starting at `hub-a` with depth=2. `hub-a` references `hub-b` (`graph.refs[peer]`), and `hub-b` references `hub-a` back:
+
+```
+POST http://127.0.0.1:17460/query   X-NWP-Depth: 2
+→ HTTP 200 OK
+{
+  "anchor_ref": "sha256:779ec85b…",
+  "count": 1, "data": [ {"id":1, "label":"hub-a local row"} ],
+  "graph": [
+    { "rel": "peer", "node": "http://127.0.0.1:17461",
+      "data": {
+        "count": 1, "data": [ {"id":2, "label":"hub-b local row"} ],
+        "graph": [
+          { "rel": "peer", "node": "http://127.0.0.1:17460",
+            "error": {
+              "code": "NWP-NODE-UNAVAILABLE",
+              "message": "child 'peer' returned 422: {…,\"error\":\"NWP-GRAPH-CYCLE\",…graph cycle detected at 'urn:nps:node:demo.local:hub-a'.}"
+            } }
+        ]
+      } }
+  ]
+}
+```
+
+The overall traversal **succeeds** (HTTP 200 with both hubs' rows). The cycle is surfaced as a scoped error under `graph[].error`. An Agent can use the useful data from both hubs and still see exactly where the loop closed.
+
+---
+
+## Layout
+
+```
+demos/nwp-graph-walk/
+├── Program.cs                 # 5 loopback nodes + 4 scenes (A/B/C/D)
+├── NodeHosts.cs               # WebApplication factories (Memory / Complex)
+├── InMemoryProviders.cs       # StaticMemoryNodeProvider + StaticComplexNodeProvider
+├── DemoData.cs                # schemas + fixed rows (orders/customers/products/hubs)
+└── NPS.Demo.GraphWalk.csproj  # .NET 10 Web SDK
+```
+
+---
+
+## Demo-Only Configuration
+
+Two `ComplexNodeOptions` are relaxed so the traversal can execute on loopback:
+
+| Option | Demo value | Production default | Reason |
+|--------|-----------|-------------------|--------|
+| `RejectPrivateChildUrls` | `false` | `true` | Loopback / RFC1918 is blocked in production to prevent SSRF. |
+| `AllowHttpChildUrls` | `true` | `false` | NPS-2 §13.2 mandates `https://` for child fetches. |
+
+The `AllowedChildUrlPrefixes` allowlist (`["http://127.0.0.1:"]`) is still enforced — the demo does not disable the allowlist, only the scheme check.
+
+---
+
+## Snapshot Refresh
+
+The captured output above was recorded on 2026-04-21. Output snapshots must be refreshed at each suite version change. The `cgn_est` field rename (from `token_est` in older protocol versions) in alpha.5.2 breaks older snapshots — regenerate them with `dotnet run --project demos/nwp-graph-walk` after any NWP protocol change.
+
+---
+
+## Limitations
+
+- **No NIP.** `X-NWP-Agent` carries a bare URN; no certificate chain, no capability check, no rate limit.
+- **Depth-5 ceiling not separately demonstrated.** NPS-2 §11 caps overall depth at 5 regardless of `graph_max_depth`; this is covered by unit tests, not this demo.
+- **In-process topology.** All five nodes share one process and one `HttpClientFactory`. Production Complex Nodes talk to independent nodes over HTTPS with real certificates.
+
+---
+
+## Related Pages
+
+- [Protocol NWP](Protocol-NWP) — full NWP specification reference
+- [SDK Common Patterns](SDK-Common-Patterns) — how to build queries with depth control from any SDK
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

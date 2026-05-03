@@ -1,37 +1,262 @@
 # SDK Tutorial: Building a Bridge Node
 
-> **Audience:** Developers (writing protocol translators between NPS and non-NPS systems like MCP, A2A, gRPC)
-> **Status:** STUB — to be authored by nps-main session
-> **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
 
-## Scope
+> **Audience:** Developers implementing NPS↔non-NPS protocol translation (MCP, A2A, gRPC, HTTP).
+> **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
 
-How to implement an NPS Bridge Node: declaring `bridge_protocols`, the `bridge_target` parameter, conformance expectations.
+A **Bridge Node** translates NPS frames into requests on non-NPS protocols and translates the responses back. It was introduced alongside the Anchor Node in v1.0-alpha.3 by [NPS-CR-0001](cr/NPS-CR-0001-anchor-bridge-split.md), which split the now-retired "Gateway Node" type into two distinct roles with clearly separate concerns.
 
-## What this page should contain
+---
 
-- What a Bridge Node is and isn't (translation, not gateway — see CR-0001)
-- Declaring `bridge_protocols` in NWM and AnnounceFrame
-- The `bridge_target` parameter — current schema is implementation-defined (CR-0001 §3.2 — flag this as not yet standardized)
-- Reference implementations: `labacacia/NPS-mcp-ingress`, `labacacia/NPS-a2a-ingress`, `labacacia/NPS-grpc-ingress`
-- How to map non-NPS errors into the NPS error namespace
-- Note: legacy `node_type: "gateway"` MUST be rejected (`NDP-ANNOUNCE-ROLE-REMOVED`)
+## Table of contents
 
-## Source material to draw from
+1. [What a Bridge Node is (and is not)](#what-a-bridge-node-is-and-is-not)
+2. [Direction and the compat/\*-ingress packages](#direction-and-the-compatx-ingress-packages)
+3. [Step 1 — Declare the NWM manifest](#step-1--declare-the-nwm-manifest)
+4. [Step 2 — Declare in the NDP AnnounceFrame](#step-2--declare-in-the-ndp-announceframe)
+5. [Step 3 — Handle inbound ActionFrame with bridge_target](#step-3--handle-inbound-actionframe-with-bridge_target)
+6. [Step 4 — Translate errors into the NPS namespace](#step-4--translate-errors-into-the-nps-namespace)
+7. [Rejecting legacy gateway wire values](#rejecting-legacy-gateway-wire-values)
+8. [Reference implementations](#reference-implementations)
 
-- `spec/cr/NPS-CR-0001-anchor-bridge-split.md`
-- The 3 ingress repos as living reference implementations
+---
 
-## Cross-links
+## What a Bridge Node is (and is not)
 
-- [Protocol NDP](Protocol-NDP)
-- [SDK Building an Anchor Node](SDK-Building-an-Anchor-Node)
+| It IS | It is NOT |
+|-------|-----------|
+| A translator: NPS frames → external protocol requests | A proxy or cache |
+| Stateless per request | A state store or session manager |
+| The outbound edge of an NPS cluster for non-NPS systems | An Anchor Node (Anchor routes inbound NPS → NPS; Bridge routes NPS → external) |
+| Declared with `node_roles: ["bridge"]` | A replacement for the retired Gateway Node |
 
-## TODO checklist
+A Bridge Node does not participate in cluster topology and does not maintain a member registry. It simply accepts an ActionFrame carrying a `bridge_target` parameter, makes an outbound call in the target protocol's format, and returns the result as a CapsFrame.
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+A single Bridge Node MAY support multiple external protocols simultaneously. Deployments MAY also run dedicated Bridge Nodes per protocol for isolation and independent scaling.
+
+---
+
+## Direction and the compat/\*-ingress packages
+
+Traffic direction is the key distinction in the NPS ecosystem:
+
+```
+NPS cluster ──[Bridge Node]──→ external system   (NPS → external)
+external system ──[Ingress adapter]──→ NPS        (external → NPS)
+```
+
+The `compat/mcp-ingress`, `compat/a2a-ingress`, and `compat/grpc-ingress` packages carry the **inverse** direction: they accept incoming traffic from external systems and translate it into NPS frames. These were originally named `compat/*-bridge` before CR-0001 renamed them to free the "Bridge" word for the outbound role.
+
+When you are building a **Bridge Node** you are implementing the outbound path. If you want to receive MCP/A2A/gRPC calls from the outside world and feed them into an NPS cluster, use the ingress adapters instead.
+
+---
+
+## Step 1 — Declare the NWM manifest
+
+The NWM for a Bridge Node uses `node_type: "bridge"` and lists the supported external protocols in `bridge_protocols`:
+
+```json
+{
+  "nwp": "0.4",
+  "node_id": "urn:nps:node:api.example.com:mcp-bridge",
+  "node_type": "bridge",
+  "display_name": "Example MCP Bridge",
+  "wire_formats": ["ncp-capsule", "msgpack", "json"],
+  "preferred_format": "msgpack",
+  "capabilities": {
+    "query": false,
+    "stream_query": false,
+    "subscribe": false,
+    "token_budget_hint": true
+  },
+  "auth": {
+    "required": true,
+    "identity_type": "nip-cert",
+    "trusted_issuers": ["https://ca.example.com"],
+    "required_capabilities": ["nwp:action"]
+  },
+  "actions": {
+    "mcp.call": {
+      "description": "Forward an NPS action to an MCP server",
+      "async": false,
+      "idempotent": false,
+      "timeout_ms_default": 30000,
+      "required_capability": "nwp:action"
+    }
+  },
+  "endpoints": {
+    "invoke": "nwp://api.example.com/mcp-bridge/invoke"
+  }
+}
+```
+
+The `bridge_protocols` field is carried in the NDP `AnnounceFrame`, not in the NWM itself (see Step 2). The NWM declares the node role; NDP carries the protocol list.
+
+---
+
+## Step 2 — Declare in the NDP AnnounceFrame
+
+The AnnounceFrame (NDP 0x30) carries the authoritative role declaration for discovery:
+
+```json
+{
+  "frame": "0x30",
+  "nid": "urn:nps:node:api.example.com:mcp-bridge",
+  "node_roles": ["bridge"],
+  "bridge_protocols": ["mcp", "a2a"],
+  "activation_mode": "ephemeral"
+}
+```
+
+**`bridge_protocols` standard values (NPS-CR-0001 §3.2 / AaaS Profile §2A.3):**
+
+| Value | External protocol |
+|-------|------------------|
+| `"http"` | HTTP / HTTPS (REST and streaming) |
+| `"grpc"` | gRPC (unary and streaming) |
+| `"mcp"` | Model Context Protocol |
+| `"a2a"` | Agent-to-Agent (Google A2A v0.2) |
+
+Additional protocol values MAY be registered through future CRs. The list is open-ended to allow third-party adapters without requiring a spec change.
+
+**`bridge_target` schema:** The concrete shape of the `bridge_target` object that callers pass inside an ActionFrame is **implementation-defined at this release** (CR-0001 §3.2 defers standardization to a follow-up CR per protocol). Document your chosen shape in your node's NWM description or ActionSpec `params_anchor`. Do not assume callers know the schema — publish it.
+
+**`node_roles` MUST match `node_type`:** The NWP constraint is that `node_type` in the NWM MUST be one of the values declared in `node_roles`. For a pure Bridge Node: `node_type = "bridge"` and `node_roles` must include `"bridge"`. A multi-role node (e.g., `"bridge"` + `"action"`) must include both in `node_roles`.
+
+---
+
+## Step 3 — Handle inbound ActionFrame with bridge_target
+
+The ActionFrame arriving at a Bridge Node MUST carry a `bridge_target` parameter inside `params` (until a dedicated top-level field is standardized). The Bridge Node's translation loop:
+
+```
+Caller           Bridge Node                        External System
+  │                   │                                   │
+  │── ActionFrame ──→ │                                   │
+  │   params: {       │                                   │
+  │     bridge_target │                                   │
+  │     ...payload... │                                   │
+  │   }               │                                   │
+  │                   │── 1. Extract bridge_target        │
+  │                   │── 2. Build external request ────→ │
+  │                   │      (HTTP/gRPC/MCP/A2A format)   │
+  │                   │   ←── External response ───────── │
+  │                   │── 3. Translate response           │
+  │ ←── CapsFrame ─── │      to CapsFrame                 │
+```
+
+**Implementation sketch (protocol-neutral pseudo-code):**
+
+```
+function handle_action_frame(action_frame, nwm):
+    // Validate NID and scope as usual
+    verify_ident_frame(action_frame.caller_ident)
+
+    // Dispatch based on action_id
+    action_spec = nwm.actions[action_frame.action_id]
+    bridge_target = action_frame.params["bridge_target"]
+
+    // Resolve the external protocol handler
+    handler = get_handler(bridge_target.protocol)  // "mcp", "http", etc.
+
+    // Call the external system
+    try:
+        external_response = handler.call(bridge_target, action_frame.params)
+        return caps_frame(data = external_response, token_est = measure_cgn(external_response))
+    except ExternalError as e:
+        return error_frame(translate_error(e))   // see Step 4
+```
+
+**Authentication relay (optional):**
+
+Bridge Nodes MAY forward NIP credentials to the external system where the target protocol has an equivalent concept (e.g., HTTP `Authorization` header mapped from the NID). Where no mapping exists, use vendor-side credentials configured per Bridge instance. Never forward the raw private key.
+
+**Observability:**
+
+Annotate OpenTelemetry spans with `bridge.target_protocol` and `bridge.target_endpoint` so end-to-end traces visually cross the NPS/external boundary.
+
+---
+
+## Step 4 — Translate errors into the NPS namespace
+
+Non-NPS systems return errors in their own formats. A Bridge Node MUST translate every outbound error into a valid NPS ErrorFrame (`0xFE`) before returning it to the caller.
+
+**General translation table:**
+
+| External error class | NPS error code | NPS status |
+|---------------------|---------------|------------|
+| 400 Bad Request / invalid params | `NWP-ACTION-PARAMS-INVALID` | `NPS-CLIENT-UNPROCESSABLE` |
+| 401 / 403 Unauthorized | `NWP-AUTH-NID-CAPABILITY-MISSING` | `NPS-AUTH-FORBIDDEN` |
+| 404 Not Found | `NWP-ACTION-NOT-FOUND` | `NPS-CLIENT-NOT-FOUND` |
+| 429 Too Many Requests | `NWP-RATE-LIMIT-EXCEEDED` | `NPS-LIMIT-RATE` |
+| 500 Internal Error | `NPS-SERVER-INTERNAL` | `NPS-SERVER-INTERNAL` |
+| 503 / service down | `NWP-NODE-UNAVAILABLE` | `NPS-SERVER-UNAVAILABLE` |
+| Connection timeout | `NPS-SERVER-UNAVAILABLE` | `NPS-SERVER-UNAVAILABLE` |
+
+**ErrorFrame (`0xFE`) wire shape:**
+
+```json
+{
+  "frame": "0xFE",
+  "status": "NPS-SERVER-UNAVAILABLE",
+  "error": "NWP-NODE-UNAVAILABLE",
+  "message": "MCP server at mcp.example.com did not respond within 30 s",
+  "details": {
+    "bridge_protocol": "mcp",
+    "bridge_target": "mcp.example.com/tools/search",
+    "upstream_status": 503
+  },
+  "request_id": "550e8400-..."
+}
+```
+
+Include `bridge_protocol` and a sanitized reference to the external target in `details` — it helps callers diagnose which downstream system failed without leaking internal endpoint secrets.
+
+**Protocol-specific notes:**
+
+- **MCP:** Tool-call errors return in the `isError: true` tool result. Map to `NWP-ACTION-PARAMS-INVALID` (semantic error in the tool call) or `NPS-SERVER-INTERNAL` (unexpected tool-side crash).
+- **gRPC status codes:** `UNAVAILABLE` → `NPS-SERVER-UNAVAILABLE`; `UNIMPLEMENTED` → `NPS-SERVER-UNSUPPORTED`; `PERMISSION_DENIED` → `NPS-AUTH-FORBIDDEN`.
+- **A2A:** Task failure states map to `NPS-SERVER-INTERNAL`; authentication failures to `NPS-AUTH-UNAUTHENTICATED`.
+
+---
+
+## Rejecting legacy gateway wire values
+
+Your implementation MUST reject the retired `"gateway"` role in both places it can appear:
+
+| Incoming wire field | Legacy value | Correct response |
+|--------------------|-------------|-----------------|
+| NWP NWM `node_type` | `"gateway"` | `NWP-MANIFEST-NODE-TYPE-REMOVED` |
+| NDP AnnounceFrame `node_roles` | `["gateway"]` | `NDP-ANNOUNCE-ROLE-REMOVED` |
+
+Both responses SHOULD include a `hint` field referencing NPS-CR-0001 and indicating that callers should migrate to `"anchor"` or `"bridge"` depending on the role they intended.
+
+Do NOT silently accept `"gateway"` or remap it to `"anchor"`. Explicit rejection ensures operators discover the breaking change rather than silently operating in an undefined state.
+
+---
+
+## Reference implementations
+
+Three open-source reference implementations are available:
+
+| Repository | External protocol | Direction |
+|-----------|------------------|-----------|
+| `labacacia/NPS-mcp-ingress` | Model Context Protocol | external → NPS (ingress; NOT a Bridge Node but a useful reference for MCP wire format) |
+| `labacacia/NPS-a2a-ingress` | Google Agent-to-Agent | external → NPS (ingress) |
+| `labacacia/NPS-grpc-ingress` | gRPC | external → NPS (ingress) |
+
+These ingress packages carry the inverse direction from a Bridge Node, but their protocol-translation logic (MCP tool schema mapping, A2A task state machine, gRPC proto-to-NPS frame mapping) is the most complete reference for each protocol's quirks. Study the translation layer and adapt it for the outbound path.
+
+A dedicated `NPS-mcp-bridge` (outbound direction) is on the alpha.6 task queue.
+
+---
+
+## See also
+
+- [Protocol NDP](Protocol-NDP) — AnnounceFrame schema, `node_roles`, `bridge_protocols`
+- [SDK Building an Anchor Node](SDK-Building-an-Anchor-Node) — the sibling routing role
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

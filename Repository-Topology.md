@@ -1,37 +1,126 @@
 # Repository Topology
 
-> **Audience:** Contributors + curious newcomers
-> **Status:** STUB — to be authored by nps-main session
-> **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
 
-## Scope
+This page maps every NPS-related repository, its role, and how it relates to the central source monorepo.
 
-Map of all 17 NPS repos: who owns what, what flows where, what's source-of-truth and what's distribution.
+---
 
-## What this page should contain
+## High-Level Diagram
 
-- A diagram (mermaid OK) showing NPS-Dev as the hub, with arrows out to NPS-Release, 6 SDKs, 3 ingress, 7 daemons distribution, examples, orchestrator
-- Per-repo table: name, role (truth / distribution / consumer), org (labacacia / orilynn-studio / innolotus), public/private
-- The 4 stub repos (Studio, NWP-Manager, sdk-cpp, sdk-php) and their tracking convention
-- Sync-script mapping: which sync-*.sh produces which distribution repo
-- The version.yaml repo list as the canonical inventory
+```
+labacacia/NPS-Dev  (source monorepo — all authoring happens here)
+│
+├── spec/ ──────────────────────────────► labacacia/NPS-Release
+│   (specs, RFCs, CRs)                    (GitHub Pages + spec distribution)
+│
+├── impl/dotnet/ ────────────────────────► labacacia/NPS-sdk-dotnet
+├── impl/python/ ────────────────────────► labacacia/NPS-sdk-py
+├── impl/typescript/ ────────────────────► labacacia/NPS-sdk-ts
+├── impl/java/ ──────────────────────────► labacacia/NPS-sdk-java
+├── impl/rust/ ──────────────────────────► labacacia/NPS-sdk-rust
+├── impl/go/ ────────────────────────────► labacacia/NPS-sdk-go
+│
+├── tools/daemons/                        ┌─ labacacia/nps-daemons (bundle, public)
+│   ├── npsd/          ──────────────────►├── npsd/
+│   ├── nps-runner/    ──────────────────►├── nps-runner/
+│   ├── nps-gateway/   ──────────────────►├── nps-gateway/
+│   ├── nps-registry/  ──────────────────►└── nps-registry/
+│   ├── nps-cloud-ca/  ──────────────────► innolotus/nps-cloud-ca (private)
+│   └── nps-ledger/    ──────────────────► innolotus/nps-ledger (private)
+│
+├── tools/nip-ca-server/ ────────────────► labacacia/nip-ca-server
+│
+├── compat/mcp-ingress/ ─────────────────► labacacia/NPS-mcp-ingress
+├── compat/a2a-ingress/ ─────────────────► labacacia/NPS-a2a-ingress
+└── compat/grpc-ingress/ ────────────────► labacacia/NPS-grpc-ingress
 
-## Source material to draw from
+orilynn-studio/nps-orchestrator  (independent consumer / example — not synced from NPS-Dev)
+labacacia/NPS-examples           (curated demos — source in NPS-Dev demos/)
+```
 
-- `NPS-Dev/nps-repo-list.md`
-- `NPS-Release/version.yaml`
-- `NPS-Dev/tools/release/sync-*.sh` headers (each declares its source + target)
+All arrows are one-way syncs: NPS-Dev → distribution repo. Distribution repos are never edited directly; their next state comes from the next sync run.
 
-## Cross-links
+---
 
-- [Release Process](Release-Process)
-- [Contributing Guide](Contributing-Guide)
+## Repository Table
 
-## TODO checklist
+| Repo | Organization | Role | Visibility | Source of Truth |
+|------|-------------|------|------------|----------------|
+| `NPS-Dev` | labacacia | Source monorepo — all spec authoring, SDK development, tooling | Public | YES — all source lives here |
+| `NPS-Release` | labacacia | Spec distribution + GitHub Pages docs site | Public | Specs only (synced from NPS-Dev `spec/`) |
+| `NPS-sdk-dotnet` | labacacia | .NET SDK distribution | Public | NO — synced from NPS-Dev `impl/dotnet/` |
+| `NPS-sdk-py` | labacacia | Python SDK distribution | Public | NO — synced from NPS-Dev `impl/python/` |
+| `NPS-sdk-ts` | labacacia | TypeScript SDK distribution | Public | NO — synced from NPS-Dev `impl/typescript/` |
+| `NPS-sdk-java` | labacacia | Java SDK distribution | Public | NO — synced from NPS-Dev `impl/java/` |
+| `NPS-sdk-rust` | labacacia | Rust SDK distribution | Public | NO — synced from NPS-Dev `impl/rust/` |
+| `NPS-sdk-go` | labacacia | Go SDK distribution | Public | NO — synced from NPS-Dev `impl/go/` |
+| `nps-daemons` | labacacia | OSS daemon bundle (npsd + nps-runner + nps-gateway + nps-registry) | Public | NO — synced from NPS-Dev `tools/daemons/` (4 OSS daemons + bundle-overlay) |
+| `nip-ca-server` | labacacia | NIP CA Server standalone distribution | Public | NO — synced from NPS-Dev `tools/nip-ca-server/` |
+| `NPS-mcp-ingress` | labacacia | MCP Ingress adapter distribution (`LabAcacia.McpIngress`) | Public | NO — synced from NPS-Dev `compat/mcp-ingress/` |
+| `NPS-a2a-ingress` | labacacia | A2A Ingress adapter distribution (`LabAcacia.A2aIngress`) | Public | NO — synced from NPS-Dev `compat/a2a-ingress/` |
+| `NPS-grpc-ingress` | labacacia | gRPC Ingress adapter distribution (`LabAcacia.GrpcIngress`) | Public | NO — synced from NPS-Dev `compat/grpc-ingress/` |
+| `NPS-examples` | labacacia | Curated runnable demos (`nwp-graph-walk`, `ingress-playground`, `cross-sdk-interop`) | Public | NO — mirrors NPS-Dev `demos/`; tagged independently |
+| `nps-cloud-ca` | innolotus | NPS Cloud CA daemon (private — 2027 Q1+ target) | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-cloud-ca/` |
+| `nps-ledger` | innolotus | K-of-N audit + reputation log daemon | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-ledger/` |
+| `nps-orchestrator` | orilynn-studio | Consumer / example orchestrator service | Public | Independent — not synced from NPS-Dev; tracked by `version.yaml` for version parity only |
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+---
+
+## Stub Repos (Tracked, Not Yet Released)
+
+These repos exist as public stubs with README placeholder files. CI tracks them in `version.yaml` with `expected: stub` — they are not required to carry a real version but their README must contain a tracking declaration.
+
+| Repo | Organization | Planned purpose |
+|------|-------------|-----------------|
+| `NPS-Studio` | labacacia | Frame-stream visualizer / debugger (NPS-Dev alpha.6 queue) |
+| `NPS-NWP-Manager` | labacacia | Web-based NWM authoring and node management tool |
+| `NPS-sdk-cpp` | labacacia | C++ SDK |
+| `NPS-sdk-php` | labacacia | PHP SDK |
+
+---
+
+## Sync-Script Mapping
+
+Scripts live in `tools/release/` in NPS-Dev. Each script:
+1. `rsync`s the relevant source directory into a fresh clone of the target publish repo
+2. Overlays `publish-overlay/` files (csproj, Dockerfile, docker-compose, nuget.config variants that differ from the monorepo flavor)
+3. Copies `LICENSE` and `NOTICE` from the monorepo root
+4. Commits, tags (idempotent), pushes to GitHub
+5. Invokes the Gitee mirror script with labacacia link rewriting
+
+| Script | Source in NPS-Dev | Target repo |
+|--------|------------------|------------|
+| `sync-nps-daemons.sh` | `tools/daemons/{npsd,nps-runner,nps-gateway,nps-registry}/` + `bundle-overlay/` | `labacacia/nps-daemons` → Gitee mirror |
+| `sync-nip-ca-server.sh` | `tools/nip-ca-server/` | `labacacia/nip-ca-server` → Gitee mirror |
+| `sync-nps-cloud-ca.sh` | `tools/daemons/nps-cloud-ca/` | `innolotus/nps-cloud-ca` (no Gitee) |
+| `sync-nps-ledger.sh` | `tools/daemons/nps-ledger/` | `innolotus/nps-ledger` (no Gitee) |
+
+SDK and ingress sync scripts follow the same pattern but are per-language / per-adapter.
+
+### Publish Overlay Pattern
+
+Each daemon (and the NIP CA Server) has a `publish-overlay/` subdirectory inside the NPS-Dev source tree. The overlay holds files that must differ between the monorepo build and the standalone published build:
+
+- `publish-overlay/*.csproj` — uses `<PackageReference>` (NuGet) instead of `<ProjectReference>` (monorepo-local path)
+- `publish-overlay/Dockerfile` — standalone image build
+- `publish-overlay/docker-compose.yml` — standalone deployment compose
+- `publish-overlay/nuget.config` — points to nuget.org only (no internal feed)
+
+The sync script copies everything from the source directory, then overlays and deletes the `publish-overlay/` subdirectory so it does not appear in the published repo.
+
+---
+
+## Gitee Mirror
+
+All public labacacia repos are mirrored to Gitee (`gitee.com/labacacia/`) via `tools/mirror-to-gitee/sync-to-gitee.sh`. The Gitee mirror rewrites GitHub URLs to Gitee URLs within README and CHANGELOG files. Private innolotus repos are not mirrored.
+
+---
+
+## Related Pages
+
+- [Release Process](Release-Process) — how a release is prepared and synced to distribution repos
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

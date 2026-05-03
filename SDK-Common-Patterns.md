@@ -1,38 +1,417 @@
 # SDK Common Patterns
 
-> **Audience:** Developers
-> **Status:** STUB — to be authored by nps-main session
-> **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
 
-## Scope
+> **Audience:** Developers building Agents or Nodes with any NPS SDK.
+> **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
 
-Cross-cutting recipes: retries, idempotency, error handling, streaming, capability negotiation, version pinning.
+This page is a cookbook of cross-cutting patterns. Every section applies to all six SDK languages (.NET, Python, TypeScript, Java, Rust, Go) unless a language-specific note appears. Code snippets use pseudo-code; adapt to your SDK's surface.
 
-## What this page should contain
+---
 
-- Retries: which errors are retryable (idempotent ActionSpec) vs not
-- Streaming queries and subscriptions: cancellation via SubscribeFrame(action="unsubscribe", stream_id=…)
-- Capability negotiation pattern (advertise via IdentFrame, gate via NWM)
-- Token-budget consumption: reading `X-NWP-Tokens` from streams
-- Wire-field migration: how to handle `estimated_npt` → `cgn_est` boundary if you must straddle alpha.5.2
-- Pinning suite_version vs per-package pins (rule: always pin to suite_version; per-package versioning forbidden)
+## Table of contents
 
-## Source material to draw from
+1. [Retries](#retries)
+2. [Streaming queries](#streaming-queries)
+3. [Subscriptions](#subscriptions)
+4. [Capability negotiation](#capability-negotiation)
+5. [Token budget (CGN)](#token-budget-cgn)
+6. [Version pinning](#version-pinning)
+7. [Encoding tier](#encoding-tier)
 
-- `spec/NPS-2-NWP.md` §6.6 (streaming termination), §8.3 (subscription flow)
-- `spec/token-budget.md` (currently v0.3)
-- `NPS-Release/version.yaml`
+---
 
-## Cross-links
+## Retries
 
-- [Reference: Cognon Budget](Reference-Cognon-Budget)
-- [Release Process](Release-Process)
+### Which errors are retryable
 
-## TODO checklist
+Only retry **server-side transient errors** on **idempotent** actions:
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+| Error code | NPS status | Retryable? | Condition |
+|-----------|-----------|-----------|-----------|
+| `NPS-SERVER-INTERNAL` | `NPS-SERVER-INTERNAL` | Yes | Idempotent action only |
+| `NPS-SERVER-THROTTLE` | `NPS-LIMIT-RATE` (`NWP-RATE-LIMIT-EXCEEDED`) | Yes | After waiting for `X-NWP-Rate-Reset` |
+| `NPS-SERVER-UNAVAILABLE` | `NPS-SERVER-UNAVAILABLE` | Yes | With backoff; idempotent actions only |
+| Any `NPS-CLIENT-*` | — | No | Client error; fix the request |
+| `NWP-BUDGET-EXCEEDED` | `NPS-LIMIT-BUDGET` | No | Increase budget or reduce scope |
+| `NIP-CERT-REVOKED` | `NPS-AUTH-UNAUTHENTICATED` | No | Re-enroll with the CA first |
+| `NIP-CERT-EXPIRED` | `NPS-AUTH-UNAUTHENTICATED` | No | Renew certificate first |
+| `NWP-AUTH-ASSURANCE-TOO-LOW` | `NPS-AUTH-FORBIDDEN` | No | Upgrade assurance level |
+
+An action is idempotent when its `ActionSpec.idempotent` flag in the NWM is `true`. Never assume idempotency — always read the manifest.
+
+### Recommended retry policy
+
+```
+max_attempts = 3
+base_delay_ms = 200
+multiplier = 2.0   // exponential backoff
+
+for attempt in 1..max_attempts:
+    response = call(action_frame)
+
+    if response.error in TRANSIENT_ERRORS and action_spec.idempotent:
+        if attempt < max_attempts:
+            sleep(base_delay_ms * multiplier^(attempt - 1))
+            continue
+
+    break  // success or non-retryable
+```
+
+Use `ActionFrame.idempotency_key` (UUID v4) to let the server deduplicate replayed requests. The same key is valid for 24 hours on the server side. Set it on the first attempt and keep it across retries.
+
+### What NOT to retry
+
+- Any error in the `NPS-CLIENT-*` family — retrying will not change the outcome.
+- `NWP-BUDGET-EXCEEDED` — the request itself exceeds budget; reduce scope.
+- Revoked or expired NID — certificate renewal must happen before the next request.
+- `NWP-ACTION-IDEMPOTENCY-CONFLICT` — another request with the same key is already in progress; wait for it rather than sending again.
+
+---
+
+## Streaming queries
+
+A streaming query is a `QueryFrame` with `stream: true` (or using the `/stream` sub-path). The node returns a sequence of `StreamFrame (0x03)` batches rather than a single `CapsFrame`.
+
+### Reading the stream
+
+```
+stream_id = new_uuid()
+query_frame = {
+    "frame": "0x10",
+    "anchor_ref": schema_ref,
+    "stream": true,
+    "filter": { ... },
+    "limit": 100,        // records per batch
+    "request_id": stream_id
+}
+
+send(query_frame)
+
+while true:
+    frame = receive()
+    if frame.type != StreamFrame:
+        break  // error or unexpected
+
+    process(frame.data)
+
+    if frame.is_last == true:  // FINAL flag
+        break
+```
+
+**The `is_last` flag is the termination signal.** The spec calls it `is_last = true` on the terminal frame (§6.6). Do not rely on connection close as the only termination signal; always check `is_last`.
+
+The first frame (`seq = 0`) carries metadata: `estimated_total` (total matching records, -1 = unknown) and `request_id` echo. Subsequent frames carry data batches.
+
+### Early cancellation
+
+To stop the stream before `is_last`:
+
+```
+cancel_frame = {
+    "frame": "0x12",
+    "action": "unsubscribe",
+    "stream_id": stream_id   // matches QueryFrame.request_id
+}
+send(cancel_frame)
+```
+
+This reuses `SubscribeFrame` as the protocol-wide stream cancellation signal. Nodes route it by `stream_id` regardless of whether the stream originated from a query or a subscription.
+
+### Timeout
+
+Set a **per-stream timeout** (from first frame received to last), not a per-chunk timeout. A single batch may be slow to arrive if the node is querying a large dataset; a per-chunk timeout would produce spurious cancellations.
+
+```
+stream_deadline = now() + stream_timeout_ms
+
+for each frame:
+    if now() > stream_deadline:
+        send(cancel_frame)
+        raise TimeoutError
+    process(frame)
+```
+
+---
+
+## Subscriptions
+
+A subscription (`SubscribeFrame` with `action = "subscribe"`) establishes a long-lived push channel for incremental changes.
+
+### Establishing a subscription
+
+```
+subscribe_frame = {
+    "frame": "0x12",
+    "action": "subscribe",
+    "stream_id": new_uuid(),
+    "anchor_ref": schema_ref,
+    "filter": { "status": { "$eq": "active" } },
+    "heartbeat_interval": 30
+}
+send(subscribe_frame)
+
+// Wait for acknowledgement CapsFrame
+ack = receive_caps_frame(anchor_ref = "nps:system:subscribe:ack")
+assert ack.data[0].status == "subscribed"
+last_seq = ack.data[0].last_seq
+
+// Enter push loop
+while connected:
+    diff = receive_diff_frame()
+    apply_diff(diff.patch)
+    last_seq = diff.seq
+```
+
+### Reconnection and gap detection
+
+If the connection drops, reconnect with `resume_from_seq = last_seq`:
+
+```
+subscribe_frame = {
+    ...
+    "action": "subscribe",
+    "resume_from_seq": last_seq
+}
+```
+
+If `last_seq` is outside the node's buffer window (typically 10 minutes or 10,000 events), the node returns `NWP-SUBSCRIBE-SEQ-TOO-OLD`. In that case:
+
+1. Issue a fresh full QueryFrame (no streaming) to re-sync state.
+2. Re-subscribe without `resume_from_seq`.
+
+Always compare incoming `seq` values to detect gaps:
+
+```
+if diff.seq != last_seq + 1:
+    log_warn("Sequence gap detected; re-subscribing")
+    resubscribe(resume_from_seq = last_seq)
+```
+
+### Cancellation
+
+```
+cancel_frame = {
+    "frame": "0x12",
+    "action": "unsubscribe",
+    "stream_id": stream_id
+}
+send(cancel_frame)
+```
+
+The node stops pushing DiffFrames and frees server-side state. Always unsubscribe explicitly rather than just closing the connection.
+
+---
+
+## Capability negotiation
+
+Capabilities flow in two directions:
+
+- **Agent → Node**: declared in `IdentFrame.capabilities`; the Node checks these on every request.
+- **Node → Agent**: declared in `NWM.capabilities`; the Agent reads these before issuing requests.
+
+### Advertising capabilities (Agent side)
+
+Include every capability your Agent holds in the IdentFrame you send at connection time. The IdentFrame is signed by the CA, so the declaration is integrity-protected.
+
+```json
+"capabilities": ["nwp:query", "nwp:action", "nwp:stream", "topology:read"]
+```
+
+Do not include capabilities you do not actually support — the Node may use them to route or prioritize traffic, and a false declaration creates trust debt.
+
+### Checking node capabilities before issuing requests (Agent side)
+
+Read the NWM before the first request and cache it (use `manifest_version` for conditional re-fetch):
+
+```
+nwm = fetch_nwm("nwp://api.example.com/orders/.nwm")
+
+if not nwm.capabilities.stream_query:
+    // Fall back to paginated single queries
+    use_pagination_mode()
+
+if nwm.capabilities.vector_search:
+    // Use semantic search path
+    query_frame.vector_search = { ... }
+```
+
+### Runtime gate check (Node side)
+
+In HTTP mode, the request carries an `X-NWP-Capabilities` header derived from the caller's IdentFrame. Check it in middleware before serving any capability-gated route:
+
+```
+// Check for topology:read on topology.* endpoints
+required_cap = "topology:read"
+caller_caps  = parse_header(request.headers["X-NWP-Capabilities"])
+
+if required_cap not in caller_caps:
+    return error("NWP-TOPOLOGY-UNAUTHORIZED", "NPS-AUTH-FORBIDDEN")
+```
+
+---
+
+## Token budget (CGN)
+
+NPS uses **Cognon (CGN)** as a model-agnostic token-accounting unit. Nodes consume CGN against your declared budget and report actual usage in response headers.
+
+### Setting a budget on requests
+
+HTTP mode:
+```
+X-NWP-Budget: 2000
+X-NWP-Tokenizer: cl100k_base
+```
+
+Native mode (QueryFrame field):
+```json
+"token_budget": 2000,
+"tokenizer": "cl100k_base"
+```
+
+Declare your tokenizer when known — it improves accuracy of the node's estimates.
+
+### Reading remaining budget from responses
+
+Every response in HTTP mode carries:
+
+```
+X-NWP-Tokens: 380          ← CGN consumed by this response
+X-NWP-Tokens-Native: 365   ← native tokens (when tokenizer is known)
+X-NWP-Tokenizer-Used: cl100k_base
+```
+
+Track cumulative consumption across requests to stay within your session budget:
+
+```
+session_budget = 50000
+used_cgn = 0
+
+for each request:
+    response = send(request)
+    used_cgn += parse_int(response.headers["X-NWP-Tokens"])
+
+    if session_budget - used_cgn < min_remaining:
+        pause_and_report("approaching budget limit")
+```
+
+### Streaming budget
+
+For streaming queries (`stream: true`), `X-NWP-Budget` applies **per batch**, not to the total stream. The node trims or stops the current batch if it would exceed budget. Check `X-NWP-Tokens` after each StreamFrame to track cumulative consumption:
+
+```
+total_cgn = 0
+for each stream_frame:
+    total_cgn += parse_int(stream_frame.headers["X-NWP-Tokens"])
+    if total_cgn > session_limit:
+        send(cancel_frame)
+        break
+```
+
+For `topology.stream` and other long-running push subscriptions, budget enforcement is **agent-side only** — the node does not apply `X-NWP-Budget` to push events. You are responsible for tracking cumulative CGN and unsubscribing when the limit is reached.
+
+### cgn_est in ActionSpec
+
+The `cgn_est` field in an ActionSpec is an **estimate**, not a hard limit. It tells you approximately how many CGN a typical call to that action will consume. Use it for pre-flight planning, not for enforcement:
+
+```
+action = nwm.actions["analysis.run"]
+if action.cgn_est > remaining_budget:
+    log_warn("Insufficient budget estimate for this action")
+    // ... decide whether to proceed
+```
+
+If the actual response exceeds `X-NWP-Budget`, the node will either trim the response or return `NWP-BUDGET-EXCEEDED`. In neither case will you receive silently truncated structured data.
+
+---
+
+## Version pinning
+
+### Always pin to the suite version
+
+NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.5.2`). Pin to this suite version, not to per-package/per-SDK versions.
+
+**Correct:**
+```
+# requirements.txt (Python)
+nps-lib==1.0.0-alpha.5.2
+```
+
+```xml
+<!-- .csproj (.NET) -->
+<PackageReference Include="NPS.Core" Version="1.0.0-alpha.5.2" />
+```
+
+**Incorrect:** pinning each NPS package to a different version (e.g., `NPS.Core` at alpha.5 while `NPS.NWP` is at alpha.4) creates cross-package incompatibilities that are hard to diagnose.
+
+### Straddling alpha.5.1 and alpha.5.2 servers
+
+If your deployment is mid-upgrade and some servers are still running alpha.5.1 while others have been upgraded to alpha.5.2, be aware of the `estimated_npt` → `cgn_est` field rename. Write client code that checks both fields with a fallback:
+
+```
+// Pseudo-code — works against both alpha.5.1 and alpha.5.2 servers
+function read_cgn_estimate(action_spec):
+    return action_spec.cgn_est ?? action_spec.estimated_npt ?? null
+```
+
+Once all servers are upgraded, drop the `estimated_npt` fallback.
+
+Similarly, for `node_kind` vs `node_roles` in NDP (renamed at NWP v0.9 / NDP v0.6 in alpha.5):
+
+```
+// Read node roles from NDP AnnounceFrame; accept both field names
+function read_node_roles(announce_frame):
+    return announce_frame.node_roles ?? announce_frame.node_kind ?? []
+```
+
+These shims are transitional. Remove them after confirming all peers are on alpha.5.2.
+
+---
+
+## Encoding tier
+
+NPS supports two encoding tiers:
+
+| Tier | Identifier | Wire format | Use case |
+|------|-----------|-------------|----------|
+| Tier-1 | `json` | Plain JSON | Development, debugging, interop testing |
+| Tier-2 | `msgpack` | MessagePack binary | Production — ~60% smaller payloads |
+
+### Always use MsgPack in production
+
+The `~60%` size reduction comes from MsgPack's binary encoding of field names and values. For high-frequency Agent loops, this meaningfully reduces both bandwidth and latency.
+
+Set the encoding in the NWM `preferred_format` field:
+
+```json
+"preferred_format": "msgpack",
+"wire_formats": ["ncp-capsule", "msgpack", "json"]
+```
+
+In HTTP mode, the client announces encoding preference via:
+
+```
+X-NWP-Encoding: msgpack
+```
+
+If a Node does not support MsgPack (it has `msgpack` absent from `wire_formats`), fall back to JSON automatically. Never hard-fail on encoding negotiation.
+
+### For debugging and interop testing
+
+Switch to JSON to read raw wire data without a MsgPack parser:
+
+```
+X-NWP-Encoding: json
+```
+
+JSON is also the safe fallback for exploratory calls to third-party nodes whose encoding support you have not yet verified.
+
+---
+
+## See also
+
+- [Reference: Cognon Budget](Reference-Cognon-Budget) — full CGN spec including exchange-rate table and tokenizer resolution chain
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

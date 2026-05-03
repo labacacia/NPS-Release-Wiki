@@ -1,39 +1,350 @@
 # SDK How-To: Identity and Authentication
 
-> **Audience:** Developers
-> **Status:** STUB — to be authored by nps-main session
-> **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
+**Status:** ✅ Content complete — v1.0.0-alpha.5.2
 
-## Scope
+> **Audience:** Developers integrating NPS identity into an Agent or Node implementation.
+> **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
 
-Practical guide to obtaining a NID, presenting it via IdentFrame, dealing with assurance levels, and consulting the reputation log.
+Every participant in the NPS network — Agent, Node, or Operator — holds a **Neural Identity (NID)**: a URN-format identifier backed by an Ed25519 (or ECDSA P-256 fallback) keypair and a CA-issued certificate. This page walks through obtaining a NID, constructing an IdentFrame, and verifying one on the receiving side. It also covers assurance levels (NPS-RFC-0003) and the behavior changes shipped in alpha.5 to fix the empty-string edge case across all six SDKs.
 
-## What this page should contain
+---
 
-- How to get a NID (current path = NIP CA Server; future = ACME via RFC-0002 once non-experimental)
-- Presenting IdentFrame, what to put in `assurance_level`
-- Receiver-side: how to verify a NID, when to consult the reputation log
-- The `AssuranceLevel.fromWire("")` empty-string handling (cross-SDK parity fix from alpha.5; demonstrates why blank should map to `anonymous`)
-- The forward-compatibility rule for unknown future assurance levels
-- How to gate sensitive actions with `min_assurance_level` (NWM-level + per-ActionSpec)
+## Table of contents
 
-## Source material to draw from
+1. [NID format](#nid-format)
+2. [Getting a NID](#getting-a-nid)
+3. [Generating a keypair](#generating-a-keypair)
+4. [Presenting an IdentFrame](#presenting-an-identframe)
+5. [Assurance levels](#assurance-levels)
+6. [The empty-string bug fix (alpha.5)](#the-empty-string-bug-fix-alpha5)
+7. [Receiver-side verification](#receiver-side-verification)
+8. [Gating actions with min_assurance_level](#gating-actions-with-min_assurance_level)
+9. [Consulting the reputation log](#consulting-the-reputation-log)
+10. [Forward compatibility: unknown assurance levels](#forward-compatibility-unknown-assurance-levels)
 
-- `spec/NPS-3-NIP.md` §5 (NID), §5.1.1 (assurance), §5.1.2 (reputation entry)
-- `spec/rfcs/NPS-RFC-0003-agent-identity-assurance-levels.md`
-- `spec/rfcs/NPS-RFC-0004-nid-reputation-log.md`
-- `NPS-examples/cross-sdk-interop/assurance-level-parity.sh`
+---
 
-## Cross-links
+## NID format
 
-- [Protocol NIP](Protocol-NIP)
-- [Operator Reputation Log](Operator-Reputation-Log)
+A NID is a structured URN:
 
-## TODO checklist
+```
+urn:nps:{entity-type}:{issuer-domain}:{identifier}
+```
 
-- [ ] Write the introduction (2–3 paragraphs, set context)
-- [ ] Add code examples / wire diagrams as appropriate
-- [ ] Cross-check field names match current naming (`node_roles` not `node_kind`; `cgn_est` not `estimated_npt`)
-- [ ] Verify all referenced spec section numbers against latest spec versions
-- [ ] Add a "Last reviewed at suite version: vX.Y.Z" footer once content is written
-- [ ] EN content first; CN translation may follow as `Page-Name.cn` if the user requests bilingual wiki
+| Segment | Values | Example |
+|---------|--------|---------|
+| `entity-type` | `agent` / `node` / `org` | `agent` |
+| `issuer-domain` | RFC 1034 domain of the issuing CA | `ca.example.com` |
+| `identifier` | Stable per-entity ID (alphanumeric, `-`, `_`, `.`) | `550e8400-e29b-41d4` |
+
+**Examples:**
+
+```
+urn:nps:agent:ca.example.com:550e8400-e29b-41d4    ← AI agent
+urn:nps:node:api.myapp.com:products                 ← NWP node
+urn:nps:org:mycompany.com                            ← Organization CA
+```
+
+Validation rule: the `identifier` segment MUST match `^[A-Za-z0-9\-_.]+$`. Reject any NID that fails this pattern with `NIP-CERT-SIGNATURE-INVALID` before attempting signature verification.
+
+---
+
+## Getting a NID
+
+Two paths are available today; a third is planned once ACME support stabilizes.
+
+### Path 1: NIP CA Server (OSS, self-hosted)
+
+The NIP CA Server is an open-source ASP.NET Core service you run yourself:
+
+```
+POST /v1/agents/register           ← requires an Operator Certificate
+→ 201 { "nid": "urn:nps:agent:...", "ident_frame": { ... } }
+```
+
+The CA returns a signed IdentFrame ready to use. Certificate validity is 30 days; auto-renewal opens 7 days before expiry via `POST /v1/agents/{nid}/renew`.
+
+Discovery endpoint: `GET /.well-known/nps-ca` returns the CA's public key, supported algorithms, and endpoint URLs.
+
+### Path 2: NPS Cloud CA (managed)
+
+For production deployments that do not want to operate their own CA, NPS Cloud CA (a commercial service operated by INNO LOTUS PTY LTD) issues and manages certificates. Contact the NPS Cloud onboarding flow; the issued IdentFrame is structurally identical to a self-hosted CA output.
+
+The Cloud CA is the only path today that can issue **`verified` (L2)** assurance-level certificates, because it performs the legal identity binding required at that tier.
+
+### Path 3: ACME (future — not yet available for production)
+
+NPS-RFC-0002 defines an ACME-compatible challenge type (`agent-01`) for automated NID issuance. It is currently gated behind an `EXPERIMENTAL` marker and requires a registered IANA OID (`1.3.6.1.4.1.99999.1` is a placeholder; PEN assignment is pending as of v1.0.0-alpha.5). Do not use this path in production.
+
+---
+
+## Generating a keypair
+
+Every SDK exposes a static factory method on its identity class. The method generates a fresh Ed25519 keypair, creates a self-signed pre-registration IdentFrame, and returns both:
+
+| SDK | Call |
+|-----|------|
+| .NET | `NipIdentity.Generate()` |
+| Python | `NipIdentity.generate()` |
+| TypeScript | `NipIdentity.generate()` |
+| Java | `NipIdentity.generate()` |
+| Rust | `NipIdentity::generate()` |
+| Go | `nipidentity.Generate()` |
+
+The returned object exposes:
+- `PrivateKeyBytes` / `private_key_bytes` — 32-byte Ed25519 private scalar; **store in an HSM or encrypted file (mode 0600)**. Never log or transmit this.
+- `PublicKeyEncoded` / `pub_key` — wire-format string `ed25519:{base64url(DER)}`.
+- A draft IdentFrame with `pub_key` populated and `signature` left empty (you submit this to the CA for signing).
+
+After the CA signs and returns the IdentFrame, persist the complete signed frame alongside the private key.
+
+---
+
+## Presenting an IdentFrame
+
+An IdentFrame (type `0x20`) is sent as the **handshake frame** on every new connection — before any QueryFrame, ActionFrame, or SubscribeFrame. The frame is signed by the issuing CA over the canonical JSON of the frame with the `signature` field excluded (keys sorted alphabetically, no whitespace).
+
+**Minimal required fields:**
+
+```json
+{
+  "frame": "0x20",
+  "nid": "urn:nps:agent:ca.example.com:my-agent-01",
+  "pub_key": "ed25519:MCowBQYDK2VwAyEA...",
+  "capabilities": ["nwp:query", "nwp:action"],
+  "scope": {
+    "nodes": ["nwp://api.example.com/*"],
+    "actions": ["orders:read"],
+    "max_token_budget": 50000
+  },
+  "issued_by": "urn:nps:org:ca.example.com",
+  "issued_at": "2026-04-10T00:00:00Z",
+  "expires_at": "2026-05-10T00:00:00Z",
+  "serial": "0x0A3F9C",
+  "signature": "ed25519:3045022100..."
+}
+```
+
+**`assurance_level` field:**
+
+Include `assurance_level` whenever your NID certificate carries the `id-nid-assurance-level` extension. If you omit it, receivers treat the identity as `"anonymous"` (backward compatible with pre-RFC-0003 NIDs).
+
+When both the field and the cert extension are present, they MUST carry the same value. A mismatch (downgrade-attack defense) returns `NIP-ASSURANCE-MISMATCH`.
+
+**`metadata` (optional, not signed):**
+
+The `metadata` object is excluded from signature computation and MAY be updated at runtime. Nodes use it for CGN tokenizer auto-match:
+
+```json
+"metadata": {
+  "model_family": "anthropic/claude-4",
+  "tokenizer": "claude",
+  "runtime": "custom/1.0"
+}
+```
+
+**Standard capability values to include:**
+
+| Capability | Purpose |
+|------------|---------|
+| `nwp:query` | May query Memory Nodes |
+| `nwp:action` | May invoke Action Nodes |
+| `nwp:stream` | May receive StreamFrame responses |
+| `nop:delegate` | May delegate subtasks |
+| `topology:read` | May read Anchor Node topology (required if your Agent monitors cluster health) |
+
+---
+
+## Assurance levels
+
+NPS-RFC-0003 defines three tiers. The tier travels in `IdentFrame.assurance_level` and is the input to `NWM.min_assurance_level` policy enforcement on Nodes.
+
+| Level | Wire value | What the CA must do | When to use |
+|-------|------------|---------------------|-------------|
+| L0 | `"anonymous"` | Self-signed, or CA-signed without out-of-band identity check | Dev/test, public read-only endpoints, hobbyist Agents |
+| L1 | `"attested"` | CA attests key possession (ACME `agent-01` challenge) and verifies contact email or domain | Most production Agents; standard rate-limit tier |
+| L2 | `"verified"` | L1 plus CA binds the operator's legal identity (corporate registration or signed AaaS-operator attestation) | Regulated integrations, contract-grade orchestration, premium paid tiers |
+
+The levels are **ordered**: `anonymous < attested < verified`. A request whose level is below the Node's declared minimum is rejected with `NWP-AUTH-ASSURANCE-TOO-LOW` (`NPS-AUTH-FORBIDDEN`). The response SHOULD include a `hint` pointing to a CA enrolment URL.
+
+**Note on L1 availability:** `"attested"` formally requires RFC-0002 to be in Accepted status with a registered IANA OID. The provisional implementation using OID `1.3.6.1.4.1.99999.1` does NOT satisfy this criterion for conformance or production purposes until the PEN is assigned. Check [the IANA PEN status](https://pen.iana.org/) before relying on L1 for regulated use cases.
+
+**Phase gate:** Phase 1–2 (current) enforcement is opt-in (`SHOULD check, MAY enforce`). Starting the Phase 3 flag day, enforcement is `MUST`, and violations return `NIP-ASSURANCE-MISMATCH`.
+
+---
+
+## The empty-string bug fix (alpha.5)
+
+In versions before alpha.5, some SDKs mapped the empty string `""` to `null` during deserialization of `assurance_level`, while others threw a parse error or silently treated it as `"anonymous"`. This created cross-SDK interop failures when a publisher omitted the field entirely vs. sent an empty string.
+
+**Correct behavior (all SDKs as of alpha.5):**
+
+An absent `assurance_level` field AND an empty-string value `""` both mean "no assertion made" and MUST be treated as `"anonymous"`:
+
+| SDK | Correct guard pattern |
+|-----|-----------------------|
+| Python | `level = wire if wire else "anonymous"` |
+| TypeScript / Go | `level = wire == "" ? "anonymous" : wire` |
+| .NET | `level = string.IsNullOrEmpty(wire) ? "anonymous" : wire` |
+| Java | `level = (wire == null \|\| wire.isEmpty()) ? "anonymous" : wire` |
+| Rust | `level = if wire.is_empty() { "anonymous" } else { wire }` |
+
+The rationale: blank = no assertion made; the protocol default is the weakest tier. An empty string arriving on the wire is a publisher bug, not a security signal — treating it as an error would break backward compatibility with pre-RFC-0003 publishers.
+
+---
+
+## Receiver-side verification
+
+When a Node receives an IdentFrame, it MUST perform these checks in order:
+
+```
+1. Check expires_at > now                → NIP-CERT-EXPIRED
+2. Check issued_by ∈ NWM.trusted_issuers → NIP-CERT-UNTRUSTED-ISSUER
+3. Verify Ed25519 signature              → NIP-CERT-SIGNATURE-INVALID
+4. OCSP or local CRL check (if configured) → NIP-CERT-REVOKED
+5. Check required capabilities present   → NIP-CERT-CAPABILITY-MISSING
+6. Check scope.nodes covers target path  → NWP-AUTH-NID-SCOPE-VIOLATION
+```
+
+All checks pass → authorize the request.
+
+**Signature verification (canonical form):**
+
+Reconstruct the JSON with `signature` field removed, keys sorted alphabetically, no whitespace. Feed the UTF-8 bytes to your Ed25519 verify function along with the public key from `pub_key`.
+
+```
+// Pseudo-code (applies to every SDK)
+frame_copy = remove_field(ident_frame, "signature")
+canonical  = json_serialize(frame_copy, sort_keys=true, compact=true)
+ok = ed25519_verify(
+    public_key = parse_pub_key(ident_frame.pub_key),
+    message    = canonical.to_utf8_bytes(),
+    signature  = parse_signature(ident_frame.signature)
+)
+```
+
+**Optionally check assurance level against min_assurance_level:**
+
+```
+// Pseudo-code
+required = nwm.min_assurance_level ?? "anonymous"
+actual   = ident_frame.assurance_level ?? "anonymous"   // empty-string → anonymous (alpha.5 fix)
+if assurance_rank(actual) < assurance_rank(required):
+    return error NWP-AUTH-ASSURANCE-TOO-LOW
+```
+
+Where `assurance_rank("anonymous") = 0`, `assurance_rank("attested") = 1`, `assurance_rank("verified") = 2`.
+
+---
+
+## Gating actions with min_assurance_level
+
+Set `min_assurance_level` at two levels:
+
+**Node-wide (NWM top-level):**
+
+```json
+{
+  "nwp": "0.4",
+  "node_type": "action",
+  "min_assurance_level": "attested",
+  ...
+}
+```
+
+All requests to this Node must present at least `"attested"`.
+
+**Per-action override (ActionSpec):**
+
+```json
+"actions": {
+  "orders.read": {
+    "min_assurance_level": "anonymous"
+  },
+  "orders.delete": {
+    "min_assurance_level": "verified"
+  }
+}
+```
+
+The per-action value takes precedence over the top-level NWM value for requests targeting that action. Requests presenting a level lower than the effective minimum MUST be rejected with `NWP-AUTH-ASSURANCE-TOO-LOW`.
+
+**Runtime gate check (pseudo-code applicable to all SDKs):**
+
+```
+function check_assurance_gate(request, action_spec, nwm):
+    // Per-action override takes precedence
+    required = action_spec.min_assurance_level
+               ?? nwm.min_assurance_level
+               ?? "anonymous"
+
+    actual = normalize_assurance(request.ident_frame.assurance_level)
+    // normalize: null or "" → "anonymous"
+
+    if assurance_rank(actual) < assurance_rank(required):
+        raise AuthError(
+            code = "NWP-AUTH-ASSURANCE-TOO-LOW",
+            hint = nwm.auth.enrolment_url
+        )
+```
+
+---
+
+## Consulting the reputation log
+
+The reputation log (NPS-RFC-0004) records behavioral incidents per NID in a Certificate-Transparency-style append-only feed. A Node may optionally configure a `reputation_policy` in its NWM to reject Agents with certain incident types.
+
+**At AaaS L2 (recommended minimum policy):**
+
+Reject Agents with:
+- An active `cert-revoked` incident of any severity.
+- A `rate-limit-violation` or `tos-violation` incident of `major` or higher within the last 30 days.
+
+**Querying the log at admission time:**
+
+```
+// Pseudo-code
+entries = reputation_log_client.query(subject_nid = agent_nid)
+for entry in entries:
+    if matches_reject_rule(entry, policy):
+        raise AuthError(
+            code = "NWP-AUTH-REPUTATION-BLOCKED",
+            details = {
+                incident: entry.incident,
+                severity: entry.severity,
+                seq:      entry.seq
+            }
+        )
+```
+
+If the log operator is unreachable and `reputation_policy.on_log_unreachable = "deny"`, return `NIP-REPUTATION-LOG-UNREACHABLE` (`NPS-DOWNSTREAM-UNAVAILABLE`). The default recommendation is `"allow"` (fail-open) unless you are operating a high-assurance endpoint.
+
+---
+
+## Forward compatibility: unknown assurance levels
+
+If a future spec revision introduces a fourth tier (e.g., `"sovereign"`), older implementations will encounter an `assurance_level` value not in the current enum. The correct behavior is:
+
+**Reject with `NIP-ASSURANCE-UNKNOWN` (`NPS-CLIENT-BAD-FRAME`) — do NOT silently demote to `"anonymous"`.**
+
+Demotion creates a security hole: a publisher asserting a future higher-assurance level would be treated as unauthenticated rather than as "authenticity unknown". Explicit rejection lets the caller know it needs to upgrade.
+
+```
+// Pseudo-code
+KNOWN_LEVELS = {"anonymous", "attested", "verified"}
+level = normalize_assurance(wire_value)   // "" → "anonymous"
+if level not in KNOWN_LEVELS:
+    raise ProtocolError(code = "NIP-ASSURANCE-UNKNOWN")
+```
+
+---
+
+## See also
+
+- [Protocol NIP](Protocol-NIP) — full NIP spec including TrustFrame, RevokeFrame, CA hierarchy
+- [Operator Reputation Log](Operator-Reputation-Log) — operating an RFC-0004-compliant log
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.5.2*

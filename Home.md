@@ -1,8 +1,8 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** 🏗️ Skeleton wiki authored 2026-05-03. Page bodies are stubs
-> awaiting content from the docs-writing session. See each page's `## TODO`
-> block for what should land there.
+> **Status:** ✅ Wiki content complete as of v1.0.0-alpha.5.2
+
+> 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
 The **Neural Protocol Suite (NPS)** is a 5-protocol family for Agent-to-Agent
 and Agent-to-Service communication. The canonical specification lives in
@@ -64,6 +64,8 @@ This wiki tracks the suite version declared in
 — currently **v1.0.0-alpha.5.2** (released 2026-05-03). Pages should be
 re-reviewed at each suite release; see the `## TODO` block on each page for
 the version-alignment checklist.
+
+*Wiki last updated: v1.0.0-alpha.5.2 (2026-05-03)*
 
 ---
 
