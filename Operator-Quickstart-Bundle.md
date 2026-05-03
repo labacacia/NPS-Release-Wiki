@@ -179,10 +179,10 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 1. Pin all services to the new suite version in `docker-compose.yml`:
 
    ```yaml
-   image: labacacia/npsd:1.0.0-alpha.5.2        # change to target version
-   image: labacacia/nps-runner:1.0.0-alpha.5.2
-   image: labacacia/nps-gateway:1.0.0-alpha.5.2
-   image: labacacia/nps-registry:1.0.0-alpha.5.2
+   image: labacacia/npsd:1.0.0-alpha.5        # change to target version
+   image: labacacia/nps-runner:1.0.0-alpha.5
+   image: labacacia/nps-gateway:1.0.0-alpha.5
+   image: labacacia/nps-registry:1.0.0-alpha.5
    ```
 
 2. Back up all named volumes (see above).
@@ -219,8 +219,8 @@ Download from the [nps-daemons releases page](https://github.com/labacacia/nps-d
 
 ```bash
 # Set the suite version (Debian format: ~ separates pre-release)
-DEB_VER="1.0.0~alpha.5.2"
-SUITE_VER="1.0.0-alpha.5.2"
+DEB_VER="1.0.0~alpha.5"
+SUITE_VER="1.0.0-alpha.5"
 
 for pkg in npsd nps-runner nps-gateway nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}_${DEB_VER}_amd64.deb"
@@ -273,9 +273,9 @@ Data directories under `/var/lib/nps/` are not removed on uninstall (`apt purge`
 ### Fedora / RHEL (x86_64)
 
 ```bash
-SUITE_VER="1.0.0-alpha.5.2"
+SUITE_VER="1.0.0-alpha.5"
 RPM_VER="1.0.0"
-RPM_REL="0.alpha.5.2.1"   # for stable releases: "1"
+RPM_REL="0.alpha.5.1"   # for stable releases: "1"
 
 for pkg in npsd nps-runner nps-gateway nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
@@ -305,7 +305,7 @@ sudo rpm -e npsd nps-runner nps-gateway nps-registry
 Each daemon ships as a per-daemon `.msi` installer. Run as Administrator.
 
 ```powershell
-$ver = "1.0.0-alpha.5.2"
+$ver = "1.0.0-alpha.5"
 
 foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
@@ -366,4 +366,4 @@ foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.5*
