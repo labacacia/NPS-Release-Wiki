@@ -6,9 +6,18 @@
 
 The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-runner**, **nps-gateway**, and **nps-registry** — in a single git repository with a reference `docker-compose.yml`. This is the recommended starting point for operators who want to run a self-hosted NPS cluster. (The private daemons **nps-ledger** and **nps-cloud-ca** ship separately; see [Operator Daemons Reference](Operator-Daemons-Reference).)
 
+**Two install paths:**
+
+| Path | Best for |
+|------|---------|
+| [Option A: Docker Compose](#option-a-docker-compose) | Isolated deployments, CI, quick evaluation |
+| [Option B: Native packages](#option-b-native-packages-systemd--windows-service) | Bare-metal / VM servers, systemd-managed fleets, Windows hosts |
+
 ---
 
-## Step 1: Clone the bundle
+## Option A: Docker Compose
+
+### Step 1: Clone the bundle
 
 ```bash
 git clone https://github.com/labacacia/nps-daemons && cd nps-daemons
@@ -188,7 +197,7 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 
 ---
 
-## Common bring-up errors
+## Common bring-up errors (Docker)
 
 | Symptom | Likely cause | Resolution |
 |---------|-------------|-----------|
@@ -197,6 +206,156 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 | NDP `Resolve` queries time out | Firewall blocking UDP or the NDP registry port | Ensure port 17436 TCP is open between cluster machines; UDP is used by NDP for multicast but the registry daemon uses TCP |
 | `npsd` exits immediately on first start | `NPSD_DATA_DIR` is not writable, or the keypair file has wrong permissions | Verify the volume mount; the root key file must be `0600` (TC-N1-NIP-01) |
 | nps-runner workers not spawning | `NPSD_URL` points at the wrong address inside the container | Use the Docker service name: `http://npsd:17433` (not `localhost`) |
+
+---
+
+## Option B: Native packages (systemd / Windows service)
+
+Native packages are self-contained binaries — no Docker, no .NET runtime installation required. Each package registers the daemon as a system service that starts on boot.
+
+Download from the [nps-daemons releases page](https://github.com/labacacia/nps-daemons/releases).
+
+### Ubuntu / Debian (amd64)
+
+```bash
+# Set the suite version (Debian format: ~ separates pre-release)
+DEB_VER="1.0.0~alpha.5.2"
+SUITE_VER="1.0.0-alpha.5.2"
+
+for pkg in npsd nps-runner nps-gateway nps-registry; do
+    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}_${DEB_VER}_amd64.deb"
+    sudo dpkg -i "${pkg}_${DEB_VER}_amd64.deb"
+done
+```
+
+The installer:
+- Creates a dedicated system user/group per daemon (`npsd`, `npsrunner`, `npsgw`, `npsreg`)
+- Installs the binary to `/opt/labacacia/<daemon>/`
+- Installs the systemd unit to `/lib/systemd/system/<daemon>.service`
+- Creates `/var/lib/nps/<daemon>/` (owned by the service user, mode 750)
+- Enables and starts the service automatically
+
+**Configuration** (environment overrides, preserved on upgrade):
+
+```bash
+# Edit the env file for any daemon, then restart:
+sudo systemctl edit --force npsd.service
+# — or —
+sudo nano /etc/nps/npsd/env
+sudo systemctl restart npsd
+```
+
+Example `/etc/nps/npsd/env`:
+
+```bash
+# Uncomment to override defaults
+#ASPNETCORE_URLS=http://127.0.0.1:17433
+#NPSD_DATA_DIR=/var/lib/nps/npsd
+```
+
+**Verify:**
+
+```bash
+sudo systemctl status npsd nps-runner nps-gateway nps-registry
+curl -s http://localhost:17433/health | jq
+```
+
+**Uninstall:**
+
+```bash
+sudo apt remove npsd nps-runner nps-gateway nps-registry
+```
+
+Data directories under `/var/lib/nps/` are not removed on uninstall (`apt purge` removes them).
+
+---
+
+### Fedora / RHEL (x86_64)
+
+```bash
+SUITE_VER="1.0.0-alpha.5.2"
+RPM_VER="1.0.0"
+RPM_REL="0.alpha.5.2.1"   # for stable releases: "1"
+
+for pkg in npsd nps-runner nps-gateway nps-registry; do
+    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
+    sudo rpm -i "${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
+done
+```
+
+systemd units install to `/usr/lib/systemd/system/`. Config and data directories are the same as Debian.
+
+**Verify:**
+
+```bash
+sudo systemctl status npsd
+curl -s http://localhost:17433/health | jq
+```
+
+**Uninstall:**
+
+```bash
+sudo rpm -e npsd nps-runner nps-gateway nps-registry
+```
+
+---
+
+### Windows (x64, MSI)
+
+Each daemon ships as a per-daemon `.msi` installer. Run as Administrator.
+
+```powershell
+$ver = "1.0.0-alpha.5.2"
+
+foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
+    $file = "$pkg-$ver-win-x64.msi"
+    Invoke-WebRequest `
+        -Uri "https://github.com/labacacia/nps-daemons/releases/download/v$ver/$file" `
+        -OutFile $file
+    Start-Process msiexec.exe -ArgumentList "/i `"$file`" /quiet /norestart" -Wait
+}
+
+# Services start automatically; verify:
+Get-Service npsd, nps-runner, nps-gateway, nps-registry
+```
+
+The MSI:
+- Installs to `%ProgramFiles%\LabAcacia\<daemon>\`
+- Creates `%ProgramData%\LabAcacia\<daemon>\` as the service data directory
+- Registers the service under `NT SERVICE\<daemon>` (virtual account — no password needed)
+- Configures auto-restart on failure (3 attempts, 10 s delay)
+
+**Configuration** (Windows environment variables):
+
+Open `services.msc`, right-click the daemon → Properties → Log On tab to configure an alternate account, or set environment variables via the registry:
+
+```powershell
+# Set an env var for npsd (takes effect after service restart):
+[Environment]::SetEnvironmentVariable(
+    "NPSD_DATA_DIR", "D:\nps\npsd",
+    [System.EnvironmentVariableTarget]::Machine
+)
+Restart-Service npsd
+```
+
+**Uninstall:**
+
+```powershell
+foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
+    Get-Package $pkg -ErrorAction SilentlyContinue | Uninstall-Package -Force
+}
+```
+
+---
+
+### Common bring-up errors (native packages)
+
+| Symptom | Likely cause | Resolution |
+|---------|-------------|-----------|
+| Service fails to start (Linux) | `/var/lib/nps/<daemon>/` missing or wrong permissions | Check `systemctl status <daemon>` and `journalctl -u <daemon> -n 50`; run `sudo chown <user>:<group> /var/lib/nps/<daemon>` |
+| Service fails to start (Windows) | Data directory not writable by `NT SERVICE\<daemon>` | Verify `%ProgramData%\LabAcacia\<daemon>` exists with the service account having full control |
+| Port already in use | Another process using port 17433 / 8080 / 17436 | Override via `/etc/nps/<daemon>/env` (Linux) or `SetEnvironmentVariable` (Windows) |
+| `dpkg-i` errors about dependency | `libc6` or `libstdc++` version mismatch | Packages are fully self-contained; run `sudo apt install -f` to fix missing system deps |
 
 ---
 
