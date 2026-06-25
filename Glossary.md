@@ -1,7 +1,7 @@
 # Glossary
 
 > **Audience:** Anyone (reference)
-> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
+> **Status:** ✅ Content complete — v1.0.0-alpha.13
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 >
 > Each entry: one-sentence definition followed by the primary spec reference in parentheses.
@@ -39,9 +39,15 @@
 
 **CapsFrame** — The NCP frame type (0x04) used as the standard response envelope; wraps a response body with an anchor reference and pagination cursor, and is also used by the server during native-mode capability negotiation. ([NPS-1 §4.4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
 
-**CGN (Cognon)** — The standardized cross-model token accounting unit in NPS; agents declare a maximum CGN budget per request via `X-NWP-Budget` and nodes use the tokenizer resolution chain to enforce truncation or rejection. ([spec/token-budget.md](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
+**CGN (Cognon)** — The standardized cross-model token accounting unit in NPS; agents declare a maximum CGN budget per request via `X-NWP-Budget` and nodes use the tokenizer resolution chain to enforce truncation or rejection. Since token-budget v0.5, CGN is split into two non-overlapping profiles, CGN-Estimate and CGN-Billing. ([spec/token-budget.md](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
+
+**CGN-Billing** — The settlement-grade CGN profile (token-budget §2.1) used for commercial billing and dispute/chargeback handling; requires the `verified_tokenizer` tier (NIP §5.1), NID-signed and audit-logged metering records, exact (non-sampled) per-record counts, a pinned exchange-rate-table version, and the `X-NWP-Tokens-Profile: billing` / `X-NWP-Billing-Record` / `X-NWP-Billing-Tokenizer-Tier` response headers. ([spec/token-budget.md §2.1, §4.2](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
+
+**CGN-Estimate** — The estimation-grade CGN profile (token-budget §2.1) used for `X-NWP-Budget` enforcement, telemetry, and push-stream `cgn_est` reporting; permits sampling, the `ceil(UTF-8_bytes / 4)` byte-size fallback, and ±5 % exchange-rate drift, requires no signing, and is the default for any CGN value carried without an explicit profile marker. ([spec/token-budget.md §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
 
 **Complex Node** — An NWP node type that combines data storage and callable operations; may include sub-node references and serves both `QueryFrame` and `ActionFrame` requests. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
+
+**Compensation (Saga)** — The NOP rollback mechanism (NOP v0.6) for partially-executed DAGs; a `CompensationPolicy` plus per-node `DagNode.compensate_action` define how to undo completed subtasks, with `TaskState` values `COMPENSATING` / `COMPENSATED` tracking the rollback. ([NPS-5 NOP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md))
 
 ---
 
@@ -60,6 +66,8 @@
 ---
 
 ## F
+
+**Federation** — The NDP v0.8 §9 mechanism by which `public-federated` registries forward AnnounceFrames to one another so discovery spans organizations; loop detection uses the `ndp-forwarded-by` chain (max 3 hops, `NDP-FEDERATION-LOOP`) and is governed by the `SecurityProfile` values `LOCAL_DEV` / `ORG_PRIVATE` / `PUBLIC_FEDERATED`. ([NPS-4 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md))
 
 **Frame** — The fundamental unit of NPS communication; standard frames have a 4-byte header (1 B frame type + 1 B flags + 2 B payload length) supporting up to 64 KB, while EXT-flag frames use an 8-byte header supporting up to 4 GB. ([NPS-1 §3](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
 
@@ -83,11 +91,21 @@
 
 **NOP (Neural Orchestration Protocol)** — The NPS orchestration layer analogous to SMTP + message queues + workflow engines; provides wire-level DAG task dispatch (`TaskFrame`), agent delegation (`DelegateFrame`), K-of-N sync barriers (`SyncFrame`), and streaming progress (`AlignStream`). ([NPS-5 NOP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md))
 
+**NopFrame** — The NCP keepalive/heartbeat frame (0x07, added NCP v0.8); a zero-payload frame (the single byte `0x07`) that either peer MAY send after the handshake to keep an idle connection alive; cadence is driven by `HelloFrame.ping_interval_ms`, with a dead-peer threshold of 3 × interval (`NCP-KEEPALIVE-TIMEOUT` → `NPS-SERVER-TIMEOUT`). ([NPS-1 §4.8](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
+
 **NPT (Neural Processing Token)** — **Deprecated.** Legacy alias for CGN (Cognon); the associated wire field `estimated_npt` was renamed to `cgn_est` in v1.0-alpha.5.2 — do not use in new code or new spec text. ([spec/token-budget.md](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
 
 **NWM (Neural Web Manifest)** — A machine-readable JSON manifest served at `GET /.nwm` on every NWP node; declares node type, capabilities, available actions, AnchorFrame reference, trusted CA issuers, and (at AaaS Profile L2+) topology query endpoint availability. ([NPS-2 §4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
 
 **NWP (Neural Web Protocol)** — The NPS request/response layer analogous to HTTP; defines how agents access data and invoke operations on Memory, Action, Anchor, Bridge, and Complex nodes using `QueryFrame` (0x10) and `ActionFrame` (0x11). ([NPS-2 NWP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
+
+**node_roles** — A self-declared array of node-role tags (`memory` / `action` / `complex` / `anchor` / `bridge`) carried on `AnnounceFrame` (NDP, NPS-CR-0001) and `IdentFrame` (NIP v0.10); it replaced the singular `node_kind` (accepted as an alias through alpha.5 only), and a NIP cert/`IdentFrame` mismatch surfaces as `NIP-CERT-NODE-ROLES-MISMATCH` → `NPS-CLIENT-BAD-FRAME`. ([NPS-4 §3.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md), [NPS-3 §5.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md))
+
+---
+
+## O
+
+**OCSP Staple** — The base64url-encoded DER OCSP response carried in `IdentFrame.ocsp_staple` (NIP v0.9), letting a presenter prove its certificate is currently unrevoked without the verifier making a live OCSP query; the Phase 3 flag day at v1.0.0-beta.1 introduces `NIP-OCSP-STAPLE-EXPIRED`. ([NPS-3 §5.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md))
 
 ---
 
@@ -101,7 +119,9 @@
 
 **STH (Signed Tree Head)** — A signed commitment to the current state of a Reputation Log's Merkle tree (current tree size + root hash + timestamp), published by a log operator and gossiped between peer logs at a default 30-second interval so that any fork or tampering is detectable via STH divergence. ([NPS-RFC-0004 §4.4–4.5](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md))
 
-**Suite Version** — The top-level version identifier for an NPS release as a whole (e.g., `v1.0.0-alpha.5`); distinct from individual sub-protocol versions (NCP v0.6, NWP v0.10, NIP v0.6, NDP v0.6, NOP v0.4) which are tracked per spec document. ([NPS-0 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
+**SubscribeFrame** — The NWP change-subscription frame (0x12); its formal wire shape was standardized in CR-0006 (NWP v0.13, §13) with `subscription_id` (UUID v4), a QueryFrame-compatible `filter`, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` for lossless resume, and an optional `type` field that selects reserved namespaces such as `topology.stream`; topology subscriptions require both `topology:read` and `topology:subscribe` capabilities (NWP §12.4). ([NPS-2 §13](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [NPS-CR-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0006-subscribe-frame.md))
+
+**Suite Version** — The top-level version identifier for an NPS release as a whole (e.g., `v1.0.0-alpha.13`); distinct from individual sub-protocol versions (NCP v0.8, NWP v0.14, NIP v0.10, NDP v0.9, NOP v0.7) which are tracked per spec document. ([NPS-0 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
 
 ---
 
@@ -123,4 +143,4 @@ The table below records field and term renames that affect wire compatibility. D
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

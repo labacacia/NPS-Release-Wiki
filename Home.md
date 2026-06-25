@@ -1,6 +1,6 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** ✅ Wiki content complete as of v1.0.0-alpha.5.2
+> **Status:** ✅ Wiki content complete as of v1.0.0-alpha.13
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -61,11 +61,11 @@ document.
 
 This wiki tracks the suite version declared in
 [`NPS-Release/version.yaml`](https://github.com/labacacia/NPS-Release/blob/main/version.yaml)
-— currently **v1.0.0-alpha.5.2** (released 2026-05-03). Pages should be
+— currently **v1.0.0-alpha.13** (released 2026-06-13). Pages should be
 re-reviewed at each suite release; see the `## TODO` block on each page for
 the version-alignment checklist.
 
-*Wiki last updated: v1.0.0-alpha.5.2 (2026-05-03)*
+*Wiki last updated: v1.0.0-alpha.13 (2026-06-13)*
 
 ---
 

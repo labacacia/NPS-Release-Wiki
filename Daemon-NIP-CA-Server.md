@@ -1,6 +1,6 @@
 # Daemon: nip-ca-server
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Operators running a self-hosted NIP Certificate Authority
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/nip-ca-server/` (lives outside `tools/daemons/` — it has its own distribution repo)
 - **Distribution:** `labacacia/nip-ca-server` — **PUBLIC**
-- **Docker image:** `ghcr.io/labacacia/nip-ca-server:1.0.0-alpha.5.2`
+- **Docker image:** `ghcr.io/labacacia/nip-ca-server:1.0.0-alpha.13`
 - **Default port:** `:17434` (plain HTTP; TLS terminated externally)
 - **Note:** Not part of the `labacacia/nps-daemons` bundle — distributed separately
 
@@ -60,18 +60,41 @@ curl http://localhost:17434/health
 | `POST` | `/v1/nodes/{nid}/renew` | Renew Node certificate |
 | `POST` | `/v1/nodes/{nid}/revoke` | Revoke Node certificate |
 | `GET` | `/v1/nodes/{nid}/verify` | Verify / OCSP for a Node NID |
+| `POST` | `/v1/orchestrators/groups/{group}/register` | CR-0003: register an orchestrator group; mints a `group-`-prefixed NID |
+| `DELETE` | `/v1/orchestrators/groups/{group}/revoke` | CR-0003: revoke a group NID (children cascade via `parent_revoked`) |
+| `POST` | `/v1/orchestrators/groups/{group}/sessions/issue` | CR-0003: issue a `session-`-prefixed NID under a group, recording `lineage` |
+| `GET` | `/v1/orchestrators/groups/{group}/sessions` | CR-0003: list active session NIDs for a group |
 | `GET` | `/v1/ca/cert` | CA public key |
 | `GET` | `/v1/crl` | Certificate Revocation List |
 | `GET` | `/.well-known/nps-ca` | CA discovery document |
-| `GET` | `/health` | Liveness probe; returns `200` when ready |
+| `GET` | `/health` | Liveness probe; returns `200` when ready (legacy envelope) |
+| `GET` | `/healthz` | Kubernetes-style liveness probe (added alpha.6+) |
+| `GET` | `/readyz` | Kubernetes-style readiness probe (added alpha.6+) |
 
-Write endpoints (`register`, `register-x509`, `renew`, `revoke`) require `Authorization: Bearer <token>` when `NIPCA__OPERATORAPIKEY` is set.
+Write endpoints (`register`, `register-x509`, `renew`, `revoke`, and the `orchestrators/groups/*` mutations) require `Authorization: Bearer <token>` when `NIPCA__OPERATORAPIKEY` is set.
+
+> **CR-0005 RA model (Registration Authority):** registration may be gated behind an RA. A bootstrap token admits a node into a **pending-registration** queue; an operator approves the pending registration before the CA issues a certificate. This lets the CA delegate identity-proofing to a separate authority while retaining issuance control.
+
+> **`/metrics` is served on the management port 17436**, never on the public CA port 17435. The public CA port no longer exposes `/metrics`.
 
 ---
 
+## IANA PEN 65715 OID arc (CR-0004)
+
+IANA **Private Enterprise Number 65715** was assigned to the NPS Committee on **2026-05-08**. All NPS X.509 OIDs now anchor to `1.3.6.1.4.1.65715`, replacing the provisional `1.3.6.1.4.1.99999` arc that earlier alphas used. Issued certificates carry the NPS extension OIDs:
+
+| OID | Name | Encoding |
+|-----|------|----------|
+| `1.3.6.1.4.1.65715.2.2` | `id-nps-node-roles` | ASN.1 `SEQUENCE OF UTF8String` |
+| `1.3.6.1.4.1.65715.2.3` | `id-nps-capabilities` | ASN.1 `SEQUENCE OF UTF8String` |
+
+The server also supports `IdentFrame.ocsp_staple` (base64url DER OCSP) for stapled revocation responses.
+
+> **Migration:** certificates issued under the old provisional `…99999` arc MUST be revoked and re-issued under PEN 65715.
+
 ## ACME path (NPS-RFC-0002) — EXPERIMENTAL
 
-The `agent-01` ACME challenge (RFC 8555 + NPS-RFC-0002) is enabled by setting `NIPCA__ACMEENABLED=true`. This path uses provisional OID `1.3.6.1.4.1.99999.1` until an IANA PEN is granted to LabAcacia/NPS Committee. **Do not use in production until the IANA PEN is assigned and the RFC-0002 EXPERIMENTAL gate is lifted.** Track progress in `log/advises/project_iana_pen_reminder.md`.
+The `agent-01` ACME challenge (RFC 8555 + NPS-RFC-0002) is enabled by setting `NIPCA__ACMEENABLED=true`. With PEN 65715 now assigned, the ACME path issues under the IANA arc rather than the former provisional OID. The ACME pipeline itself remains EXPERIMENTAL — review the RFC-0002 gate before relying on it in production.
 
 ---
 
@@ -100,6 +123,7 @@ The `agent-01` ACME challenge (RFC 8555 + NPS-RFC-0002) is enabled by setting `N
 | `NIPCA__ALLOWEDCAPABILITIES` | — | Comma-separated capability allowlist; requests with unlisted capabilities are rejected with `403` |
 | `NIPCA__ACMEENABLED` | `false` | Enable ACME RFC 8555 + `agent-01` challenge (NPS-RFC-0002, EXPERIMENTAL) |
 | `NIPCA__ACMEPATHPREFIX` | `/acme` | HTTP route prefix for ACME endpoints |
+| `NIPCA__MGMTPORT` | `17436` | Management port serving `/metrics` (and operational probes), separate from the public CA port |
 
 ---
 
@@ -111,7 +135,11 @@ The container exposes plain HTTP on port 17434. Run it behind nginx, Caddy, or T
 
 ## `/health` response
 
-Returns `200` with a standard NPS health envelope when the service is ready. Returns `503` during startup or if the CA key cannot be loaded.
+Returns `200` with a standard NPS health envelope when the service is ready. Returns `503` during startup or if the CA key cannot be loaded. `/healthz` and `/readyz` provide Kubernetes-style liveness/readiness probes.
+
+## Graceful shutdown
+
+On `SIGTERM` the daemon performs a graceful shutdown with a 30 s drain window, allowing in-flight issuance/revocation requests to complete before the process exits.
 
 ---
 
@@ -145,4 +173,4 @@ The `example/` directory contains five reference client ports (Python, TypeScrip
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

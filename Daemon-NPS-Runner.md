@@ -1,6 +1,6 @@
 # Daemon: nps-runner
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,8 +9,8 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-runner/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-runner:1.0.0-alpha.5.2`
-- **Exposed port:** none — `nps-runner` has no HTTP surface; it communicates entirely through the `npsd` inbox
+- **Docker image:** `labacacia/nps-runner:1.0.0-alpha.13`
+- **Exposed port:** none for protocol traffic — `nps-runner` communicates entirely through the `npsd` inbox. As of alpha.13 it exposes operability endpoints (`/healthz`, `/readyz`, `/metrics`) on a local management port for probes and scraping.
 - **Layer:** L1
 
 ---
@@ -22,6 +22,36 @@
 This design provides failure isolation: a worker crash cannot take down the protocol layer. `npsd` must be running before `nps-runner` starts; in docker-compose the `depends_on: npsd` relationship enforces this.
 
 One `npsd` may serve any number of `nps-runner` instances. Each registers its own sub-NID (configured by `NPS_RUNNER_AGENT_ID`), so names must be unique per host when running multiple runners.
+
+---
+
+## NOP L3 runtime integration (CR-0007)
+
+As of alpha.13 `nps-runner` implements the [NPS-CR-0007](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md) NOP Layer-3 runtime integration (NOP v0.7, NPS-Node Profile L3). This standardizes how a runner claims, resolves, and bounds NOP `TaskFrame` work so that multiple runners can share an inbox without double-execution.
+
+### Task-claim lease protocol
+
+A runner claims the head of a per-NID inbox by issuing an **atomic lease** rather than a bare ack:
+
+- The claim carries `runner_nid`, a `dedup_key`, and a requested `lease_seconds` (the server clamps to `[10, 600]`).
+- **Granted** — the inbox marks the task `LEASED` with `(runner_nid, lease_expiry)`. The runner MUST renew the lease (heartbeat) before expiry while the task runs.
+- **Conflict** — if the task is already `LEASED` by a live lease, the claim is rejected with `NOP-CLAIM-CONFLICT` (→ `NPS-CLIENT-CONFLICT`, HTTP 409). The other runner already owns it.
+- **Reclaim** — if the prior lease has expired, a new claim succeeds; the `dedup_key` ensures a terminal node is never re-run (at-least-once execution with a dedup guard).
+
+A runner is stateless beyond its active lease set: a crash releases its leases after the lease TTL, allowing another runner to reclaim the task.
+
+### `spawn_spec_ref` → SpawnSpec resolution
+
+The `spawn_spec_ref` reference on a task (NDP AnnounceFrame field, NPS-4 §3.1) is an opaque string the runner resolves to a structured **SpawnSpec** object (OCI image + command + `resource_limits`, NDP §3.1.2). It may be either an inline `spawnspec:` data URI carrying base64url-encoded JSON, or an `https://` / `nwp://` URL. If the reference cannot be resolved or the resolved object fails SpawnSpec schema validation, the runner rejects it with `NOP-SPAWN-SPEC-INVALID` (→ `NPS-CLIENT-BAD-PARAM`, HTTP 400).
+
+### Idle / max-runtime enforcement
+
+The runner enforces the SpawnSpec runtime bounds and reports breaches as NOP error codes:
+
+| Bound | Source | Error on breach |
+|-------|--------|-----------------|
+| Idle timeout | SpawnSpec `idle_timeout_seconds` → runner policy | `NOP-RUNTIME-IDLE-TIMEOUT` (→ `NPS-SERVER-TIMEOUT`, 504) — worker exceeded idle timeout; node `FAILED` |
+| Max runtime | SpawnSpec `max_runtime_seconds` → runner policy | `NOP-RUNTIME-MAX-RUNTIME` (→ `NPS-SERVER-TIMEOUT`, 504) — worker exceeded max runtime; node `FAILED` |
 
 ---
 
@@ -112,7 +142,7 @@ Body:
 
 ```yaml
 nps-runner:
-  image: labacacia/nps-runner:1.0.0-alpha.5.2
+  image: labacacia/nps-runner:1.0.0-alpha.13
   restart: unless-stopped
   depends_on:
     - npsd
@@ -122,15 +152,25 @@ nps-runner:
 
 ---
 
-## Health check
+## Health check and operability
 
-`nps-runner` has no HTTP surface and no `/health` endpoint. Liveness is observable via its log output — look for the `nps-runner ready` startup line and the periodic poll/spawn log lines.
+As of alpha.13 `nps-runner` exposes operability endpoints on a local management port for container and systemd probes:
+
+- `GET /healthz` — liveness (process is up). Returns `200 OK`.
+- `GET /readyz` — readiness (sub-NID registered with `npsd`, inbox poll loop active). Returns `200 OK` when ready, `503` otherwise.
+- `GET /metrics` — Prometheus exposition (active worker count, lease counts, spawn/claim/timeout totals).
+
+Liveness is also observable via log output — look for the `nps-runner ready` startup line and the periodic poll/spawn log lines.
 
 ```
 nps-runner ready — NID=urn:nps:agent:host:nps-runner  npsd=http://127.0.0.1:17433 ...
 ```
 
 When running in Docker, monitor with `docker compose logs -f nps-runner`.
+
+### Graceful shutdown
+
+On `SIGTERM`, `nps-runner` shuts down gracefully with a **30-second drain window**: it stops claiming new tasks, releases (or lets expire) its active leases, signals running workers (`killed_reason: "shutdown"`), and exits once they terminate or the drain window elapses. Use `SIGTERM` (the default for `docker stop` / systemd) rather than `SIGKILL` so leases are released cleanly and in-flight workers can finish or be reported.
 
 ---
 
@@ -171,4 +211,4 @@ This is expected and harmless. The `409 Conflict` from `POST /v1/agents` means t
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

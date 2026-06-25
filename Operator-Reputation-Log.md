@@ -1,7 +1,7 @@
 # Operator: NID Reputation Log
 
 > **Audience:** Operators (running an nps-ledger instance) + AaaS operators (consuming a log)
-> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
+> **Status:** ✅ Content complete — v1.0.0-alpha.13
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The NPS reputation log is Certificate Transparency for AI agents — an append-only, signed, Merkle-tree-backed log of NID behavioral incidents. Any party (AaaS gateway, CA, auditor) can publish signed observations about a NID, and any node can query the log before admitting an agent. Multiple independent log operators are expected; nodes choose which logs to trust.
@@ -18,6 +18,8 @@ The NPS reputation log is Certificate Transparency for AI agents — an append-o
 | Submit and query signed entries via HTTP API | Phase 1 (alpha.3) |
 | Merkle tree, Signed Tree Head (STH), inclusion proofs | Phase 2 (alpha.4) |
 | STH Gossip Protocol, fork detection | Phase 3 (alpha.5) |
+| `ReputationLogClient` SDK helper (all six SDKs) | alpha.7 |
+| Federation push (`POST /v1/log/federation/push`), NDP §9 loop detection | alpha.11 |
 
 The CT analogy holds precisely:
 - **Log operator** = CT log operator (appends entries, signs the tree)
@@ -182,6 +184,38 @@ A `tree_size` regression (step 3 fails) is evidence of a fork attempt. The opera
 
 ---
 
+## Federation push (alpha.11)
+
+In addition to the pull-style STH gossip above, `nps-ledger` (alpha.11+) supports a
+**push-style federation** endpoint for forwarding batches of reputation entries between
+federated registries:
+
+```
+POST /v1/log/federation/push
+    Body: { entries: [ ReputationLogEntry, ... ] }
+    Header: X-NPS-Forwarded-By: <comma-separated NID chain>
+    Returns: 200 + per-entry accept/reject status
+```
+
+Forwarding follows the **NDP §9** federation-forwarding model. Each hop appends its NID to
+the `X-NPS-Forwarded-By` header; an operator that sees its own NID already in the chain
+drops the batch (loop detection). The maximum forwarding depth is **3 hops**; exceeding it
+raises `NDP-FEDERATION-LOOP`. This lets `public-federated` registries propagate incidents
+across a federation without re-injecting them in a cycle.
+
+---
+
+## ReputationLogClient SDK helper (alpha.7)
+
+All six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship a **`ReputationLogClient`**
+(RFC-0004 Phase 2, added in alpha.7) that wraps the log HTTP API: submitting and querying
+entries, fetching and verifying the `SignedTreeHead`, fetching an `InclusionProof`, and
+verifying it via the RFC 9162 Merkle fold. It validates the operator's dual Ed25519
+signatures for you, so AaaS gateways can consult a log on agent admission without
+reimplementing the Merkle/STH plumbing.
+
+---
+
 ## `reputation_policy` in NWM (RFC-0004 §4.4)
 
 Nodes that wish to enforce reputation checks declare a `reputation_policy` in their NWM:
@@ -222,7 +256,7 @@ On first boot, `nps-ledger` generates an operator Ed25519 keypair at `${NPSLEDGE
 ```bash
 NPSLEDGER_PEERS=log2.example.com:17440,log3.example.com:17440 \
 NPSLEDGER_GOSSIP_INTERVAL_S=30 \
-  docker run labacacia/nps-ledger:1.0.0-alpha.5.2 ...
+  docker run labacacia/nps-ledger:1.0.0-alpha.13 ...
 ```
 
 Peer operators must reciprocally add your endpoint to their `NPSLEDGER_PEERS` list. STH gossip is bidirectional.
@@ -237,4 +271,4 @@ Peer operators must reciprocally add your endpoint to their `NPSLEDGER_PEERS` li
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

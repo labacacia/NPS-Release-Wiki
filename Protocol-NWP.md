@@ -1,8 +1,8 @@
 # Protocol: NWP — Neural Web Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
-**Spec**: `spec/NPS-2-NWP.md` v0.10 · **Port**: 17433 (shared) / 17434 (optional dedicated)
+**Spec**: `spec/NPS-2-NWP.md` v0.14 · **Port**: 17433 (shared) / 17434 (optional dedicated)
 
 NWP is the HTTP-equivalent for Agent-to-Node interaction in NPS. Where HTTP defines how browsers and servers exchange web pages, NWP defines how AI Agents query data, invoke actions, and subscribe to changes on Neural Nodes — with responses that are directly machine-understandable, requiring no semantic parsing layer. NWP runs on top of [Protocol NCP](Protocol-NCP) the same way HTTP semantics run on top of TCP.
 
@@ -24,6 +24,18 @@ Related: [Protocol NCP](Protocol-NCP) | [Protocol NIP](Protocol-NIP) | [Protocol
 
 A node MAY carry multiple roles simultaneously (e.g., `["anchor", "memory"]`). The full role set is declared in the NDP `AnnounceFrame.node_roles` field (discovery layer). The NWM `node_type` field (single string) declares which role this particular `/.nwm` endpoint is serving; it MUST be one of the values in `node_roles`.
 
+### Bridge Node — `bridge_target` schema (standardized NWP v0.13)
+
+A Bridge Node accepts inbound NWP frames carrying a `bridge_target` object that identifies the external protocol and endpoint. The standard fields (spec §2.1) are:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `protocol` | string | Required | One of `"http"` / `"grpc"` / `"mcp"` / `"a2a"` |
+| `endpoint` | string (URL) | Required | Upstream endpoint to dial |
+| `headers` | object (string→string) | Optional | Extra HTTP headers passed to the upstream |
+
+Unknown `bridge_target` fields MUST be ignored (opaque pass-through, forward compatibility). A Bridge Node validates `protocol` against its advertised set (NDP `bridge_protocols`); a missing `bridge_target` or unsupported protocol is rejected with `NWP-ACTION-PARAMS-INVALID`. Bridge Nodes are stateless per request and MUST NOT participate in cluster topology (`topology.*` → `NWP-RESERVED-TYPE-UNSUPPORTED`).
+
 ---
 
 ## Neural Web Manifest (NWM)
@@ -37,6 +49,9 @@ Every node MUST expose a machine-readable manifest at `/.nwm` with `Content-Type
 | `nwp` | string | NWP version, currently `"0.4"` |
 | `node_id` | string | Node NID, format `urn:nps:node:{host}:{path}` |
 | `node_type` | string | Operative role at this endpoint: `"memory"` / `"action"` / `"complex"` / `"anchor"` / `"bridge"` |
+| `manifest_version` | uint32 | Monotonically incrementing manifest version counter (starts at 1, +1 on every structural change). Servers MUST return `X-NWM-Version: {manifest_version}` on every `GET /.nwm`. (NWP v0.14 — changed from opaque ETag string to uint32 counter) |
+| `manifest_updated_at` | string | ISO 8601 timestamp of the last manifest change, e.g. `"2026-06-03T12:00:00Z"`. SHOULD be set whenever `manifest_version` is incremented. (NWP v0.14) |
+| `trust_anchors` | array | NIDs of CA nodes the Anchor accepts as IdentFrame issuers (e.g. `["urn:nps:agent:ca.example.com:root"]`). Consumers SHOULD use this to pre-validate their issuer before connecting; absent = accept any CA trusted by the NIP chain. (NWP v0.13) |
 | `wire_formats` | array | Supported encodings: `["ncp-capsule", "msgpack", "json"]` |
 | `schema_anchors` | object | Pre-declared schemas as `{name: anchor_id}` — Agents SHOULD preload all on first connection |
 | `capabilities` | object | Boolean flags: `query`, `stream_query`, `aggregate`, `subscribe`, `vector_search`, `token_budget_hint`, `ext_frame`, `e2e_enc`, `inline_anchor` |
@@ -47,7 +62,7 @@ Every node MUST expose a machine-readable manifest at `/.nwm` with `Content-Type
 | `endpoints` | object | URLs for each sub-path (`query`, `stream`, `invoke`, `subscribe`, `actions`, `schema`) |
 | `tokenizer_support` | array | Tokenizers the node can use for CGN estimation |
 
-The NWM may be conditionally requested using `If-None-Match: {manifest_version}` (HTTP mode). If unchanged, the server returns `304 Not Modified`.
+The NWM may be conditionally requested using `If-None-Match: {manifest_version}` (HTTP mode, integer string e.g. `If-None-Match: 7`). If unchanged, the server returns `304 Not Modified`. Servers MUST emit `X-NWM-Version: {manifest_version}` on every `GET /.nwm` response so agents can detect staleness without a full re-fetch; `manifest_updated_at` gives a human-readable timestamp of the last structural change. (NWP v0.14)
 
 ### Actions: ActionSpec
 
@@ -92,7 +107,7 @@ Used for structured data queries on Memory Nodes. Returns a `CapsFrame` (single 
 
 ### Sync vs Async Behavior
 
-QueryFrame is synchronous by default: the node responds immediately with a `CapsFrame`. When `stream: true` is set, the node pushes a sequence of `StreamFrame` chunks, with the first chunk carrying `estimated_total` and `request_id` metadata. To cancel an in-flight streaming query, send a `SubscribeFrame` with `action="unsubscribe"` and `stream_id` set to the original `request_id`.
+QueryFrame is synchronous by default: the node responds immediately with a `CapsFrame`. When `stream: true` is set, the node pushes a sequence of `StreamFrame` chunks, with the first chunk carrying `estimated_total` and `request_id` metadata. To cancel an in-flight streaming query, send an `ErrorFrame` referencing the QueryFrame's `request_id`, or disconnect; nodes route the cancellation by `request_id` and MUST NOT require a SubscribeFrame-shaped cancel message for streaming queries.
 
 ---
 
@@ -125,17 +140,29 @@ All nodes supporting async actions MUST implement `system.task.status` and `syst
 
 ### Streaming Query (stream: true on QueryFrame)
 
-The node pushes `StreamFrame (0x03)` chunks with increasing `seq` values. The final chunk has `is_last=true` (FINAL flag set). The Agent MAY send a cancellation `SubscribeFrame` at any time to stop the stream.
+The node pushes `StreamFrame (0x03)` chunks with increasing `seq` values. The final chunk has `is_last=true` (FINAL flag set). To cancel, the Agent sends an `ErrorFrame` referencing the QueryFrame's `request_id`, or disconnects.
 
 ### SubscribeFrame (0x12) — Change Subscriptions
 
-Used to establish continuous change subscriptions on Memory Nodes. The node pushes incremental updates as `DiffFrame (0x02)` events.
+Used to establish continuous change subscriptions on Memory and Anchor Nodes. The node pushes incremental updates as `DiffFrame (0x02)` events. The full wire shape is formalised in **spec §13** (CR-0006, Accepted 2026-05-28) and is the authoritative NWP v0.13 form.
 
-Key fields: `action` (`"subscribe"` / `"unsubscribe"` / `"ping"`), `stream_id` (client-generated UUID v4), `anchor_ref`, optional `filter`, `heartbeat_interval`, `resume_from_seq` (for reconnection).
+**Request fields (§13.1):**
 
-Each pushed `DiffFrame` carries subscription-specific extensions: `stream_id`, a monotonically increasing per-stream `seq` (starting at 1), `event_type` (`"create"` / `"update"` / `"delete"` for standard subscriptions), and `timestamp`. If the Agent detects a `seq` gap, it SHOULD re-subscribe using `resume_from_seq`.
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `subscription_id` | string | Required | Client-generated UUID v4; correlates events and cancels the subscription |
+| `type` | string | Optional | Reserved subscribe type per §12 (e.g. `"topology.stream"`); absent = per-anchor subscription |
+| `anchor_ref` | string | Conditionally Required | anchor_id of the subscribed data; omitted when a reserved `type` defines its own target |
+| `filter` | object | Optional | Same filter syntax as QueryFrame `filter`; absent = all events match |
+| `heartbeat_interval_ms` | uint32 | Optional | If set, server MUST emit a heartbeat DiffFrame (empty payload, `event_type = "heartbeat"`) at this interval; default 0 (no heartbeat) |
+| `max_events` | uint32 | Optional | Server closes the subscription after delivering this many events; 0 = unlimited |
+| `cursor` | string | Optional | Opaque server-issued resume position; expired cursor → `NWP-SUBSCRIBE-SEQ-TOO-OLD` |
 
-**Cancellation:** send `SubscribeFrame(action="unsubscribe", stream_id=...)`.
+> **Retired field names (pre-v0.13):** earlier alpha drafts used `action`, `stream_id`, `heartbeat_interval`, and `resume_from_seq`. These are retired for NWP v0.13 and MUST NOT be emitted by conformant alpha.11+ producers; consumers MAY accept them only as a pre-alpha.11 compatibility fallback, normalizing internally to the §13 fields above.
+
+**Pushed DiffFrame event envelope (§13.2):** each event carries `subscription_id`, a monotonically increasing `seq` (uint64), `event_type` (`"create"` / `"update"` / `"delete"` / `"heartbeat"` / `"error"`; reserved subscribe types MAY add more), optional `timestamp`, optional `payload`, and optional `cgn_est` (uint32 — estimated CGN cost of this push event's payload, for Agent-side cumulative-budget accounting; absent means no per-event estimate). Cursors are opaque — clients MUST NOT parse them; on a `seq` gap, re-subscribe with the latest server-issued `cursor`.
+
+**Lifecycle:** client sends SubscribeFrame → server replies CapsFrame (`subscription_id` echoed, `status = "open"`) → server streams DiffFrame events → client cancels by closing the transport (server MAY also close at `max_events`). On error the server MUST send a terminal ErrorFrame with the appropriate `NWP-SUBSCRIBE-*` code.
 
 ---
 
@@ -158,10 +185,10 @@ One-shot retrieval of an Anchor Node's cluster topology. Added in alpha.4 via NP
 
 Continuous topology change feed. Mandatory at Profile L2 and above.
 
-**Request:** `SubscribeFrame` with `type: "topology.stream"` and a nested `topology` object:
+**Request:** `SubscribeFrame` with `type: "topology.stream"`, a required `subscription_id` (UUID v4), an optional opaque `cursor`, and a nested `topology` object:
 - `topology.scope`: `"cluster"` (default)
-- `topology.filter`: `{tags_any, tags_all, node_roles}` — reduces event volume
-- `topology.since_version`: resume from a previous version (supersedes `resume_from_seq` when both present)
+- `topology.filter`: `{tags_any, tags_all, node_roles}` — reduces event volume; unsupported keys → `NWP-TOPOLOGY-FILTER-UNSUPPORTED`
+- `topology.since_version`: topology-specific bootstrap hint for clients that have a snapshot `version` but no opaque `cursor` yet. For v0.13, the opaque `cursor` is the canonical resume mechanism and takes precedence over `topology.since_version` when both are present. If the version is outside the retention window the Anchor MUST emit a `resync_required` event and the client MUST issue a fresh `topology.snapshot`.
 
 **Events** are pushed as `DiffFrame (0x02)` with `event_type` from an extended enum:
 
@@ -175,9 +202,15 @@ Continuous topology change feed. Mandatory at Profile L2 and above.
 
 The `seq` on each event is the post-event topology version.
 
-### topology:read Capability Gate (alpha.5)
+### topology:read / topology:subscribe Capability Gate (alpha.5)
 
-Anchor Nodes MUST require the requesting NID to declare `topology:read` in `IdentFrame.capabilities` before serving any `topology.*` request. Absent capability produces `NWP-TOPOLOGY-UNAUTHORIZED`. This is enforced by `AnchorNodeMiddleware` in the .NET reference implementation. The `topology:read` capability is self-declared and key-signed at Phase 1–2; CA-attested role binding is deferred to Phase 3.
+Anchor Nodes MUST require the requesting NID to declare `topology:read` in `IdentFrame.capabilities` before serving any `topology.*` request. Absent capability produces `NWP-TOPOLOGY-UNAUTHORIZED`. This is enforced by `AnchorNodeMiddleware` in the .NET reference implementation. The capability is self-declared and key-signed at Phase 1–2; CA-attested role binding is deferred to Phase 3.
+
+The two surfaces are gated separately (spec §12.4):
+- `topology.snapshot` (single-shot pull): requires `topology:read`.
+- `topology.stream` (long-lived subscription): requires `topology:read` **AND** `topology:subscribe`. Enforcement of `topology:subscribe` was promoted from SHOULD to **MUST** in NWP v0.13 (CR-0006); Anchor Nodes that cannot enforce it MUST document the non-enforcement explicitly in the NWM `stability` metadata.
+
+If the Anchor revokes a subscriber's capability mid-stream, it MUST emit a terminal `NWP-TOPOLOGY-UNAUTHORIZED` event (DiffFrame `event_type = "error"`) and then close the stream rather than silently dropping the subscriber.
 
 ---
 
@@ -194,12 +227,14 @@ Anchor Nodes MUST require the requesting NID to declare `topology:read` in `Iden
 | `X-NWP-Encoding` | Request encoding tier: `json` / `msgpack` |
 | `X-NWP-Request-ID` | UUID v4 for tracing; echoed in response |
 | `X-NWP-Capabilities` | Agent capability list (used by `AnchorNodeMiddleware` for capability gate, alpha.5) |
+| `If-None-Match` | NWM conditional request; value is `manifest_version` (uint32). Unchanged manifest → `304 Not Modified` (NWP v0.14) |
 | `Content-Type` | MUST be `application/nwp-frame` |
 
 ### Response Headers
 
 | Header | Description |
 |--------|-------------|
+| `X-NWM-Version` | `manifest_version` (uint32); MUST be sent on every `GET /.nwm` response (NWP v0.14) |
 | `X-NWP-Schema` | `anchor_id` used in the response |
 | `X-NWP-Tokens` | Actual CGN consumed |
 | `X-NWP-Tokenizer-Used` | Tokenizer actually applied |
@@ -241,8 +276,8 @@ When a `QueryFrame` or `SubscribeFrame` carries a `type` field that the node doe
 | `NWP-BUDGET-EXCEEDED` | `NPS-LIMIT-BUDGET` | Response would exceed the CGN token budget |
 | `NWP-RATE-LIMIT-EXCEEDED` | `NPS-LIMIT-RATE` | Per-Agent rate limit exceeded |
 | `NWP-QUERY-REGEX-UNSAFE` | `NPS-CLIENT-BAD-PARAM` | `$regex` pattern rejected (ReDoS risk or too long) |
-| `NWP-SUBSCRIBE-SEQ-TOO-OLD` | `NPS-CLIENT-CONFLICT` | `resume_from_seq` outside node's buffer range; full re-query required |
+| `NWP-SUBSCRIBE-SEQ-TOO-OLD` | `NPS-CLIENT-CONFLICT` | `cursor` outside the node's retention window; full re-query or reserved-type resync required |
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

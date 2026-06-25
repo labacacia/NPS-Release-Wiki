@@ -1,6 +1,6 @@
 # Example: NWP Graph Walk
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 **Repo:** `labacacia/NPS-examples`, directory: `nwp-graph-walk/` (source in NPS-Dev `demos/nwp-graph-walk/`)
 
@@ -30,8 +30,23 @@ When an Agent issues `POST /query` with `X-NWP-Depth: N`, the Complex Node:
 
 Two hard safety gates apply at every hop:
 
-- **`max_depth` in the NWM `graph` block (NWP §11):** A node's NWM may cap the maximum depth it is willing to serve. A request exceeding this is rejected *before* any child call with `NWP-DEPTH-EXCEEDED` (HTTP 400 / NPS-CLIENT-BAD-REQUEST). The check is pre-fanout — a malicious Agent cannot amplify load by requesting depth 100.
+- **`max_depth` in the NWM `graph` block (NWP §11):** A node's NWM may cap the maximum depth it is willing to serve. A request exceeding this is rejected *before* any child call with `NWP-DEPTH-EXCEEDED` (HTTP 400 / NPS-CLIENT-BAD-PARAM). The check is pre-fanout — a malicious Agent cannot amplify load by requesting depth 100.
 - **Cycle detection (NWP §11):** The spec requires nodes to detect circular references and emit `NWP-GRAPH-CYCLE` (HTTP 422 / NPS-CLIENT-UNPROCESSABLE). The detection mechanism is implementation-defined. The parent surfaces the error under `graph[].error` without failing its own response — the traversal continues and the useful data is preserved.
+
+---
+
+---
+
+## Not to Be Confused With: NDP GraphFrame / Topology Subscriptions
+
+This demo is about **NWP Complex Node graph traversal** — an Agent issuing one `POST /query` and having a Complex Node recursively fan out over its declared `graph.refs` (NWP §11). That is a query-time, request-scoped traversal of a node's own sub-node references.
+
+It is a separate mechanism from the **NDP topology graph**, which two other alpha.13 features cover:
+
+- **NDP `GraphFrame` (0x32)** is now the §5 **topology-snapshot** format (NDP v0.8): `graph_id`, `nodes` (each with `nid` / `cluster_anchor` / `node_roles`), `edges` (`from_nid` / `to_nid` / `latency_ms` / `protocol`), `ttl`, and `metadata`, bounded at **max 256 nodes / 1024 edges** (`NDP-GRAPH-TOO-LARGE`, `NDP-GRAPH-INVALID`). It describes the registry's view of the node graph, not an Agent's per-query fanout.
+- **Topology subscriptions** use NWP **`SubscribeFrame` (0x12)** with `type = "topology.stream"` (NWP §12–13, CR-0006): a client-generated `subscription_id` (UUID v4) plus an opaque `cursor` for lossless resume, gated by the `topology:subscribe` capability. Topology consumers also track `manifest_version` and the `X-NWM-Version` response header on `GET /.nwm` (NWP v0.14).
+
+Neither GraphFrame nor SubscribeFrame is exercised by this demo; the demo stays entirely within the NWP Complex Node `graph.refs` request path described above.
 
 ---
 
@@ -110,7 +125,7 @@ POST http://127.0.0.1:17450/query   X-NWP-Depth: 1
 
 One round trip from the Agent, two child calls (`customers` + `products`) issued by the Complex Node, two distinct anchor refs returned. The Agent caches each child node independently.
 
-**Key learning — how `cgn_est` accumulates across graph hops:** The `cgn_est` field (Cognon estimate, formerly called `estimated_npt` in pre-alpha.3 versions) in the top-level CapsFrame represents the token budget consumed by the entire response, including the inlined child frames. Each child CapsFrame also carries its own `cgn_est`. An Agent tracking token budget across a graph traversal should sum the `cgn_est` values from each distinct CapsFrame it receives — the top-level `cgn_est` does not automatically aggregate the children's values.
+**Key learning — how `cgn_est` accumulates across graph hops:** The `cgn_est` field (Cognon estimate, renamed from `estimated_npt` in alpha.5.2) in the top-level CapsFrame represents the token budget consumed by the entire response, including the inlined child frames. Each child CapsFrame also carries its own `cgn_est`. An Agent tracking token budget across a graph traversal should sum the `cgn_est` values from each distinct CapsFrame it receives — the top-level `cgn_est` does not automatically aggregate the children's values.
 
 ### Scene C — depth=9, rejected before fanout
 
@@ -119,13 +134,14 @@ POST http://127.0.0.1:17450/query   X-NWP-Depth: 9
 → HTTP 400 Bad Request
 {
   "frame_type": 254,
-  "status": "NPS-CLIENT-BAD-REQUEST",
+  "status": "NPS-CLIENT-BAD-PARAM",
   "error": "NWP-DEPTH-EXCEEDED",
   "message": "X-NWP-Depth 9 exceeds node max_depth 2."
 }
 ```
 
-Frame type 254 = ErrorFrame (0xFE). The check happens before any child call is made. The `orders` node's NWM declares `graph.max_depth: 2`; the request for depth 9 is rejected immediately. There is no amplification risk.
+
+Frame type 254 = ErrorFrame (0xFE). The `status` shown above (`NPS-CLIENT-BAD-PARAM`) reflects the alpha.13 status-code mapping for `NWP-DEPTH-EXCEEDED`. The check happens before any child call is made. The `orders` node's NWM declares `graph.max_depth: 2`; the request for depth 9 is rejected immediately. There is no amplification risk.
 
 ### Scene D — mutual reference, cycle caught
 
@@ -204,4 +220,4 @@ The captured output above was recorded on 2026-04-21. Output snapshots must be r
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

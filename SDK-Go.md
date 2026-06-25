@@ -1,6 +1,6 @@
 # SDK — Go
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 Go reference implementation of the Neural Protocol Suite. Covers all five sub-protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -9,7 +9,7 @@ Go reference implementation of the Neural Protocol Suite. Covers all five sub-pr
 ## Installation
 
 ```bash
-go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.5.2
+go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.13
 ```
 
 **Requirements:** Go 1.25+.
@@ -25,13 +25,13 @@ go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.5.2
 | Package | Protocol | Description |
 |---------|----------|-------------|
 | `github.com/labacacia/NPS-sdk-go/core` | NCP | Frame types, header codec, `FrameRegistry`, `AnchorFrameCache` |
-| `github.com/labacacia/NPS-sdk-go/ncp` | NCP | `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame` |
-| `github.com/labacacia/NPS-sdk-go/nwp` | NWP | `QueryFrame`, `ActionFrame`, `NwpClient` (HTTP mode); `ErrAuth*` / `ErrQuery*` / … error code constants |
-| `github.com/labacacia/NPS-sdk-go/nip` | NIP | `IdentFrame` (v2 dual-trust), `TrustFrame`, `RevokeFrame`, `NipIdentity` (Ed25519), `NipIdentVerifier` (RFC-0002 §8.1 dual-trust), `AssuranceLevel` (RFC-0003) |
-| `github.com/labacacia/NPS-sdk-go/nip/x509` | NIP / RFC-0002 | `IssueLeaf`, `IssueRoot`, `Verify` — NPS X.509 NID certs on stdlib `crypto/x509` |
+| `github.com/labacacia/NPS-sdk-go/ncp` | NCP | `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame` (`PingIntervalMs`), `NopFrame` (0x07 keepalive), `ErrorFrame` |
+| `github.com/labacacia/NPS-sdk-go/nwp` | NWP | `QueryFrame`, `ActionFrame`, `NwpClient` (HTTP mode; reads `X-NWM-Version` and `manifest_version`/`manifest_updated_at` for conditional `.nwm` re-fetch); `ErrAuth*` / `ErrQuery*` / … error code constants |
+| `github.com/labacacia/NPS-sdk-go/nip` | NIP | `IdentFrame` (v2 dual-trust; `NodeRoles` self-declared role tags), `TrustFrame`, `RevokeFrame`, `NipIdentity` (Ed25519), `NipIdentVerifier` (RFC-0002 §8.1 dual-trust), `AssuranceLevel` (RFC-0003), `ReputationLogClient` (RFC-0004 Phase 2, added in alpha.7) |
+| `github.com/labacacia/NPS-sdk-go/nip/x509` | NIP / RFC-0002 | `IssueLeaf`, `IssueRoot`, `Verify` — NPS X.509 NID certs on stdlib `crypto/x509` (anchored to IANA PEN 65715) |
 | `github.com/labacacia/NPS-sdk-go/nip/acme` | NIP / RFC-0002 | `Client` + `Server` (in-process) + JWS/messages — ACME `agent-01` flow |
-| `github.com/labacacia/NPS-sdk-go/ndp` | NDP | `AnnounceFrame`, `ResolveFrame`, `GraphFrame`, `InMemoryNdpRegistry`, `NdpAnnounceValidator`; DNS TXT fallback (`ResolveViaDns`, `DnsTxtLookup`, `ParseNpsTxtRecord`) |
-| `github.com/labacacia/NPS-sdk-go/nop` | NOP | `TaskFrame`, `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`, `NopClient` |
+| `github.com/labacacia/NPS-sdk-go/ndp` | NDP | `AnnounceFrame` (`SpawnSpecRef` structured schema object; `HeartbeatIntervalMs`), `ResolveFrame`, `GraphFrame`, `InMemoryNdpRegistry`, `NdpAnnounceValidator`; DNS TXT fallback (`ResolveViaDns`, `DnsTxtLookup`, `ParseNpsTxtRecord`) |
+| `github.com/labacacia/NPS-sdk-go/nop` | NOP | `TaskFrame` (`ResultTtlSeconds`), `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`, `NopClient` |
 
 ---
 
@@ -197,6 +197,7 @@ delay := nop.ComputeDelayMs(nop.BackoffExponential, 100, 5000, attempt)
 | `StreamFrame` | 0x03 | `ncp` |
 | `CapsFrame` | 0x04 | `ncp` |
 | `HelloFrame` | 0x06 | `ncp` |
+| `NopFrame` | 0x07 | `ncp` |
 | `ErrorFrame` | 0xFE | `ncp` |
 | `QueryFrame` | 0x10 | `nwp` |
 | `ActionFrame` | 0x11 | `nwp` |
@@ -229,4 +230,4 @@ go test ./...
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

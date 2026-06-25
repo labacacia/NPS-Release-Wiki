@@ -1,6 +1,6 @@
 # Release Process
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 This page documents how an NPS suite release is prepared and published. The process is designed around a single-oracle version model: one file is authoritative, and all other files must match it.
 
@@ -33,10 +33,11 @@ This rule was codified after the alpha.5.2 incident, where some distribution rep
 
 | Type | Format | When used |
 |------|--------|-----------|
-| Alpha release | `1.0.0-alpha.N` | Regular alpha milestones |
-| Hotfix within an alpha | `1.0.0-alpha.N.M` | Patch on top of an alpha without advancing to the next N |
+| Alpha release | `1.0.0-alpha.N` | Every alpha milestone, including hotfixes and re-cuts |
 
-Both types bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
+**Alpha has no sub-versions.** Since alpha.6 the suite policy is to advance `1.0.0-alpha.N` → `1.0.0-alpha.N+1` for *every* release, including hotfixes and re-cuts. The old `1.0.0-alpha.N.M` hotfix format (e.g. `1.0.0-alpha.5.1`) was retired after the alpha.5.2 drift incident — there is no `alpha.5.x` going forward. A patch on top of an alpha simply becomes the next whole alpha.
+
+The current latest released suite version is **v1.0.0-alpha.13** (released 2026-06-13). All releases bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
 
 ---
 
@@ -104,7 +105,11 @@ The list of files checked by Assertions A–D is defined in `tools/scripts/sourc
 
 ## Hotfix Flow
 
-A hotfix (e.g. `1.0.0-alpha.5` → `1.0.0-alpha.5.1`) follows the same sequence as a full release. There are **no partial hotfixes** — every distribution repo must be bumped and synced together. A hotfix that touches only one SDK still requires bumping all other SDK manifests (even if their content is unchanged) so that Assertion B passes.
+Under the no-sub-version policy, a hotfix advances to the **next whole alpha** (e.g. `1.0.0-alpha.12` → `1.0.0-alpha.13`) and follows the same sequence as any full release. There are **no partial hotfixes** — every distribution repo must be bumped and synced together. A hotfix that touches only one SDK still requires bumping all other SDK manifests (even if their content is unchanged) so that Assertion B passes.
+
+### Worked example: alpha.13 re-cut
+
+alpha.13 is a real example of a re-cut release. **alpha.12 was withdrawn** because it shipped a vulnerable `MessagePack 3.0.300` dependency (NU1903) together with a native-mode handshake bug. Rather than publishing an `alpha.12.1` sub-version (which the policy forbids), the suite advanced to **alpha.13** with `MessagePack 3.1.7`, superseding the withdrawn alpha.12 entirely. `version.yaml` remained the single oracle throughout — `suite_version` was bumped straight to `1.0.0-alpha.13`.
 
 ---
 
@@ -125,4 +130,4 @@ Fix: Assertion B in `check-source-of-truth.py` now blocks the release if any SDK
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

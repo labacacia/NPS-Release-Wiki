@@ -1,6 +1,6 @@
 # Daemon: nps-gateway
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-gateway/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-gateway:1.0.0-alpha.5.2`
+- **Docker image:** `labacacia/nps-gateway:1.0.0-alpha.13`
 - **Default port:** `:8080` (HTTP). Production deployments terminate TLS on `:443` via a reverse proxy (nginx, Caddy, or Traefik) in front of this daemon.
 - **Layer:** L2
 
@@ -21,13 +21,17 @@ In HTTP mode, each `POST` request body carries exactly one NPS frame; the respon
 
 Path-based routing: `nps-gateway` examines the `Host` header and request path to determine which backing `npsd` node to forward to. In a single-node deployment all traffic routes to `http://127.0.0.1:17433`. Multi-node routing is configured via the upstream registry at `nps-registry`.
 
+When the gateway proxies a `GET /.nwm` manifest fetch, it preserves the upstream `X-NWM-Version` response header (the NWM's `manifest_version` uint32 counter, NWP v0.14) so external clients can perform `If-None-Match: <manifest_version>` conditional requests and receive `304 Not Modified` on unchanged manifests.
+
 ---
 
-## Implementation status (alpha.5)
+## Implementation status
 
-The current release ships a **Phase 1 skeleton**: a public HTTP listener with a `/health` endpoint and stable deployment surface (process name, Docker image tag, port). This skeleton has been present since alpha.3 to keep the deployment topology stable from the beginning of the daemon ecosystem.
+The original Phase 1 skeleton — a public HTTP listener with a `/health` endpoint and a stable deployment surface (process name, Docker image tag, port) — has been present since alpha.3 to keep the deployment topology stable from the beginning of the daemon ecosystem.
 
-Full ingress logic — TLS termination, rate limiting, NeuronHub-customer authentication, CGN debit triggering, NPS-RFC-0004 reputation checks, and Anchor Node middleware wiring per NPS-CR-0001 — is planned for alpha.5 and later milestones. The `nps-gateway` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring is deferred until the Anchor Node middleware is stable.
+As of alpha.13, `nps-gateway` ships working **HTTP-mode ingress**: it accepts NCP-over-HTTP frame requests on its public listener, applies the configured `X-Forwarded-For` / `X-Forwarded-Proto` handling, and forwards frames upstream to `npsd` at port 17433 (single-node) or to the node selected via `nps-registry` (multi-node). It also exposes the operability endpoints `/healthz`, `/readyz`, and `/metrics` (see below), and preserves the `X-NWM-Version` response header on proxied `GET /.nwm` fetches (NWP v0.14).
+
+Some advanced ingress logic — rate limiting, NeuronHub-customer authentication, CGN debit triggering, NPS-RFC-0004 reputation checks, and Anchor Node middleware wiring per NPS-CR-0001 — remains in progress. The `nps-gateway` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring is deferred until the Anchor Node middleware is stable. TLS is terminated by a reverse proxy in front of the gateway (see below).
 
 ---
 
@@ -49,18 +53,31 @@ Configure your reverse proxy to set `X-Forwarded-For` and `X-Forwarded-Proto` so
 
 ---
 
-## `/health` response example
+## Health and operability endpoints
+
+As of alpha.13 `nps-gateway` exposes standard operability endpoints alongside the legacy `/health` probe:
+
+- `GET /healthz` — liveness (process is up). Returns `200 OK`.
+- `GET /readyz` — readiness (upstream `npsd` reachable and listener bound). Returns `200 OK` when ready, `503` otherwise.
+- `GET /metrics` — Prometheus exposition (request counts, upstream-forward latency, 5xx/502 totals).
+- `GET /health` — legacy JSON probe (retained for compatibility).
+
+### `/health` response example
 
 ```json
 {
   "status": "ok",
   "daemon": "nps-gateway",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "layer": 2,
   "role": "internet-ingress",
   "port": 8080
 }
 ```
+
+### Graceful shutdown
+
+On `SIGTERM`, `nps-gateway` drains gracefully over a **30-second window**: it stops accepting new connections, lets in-flight forwarded requests complete, and then exits. Because the gateway is stateless, no state is lost; the drain simply avoids dropping requests mid-flight during a rolling deploy. Use `SIGTERM` (the default for `docker stop` / systemd) rather than `SIGKILL`.
 
 ---
 
@@ -75,7 +92,7 @@ Configure your reverse proxy to set `X-Forwarded-For` and `X-Forwarded-Proto` so
 
 ```yaml
 nps-gateway:
-  image: labacacia/nps-gateway:1.0.0-alpha.5.2
+  image: labacacia/nps-gateway:1.0.0-alpha.13
   restart: unless-stopped
   ports:
     - "${NPS_GATEWAY_PORT:-8080}:8080"
@@ -122,4 +139,4 @@ Set `NPSGATEWAY_PORT` to an available port, or stop the conflicting service. Che
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

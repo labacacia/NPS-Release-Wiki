@@ -1,6 +1,6 @@
 # Reference: Error Codes
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 NPS uses a two-level error system. This page documents the **protocol error codes** — the fine-grained layer. Each code names exactly what went wrong in a specific protocol domain. The coarser layer, NPS status codes, classifies the error for transport routing; see [Reference: Status Codes](Reference-Status-Codes).
 
@@ -45,6 +45,31 @@ Clients should branch on the **NPS status code** for generic retry/backoff logic
 
 ---
 
+> **Added in alpha.6 – alpha.13**
+>
+> The following codes were introduced across v1.0.0-alpha.6 through v1.0.0-alpha.13:
+>
+> - `NCP-NID-MISMATCH` — native-mode mTLS / resumed-session NID mismatch (NPS-RFC-0006)
+> - `NCP-KEEPALIVE-TIMEOUT` — no frame (incl. NopFrame) within 3 × `ping_interval_ms` (NCP v0.8)
+> - `NWP-REPUTATION-THROTTLED`, `NWP-REPUTATION-REJECTED`, `NWP-REPUTATION-BANNED` — reputation-policy enforcement (NPS-RFC-0005); supersede the now-deprecated `NWP-AUTH-REPUTATION-BLOCKED`
+> - `NWP-CGN-LIMIT-EXCEEDED` — response would exceed the effective Cognon budget (token-budget.md §7.4)
+> - `NIP-CERT-NODE-ROLES-MISMATCH` — `IdentFrame.node_roles` vs `id-nps-node-roles` extension, Phase 3 (NIP v0.10)
+> - `NIP-OCSP-STAPLE-EXPIRED` — stale `IdentFrame.ocsp_staple` (NIP v0.9)
+> - `NIP-TRUST-FRAME-EXPIRED`, `NIP-TRUST-FRAME-GRANTOR-REVOKED`, `NIP-TRUST-FRAME-SCOPE-EXCEEDS-GRANTOR`, `NIP-TRUST-FRAME-NODES-PATTERN-INVALID` — TrustFrame validation (NPS-3 §5.2)
+> - `NIP-REVOKE-FRAME-INVALID`, `NIP-REVOKE-FRAME-UNAUTHORIZED-ISSUER`, `NIP-REVOKE-FRAME-SERIAL-MISMATCH`, `NIP-REVOKE-FRAME-REASON-UNKNOWN` — RevokeFrame validation (NPS-3 §5.3)
+> - `NIP-CA-GROUP-REVOKED`, `NIP-CA-PARENT-NOT-FOUND`, `NIP-CA-PARENT-NOT-GROUP`, `NIP-CA-SESSION-VALIDITY-INVALID`, `NIP-CA-JWS-INVALID`, `NIP-CA-JWS-EXPIRED`, `NIP-CERT-PARENT-REVOKED` — group / session NID issuance (NPS-CR-0003)
+> - `NDP-RESOLVE-STALE`, `NDP-ANNOUNCE-STALE` — stale registration / expired announce heartbeat (NDP v0.9)
+> - `NDP-ANNOUNCE-CONFLICT`, `NDP-GRAPH-SEQ-ROLLBACK`, `NDP-ISSUER-NOT-ALLOWED`, `NDP-CA-ATTEST-REQUIRED` — registry-integrity / federation (NDP v0.8, NPS-4 §7)
+> - `NDP-GRAPH-INVALID`, `NDP-GRAPH-TOO-LARGE` — GraphFrame topology-snapshot validation (NDP v0.8)
+> - `NDP-FEDERATION-LOOP` — federation forwarding loop detection (NDP §9, max 3 hops)
+> - `NOP-COMPENSATION-FAILED`, `NOP-COMPENSATION-NOT-SUPPORTED` — saga rollback (NOP v0.6)
+> - `NOP-CALLBACK-HMAC-MISSING` — webhook callback missing `X-NPS-Signature` (NOP v0.6)
+> - `NOP-CLAIM-CONFLICT`, `NOP-SPAWN-SPEC-INVALID`, `NOP-RUNTIME-IDLE-TIMEOUT`, `NOP-RUNTIME-MAX-RUNTIME` — NOP L3 runtime lease (NPS-CR-0007)
+> - `NOP-TASK-RESULT-EXPIRED` — result requested after `result_ttl_seconds` (NOP v0.7)
+> - `NOP-STREAM-NAK-UNRESOLVABLE` — NAK retransmission for an evicted frame (NOP v0.7)
+
+---
+
 ## NCP Error Codes
 
 Neural Communication Protocol — wire format and framing layer.
@@ -68,6 +93,9 @@ Neural Communication Protocol — wire format and framing layer.
 | `NCP-ENC-NOT-NEGOTIATED` | `NPS-CLIENT-BAD-FRAME` | 400 | Received an ENC=1 frame but no E2E encryption algorithm was negotiated for the session |
 | `NCP-ENC-AUTH-FAILED` | `NPS-CLIENT-BAD-FRAME` | 400 | E2E encryption auth-tag verification failed; the frame may have been tampered with |
 | `NCP-PREAMBLE-INVALID` | `NPS-PROTO-PREAMBLE-INVALID` | 400 (not emitted) | Native-mode connection opened with bytes other than the constant preamble `b"NPS/1.0\n"`; server closes silently without emitting an ErrorFrame (NPS-RFC-0001) |
+| `NCP-NID-MISMATCH` | `NPS-AUTH-UNAUTHENTICATED` | 401 | Native-mode mTLS client-certificate NID does not match the session `IdentFrame` NID, or a resumed TLS session's certificate NID differs from the ticket-bound NID (NPS-RFC-0006 §6.3–§6.4) |
+| `NCP-REKEY-REQUIRED` | `NPS-PROTO-VERSION-INCOMPATIBLE` | 426 | E2E-encrypted channel has reached the rekey threshold (2^32 frames or 24 h); peer MUST initiate key rotation before sending more encrypted frames (NCP v0.7 §7.4) |
+| `NCP-KEEPALIVE-TIMEOUT` | `NPS-SERVER-TIMEOUT` | 408/504 | No frame (including NopFrame) received within 3 × `ping_interval_ms`; connection will be closed (NCP v0.8 §7.6) |
 
 ---
 
@@ -85,7 +113,10 @@ Neural Web Protocol — query, action, subscription, manifest, and topology laye
 | `NWP-AUTH-NID-UNTRUSTED-ISSUER` | `NPS-AUTH-UNAUTHENTICATED` | 401 | NID issuer is not in `trusted_issuers` |
 | `NWP-AUTH-NID-CAPABILITY-MISSING` | `NPS-AUTH-FORBIDDEN` | 403 | Agent is missing a capability required by the node (e.g. `nwp:query`) |
 | `NWP-AUTH-ASSURANCE-TOO-LOW` | `NPS-AUTH-FORBIDDEN` | 403 | Agent's assurance level is below the node's `min_assurance_level`; response SHOULD include a `hint` pointing to a CA enrolment URL (NPS-RFC-0003) |
-| `NWP-AUTH-REPUTATION-BLOCKED` | `NPS-AUTH-FORBIDDEN` | 403 | Reputation policy matched a `reject_on` rule against the requesting `subject_nid`; response SHOULD include matching `incident` + `severity` + log entry `seq` for traceability (NPS-RFC-0004) |
+| `NWP-AUTH-REPUTATION-BLOCKED` | `NPS-AUTH-FORBIDDEN` | 403 | **Deprecated** (NPS-RFC-0005): use `NWP-REPUTATION-REJECTED` / `NWP-REPUTATION-BANNED` instead. Retained as an alias for one alpha cycle. |
+| `NWP-REPUTATION-THROTTLED` | `NPS-CLIENT-RATE-LIMITED` | 429 | Request rate-limited by reputation policy (`throttle_on` rule matched). Response includes a `Retry-After: 60` header (NPS-RFC-0005) <!-- spec note: mapping per error-codes.md; status-codes.md still lists this family as NPS-LIMIT-RATE (upstream spec cleanup pending) --> |
+| `NWP-REPUTATION-REJECTED` | `NPS-AUTH-FORBIDDEN` | 403 | Request rejected by reputation policy (`reject_on` rule matched). Response body includes `matched_incident` + `matched_severity` (NPS-RFC-0005) |
+| `NWP-REPUTATION-BANNED` | `NPS-AUTH-FORBIDDEN` | 403 | Request rejected and NID temporarily banned (`ban_on` rule matched or active ban-cache entry). Response SHOULD include an `X-NWP-Ban-Expires` Unix timestamp (NPS-RFC-0005) |
 
 ### Query
 
@@ -127,6 +158,7 @@ Neural Web Protocol — query, action, subscription, manifest, and topology laye
 | Code | NPS Status Code | HTTP Equivalent | Description |
 |------|-----------------|-----------------|-------------|
 | `NWP-BUDGET-EXCEEDED` | `NPS-LIMIT-BUDGET` | 429 | Response would exceed the `X-NWP-Budget` limit |
+| `NWP-CGN-LIMIT-EXCEEDED` | `NPS-CLIENT-REQUEST-TOO-LARGE` | — | Response would exceed the effective CGN budget (`min(cgn_limit, X-NWP-Budget)`); trimming was not possible. Response body SHOULD include `effective_budget` and `estimated_cgn` (token-budget.md §7.4) <!-- spec note: mapping per error-codes.md; status code not yet in status-codes.md (upstream spec cleanup pending) --> |
 | `NWP-DEPTH-EXCEEDED` | `NPS-CLIENT-BAD-PARAM` | 400 | `X-NWP-Depth` exceeds the node's permitted `max_depth` |
 | `NWP-GRAPH-CYCLE` | `NPS-CLIENT-UNPROCESSABLE` | 422 | Node graph contains a cyclic reference |
 | `NWP-RATE-LIMIT-EXCEEDED` | `NPS-LIMIT-RATE` | 429 | Rate limit exceeded; reset timestamp is in the `X-NWP-Rate-Reset` header |
@@ -169,6 +201,9 @@ Neural Identity Protocol — certificates, trust chains, assurance levels, and r
 | `NIP-CERT-FORMAT-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | `IdentFrame.cert_chain` is not DER-encoded X.509 or fails ASN.1 parsing (NPS-RFC-0002 §4.3) |
 | `NIP-CERT-EKU-MISSING` | `NPS-CLIENT-BAD-FRAME` | 400 | Required NPS EKU (`agent-identity` or `node-identity`) is absent or non-critical on the leaf cert (NPS-RFC-0002 §4.1/§4.3) |
 | `NIP-CERT-SUBJECT-NID-MISMATCH` | `NPS-CLIENT-BAD-FRAME` | 400 | X.509 leaf cert subject CN / SAN URI does not match `IdentFrame.nid` (NPS-RFC-0002 §4.3) |
+| `NIP-CERT-NODE-ROLES-MISMATCH` | `NPS-CLIENT-BAD-FRAME` | 400 | `IdentFrame.node_roles` does not match the `id-nps-node-roles` X.509 extension; Phase 3 enforcement (NIP v0.10) |
+| `NIP-OCSP-STAPLE-EXPIRED` | `NPS-AUTH-UNAUTHENTICATED` | 401 | `IdentFrame.ocsp_staple` `nextUpdate` has elapsed — staple is stale; Agent must refresh and resend (NIP v0.9 §5.1.4) |
+| `NIP-CERT-PARENT-REVOKED` | `NPS-AUTH-UNAUTHENTICATED` | 401 | A session NID's parent / group NID is revoked or expired (chain check, NPS-3 §7 step 3a — NPS-CR-0003) |
 
 ### CA Operations
 
@@ -180,13 +215,27 @@ Neural Identity Protocol — certificates, trust chains, assurance levels, and r
 | `NIP-CA-RENEWAL-TOO-EARLY` | `NPS-CLIENT-BAD-PARAM` | 400 | More than 7 days until expiry; renewal window not yet open |
 | `NIP-CA-SCOPE-EXPANSION-DENIED` | `NPS-AUTH-FORBIDDEN` | 403 | Requested scope exceeds the parent scope (delegation-chain violation) |
 | `NIP-ACME-CHALLENGE-FAILED` | `NPS-CLIENT-BAD-FRAME` | 400 | ACME `agent-01` challenge validation failed (token mismatch, signature failure, or replay — NPS-RFC-0002 §4.4) |
+| `NIP-CA-GROUP-REVOKED` | `NPS-AUTH-FORBIDDEN` | 403 | Cannot issue a session under a group NID that has been revoked (NPS-3 §5.1.3 — NPS-CR-0003) |
+| `NIP-CA-PARENT-NOT-FOUND` | `NPS-CLIENT-NOT-FOUND` | 404 | The `parent_nid` / group NID referenced by a session-issue request does not exist (NPS-3 §5.1.3 — NPS-CR-0003) |
+| `NIP-CA-PARENT-NOT-GROUP` | `NPS-CLIENT-BAD-PARAM` | 400 | The referenced parent NID exists but is not registered as `lineage.role = "group"` (NPS-3 §5.1.3 — NPS-CR-0003) |
+| `NIP-CA-SESSION-VALIDITY-INVALID` | `NPS-CLIENT-BAD-PARAM` | 400 | Requested session validity below 60 s or above the CA's configured maximum (NPS-3 §5.1.3 — NPS-CR-0003) |
+| `NIP-CA-JWS-INVALID` | `NPS-AUTH-UNAUTHENTICATED` | 401 | Group-JWS authorisation on a session-issue request fails signature, header, or shape validation (NPS-3 §5.1.3 — NPS-CR-0003) |
+| `NIP-CA-JWS-EXPIRED` | `NPS-AUTH-UNAUTHENTICATED` | 401 | Group-JWS `iat` outside the CA's clock-skew window (default ±5 min) (NPS-3 §5.1.3 — NPS-CR-0003) |
 
 ### OCSP and Trust
 
 | Code | NPS Status Code | HTTP Equivalent | Description |
 |------|-----------------|-----------------|-------------|
 | `NIP-OCSP-UNAVAILABLE` | `NPS-SERVER-UNAVAILABLE` | 503 | OCSP service temporarily unavailable |
-| `NIP-TRUST-FRAME-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | TrustFrame signature or format is invalid |
+| `NIP-TRUST-FRAME-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | TrustFrame signature or format is invalid (NPS-3 §5.2) |
+| `NIP-TRUST-FRAME-EXPIRED` | `NPS-AUTH-UNAUTHENTICATED` | 401 | TrustFrame `expires_at` is in the past (NPS-3 §5.2) |
+| `NIP-TRUST-FRAME-GRANTOR-REVOKED` | `NPS-AUTH-UNAUTHENTICATED` | 401 | TrustFrame `grantor_nid`'s own CA certificate is revoked or expired (NPS-3 §5.2) |
+| `NIP-TRUST-FRAME-SCOPE-EXCEEDS-GRANTOR` | `NPS-AUTH-FORBIDDEN` | 403 | TrustFrame `trust_scope` contains a capability the grantor itself does not hold (no-scope-expansion principle — NPS-3 §5.2) |
+| `NIP-TRUST-FRAME-NODES-PATTERN-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | TrustFrame `nodes` entry is not a valid `nwp://` URL pattern (e.g. malformed wildcard — NPS-3 §5.2) |
+| `NIP-REVOKE-FRAME-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | RevokeFrame is malformed (missing required field, signature verification fails, or canonical form is invalid — NPS-3 §5.3) |
+| `NIP-REVOKE-FRAME-UNAUTHORIZED-ISSUER` | `NPS-AUTH-FORBIDDEN` | 403 | RevokeFrame `signer_nid` is not authorised to revoke `target_nid` (NPS-3 §5.3) |
+| `NIP-REVOKE-FRAME-SERIAL-MISMATCH` | `NPS-CLIENT-BAD-PARAM` | 400 | RevokeFrame `serial` is present but does not match any currently-issued cert for `target_nid` (NPS-3 §5.3) |
+| `NIP-REVOKE-FRAME-REASON-UNKNOWN` | `NPS-CLIENT-BAD-FRAME` | 400 | RevokeFrame `reason` carries a value outside the defined enum; receivers treat it as `key_compromise` (most restrictive — NPS-3 §5.3) |
 
 ### Assurance and Reputation
 
@@ -210,11 +259,20 @@ Neural Discovery Protocol — address resolution, announcement, and graph synchr
 | `NDP-RESOLVE-NOT-FOUND` | `NPS-CLIENT-NOT-FOUND` | 404 | `nwp://` address cannot be resolved to a physical endpoint |
 | `NDP-RESOLVE-AMBIGUOUS` | `NPS-CLIENT-CONFLICT` | 409 | Resolution result is conflicting (multiple inconsistent registrations) |
 | `NDP-RESOLVE-TIMEOUT` | `NPS-SERVER-TIMEOUT` | 408/504 | Resolution request timed out |
+| `NDP-RESOLVE-STALE` | `NPS-CLIENT-NOT-FOUND` | 404 | Resolved entry's freshness deadline `(last_seen ?? timestamp) + ttl` is in the past; the registration is stale and MUST NOT be served (NDP v0.9 §3.2.1) |
 | `NDP-ANNOUNCE-SIGNATURE-INVALID` | `NPS-AUTH-UNAUTHENTICATED` | 401 | AnnounceFrame signature verification failed |
 | `NDP-ANNOUNCE-NID-MISMATCH` | `NPS-CLIENT-BAD-FRAME` | 400 | NID in AnnounceFrame does not match the signing certificate |
+| `NDP-ANNOUNCE-STALE` | `NPS-CLIENT-NOT-FOUND` | 404 | AnnounceFrame heartbeat has expired (3× `heartbeat_interval_ms` elapsed with no re-announce) (NDP v0.9) |
 | `NDP-ANNOUNCE-ROLE-REMOVED` | `NPS-CLIENT-BAD-FRAME` | 400 | AnnounceFrame `node_roles` contains the removed legacy value `"gateway"` (NPS-CR-0001); use `"anchor"` or `"bridge"`. Response SHOULD include a `hint` pointing to NPS-CR-0001. |
 | `NDP-ANNOUNCE-ROLE-UNKNOWN` | `NPS-CLIENT-BAD-FRAME` | 400 | AnnounceFrame `node_roles` contains an unrecognized value that is not a known-removed legacy value |
+| `NDP-ANNOUNCE-CONFLICT` | `NPS-CLIENT-CONFLICT` | 409 | Two AnnounceFrames share the same `nid` and `graph_seq` but differ in covered content (registry-poisoning attempt; see NPS-4 §7.4) |
+| `NDP-GRAPH-SEQ-ROLLBACK` | `NPS-CLIENT-BAD-FRAME` | 400 | AnnounceFrame `graph_seq` is less than or equal to the highest value previously accepted for that NID (rollback attempt; see NPS-4 §7.5) |
 | `NDP-GRAPH-SEQ-GAP` | `NPS-STREAM-SEQ-GAP` | 422 | GraphFrame sequence numbers are not contiguous |
+| `NDP-GRAPH-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | GraphFrame edge references a NID not in the nodes list, or a self-edge is detected (NDP v0.8 §5) |
+| `NDP-GRAPH-TOO-LARGE` | `NPS-CLIENT-BAD-FRAME` | 400 | GraphFrame `nodes` > 256 or `edges` > 1024 (NDP v0.8 §5) |
+| `NDP-FEDERATION-LOOP` | `NPS-CLIENT-CONFLICT` | 409 | AnnounceFrame forwarding loop: the registry's own NID already appears in `ndp-forwarded-by`, or the max 3-hop limit was exceeded (NPS-4 §9) |
+| `NDP-ISSUER-NOT-ALLOWED` | `NPS-AUTH-FORBIDDEN` | 403 | AnnounceFrame issuer (signing CA) is not in the active registry profile's issuer allowlist (see NPS-4 §7.3) |
+| `NDP-CA-ATTEST-REQUIRED` | `NPS-AUTH-UNAUTHENTICATED` | 401 | Active registry profile requires a CA-attested NID and the AnnounceFrame's certificate chain does not anchor in the configured trust roots (see NPS-4 §7.3) |
 | `NDP-REGISTRY-UNAVAILABLE` | `NPS-SERVER-UNAVAILABLE` | 503 | NDP Registry temporarily unavailable |
 
 ---
@@ -252,6 +310,8 @@ Neural Orchestration Protocol — DAG task dispatch, delegation, synchronization
 | `NOP-SYNC-DEPENDENCY-FAILED` | `NPS-CLIENT-UNPROCESSABLE` | 422 | Dependency subtask has failed and failure count exceeds the K-of-N tolerance |
 | `NOP-STREAM-SEQ-GAP` | `NPS-STREAM-SEQ-GAP` | 422 | AlignStream sequence numbers are not contiguous |
 | `NOP-STREAM-NID-MISMATCH` | `NPS-AUTH-UNAUTHENTICATED` | 401 | AlignStream `sender_nid` does not match the connection identity |
+| `NOP-STREAM-NAK-UNRESOLVABLE` | `NPS-STREAM-SEQ-GAP` | 422 | NAK retransmission requested for a frame no longer available in the sender's buffer (frame has been evicted) (NOP v0.7) |
+| `NOP-CALLBACK-HMAC-MISSING` | `NPS-AUTH-UNAUTHENTICATED` | 401 | Callback recipient rejected delivery because the `X-NPS-Signature` header was absent; `callback_secret` was set but the signature was not computed (NOP v0.6) |
 
 ### Resources and Conditions
 
@@ -260,6 +320,23 @@ Neural Orchestration Protocol — DAG task dispatch, delegation, synchronization
 | `NOP-RESOURCE-INSUFFICIENT` | `NPS-SERVER-UNAVAILABLE` | 503 | Preflight found one or more Worker Agents lack sufficient resources (CGN or capabilities) |
 | `NOP-CONDITION-EVAL-ERROR` | `NPS-CLIENT-BAD-PARAM` | 400 | DAG node `condition` expression failed to evaluate (syntax error or missing referenced field) |
 | `NOP-INPUT-MAPPING-ERROR` | `NPS-CLIENT-UNPROCESSABLE` | 422 | `input_mapping` JSONPath could not be resolved or target field is missing |
+
+### Saga Compensation
+
+| Code | NPS Status Code | HTTP Equivalent | Description |
+|------|-----------------|-----------------|-------------|
+| `NOP-COMPENSATION-FAILED` | `NPS-CLIENT-UNPROCESSABLE` | 422 | Terminal — node `compensate_action` returned an error during saga rollback (NOP v0.6) |
+| `NOP-COMPENSATION-NOT-SUPPORTED` | `NPS-CLIENT-UNPROCESSABLE` | 422 | Terminal — a predecessor that must be compensated has no `compensate_action` (and `compensation_policy="strict"`) (NOP v0.6) |
+
+### L3 Runtime Lease (NPS-CR-0007)
+
+| Code | NPS Status Code | HTTP Equivalent | Description |
+|------|-----------------|-----------------|-------------|
+| `NOP-CLAIM-CONFLICT` | `NPS-CLIENT-CONFLICT` | 409 | TaskFrame already leased by a live `nps-runner` lease (NPS-CR-0007 §4.2) |
+| `NOP-SPAWN-SPEC-INVALID` | `NPS-CLIENT-BAD-PARAM` | 400 | `spawn_spec_ref` could not be resolved or failed SpawnSpec schema validation (NPS-CR-0007 §5) |
+| `NOP-RUNTIME-IDLE-TIMEOUT` | `NPS-SERVER-TIMEOUT` | 408/504 | L3 worker exceeded its idle timeout before completing the node (NPS-CR-0007 §6) |
+| `NOP-RUNTIME-MAX-RUNTIME` | `NPS-SERVER-TIMEOUT` | 408/504 | L3 worker exceeded its max runtime before completing the node (NPS-CR-0007 §6) |
+| `NOP-TASK-RESULT-EXPIRED` | `NPS-CLIENT-NOT-FOUND` | 404 | Task result requested after `result_ttl_seconds` elapsed; result no longer retained (NOP v0.7) |
 
 ---
 
@@ -293,4 +370,4 @@ Use this code when the error is "I don't know how to handle this type of operati
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

@@ -1,6 +1,6 @@
 # Reference: Frame Registry
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 Every NPS frame type is identified by a single byte. Frames from all five protocols share one unified byte space, routed by type code. The machine-readable source of truth is `spec/frame-registry.yaml` in the repository — that file is CI-validated on every commit.
 
@@ -32,13 +32,14 @@ Neural Communication Protocol — wire format, framing, streaming, and handshake
 | Byte | Frame Name | Status | Spec Reference | Description |
 |------|------------|--------|----------------|-------------|
 | `0x01` | AnchorFrame | Stable | NPS-1-NCP §4.1 | Schema anchor published by a Node. `anchor_id` is computed via RFC 8785 JCS + SHA-256. Establishes a global schema reference to eliminate repeated schema transmission. Agents read and cache; they do not author AnchorFrames. |
-| `0x02` | DiffFrame | Stable | NPS-1-NCP §4.2 | Incremental data frame. Supports `json_patch` (RFC 6902, Tier-1 default) and `binary_bitset` (Tier-2, ~15–20% smaller) via the `patch_format` field. NPS-CR-0002 extends `event_type` with topology-stream values: `member_joined`, `member_left`, `member_updated`. |
+| `0x02` | DiffFrame | Stable | NPS-1-NCP §4.2 | Incremental data frame. Supports `json_patch` (RFC 6902, Tier-1 default) and `binary_bitset` (Tier-2, ~15–20% smaller) via the `patch_format` field. NPS-CR-0002 / CR-0006 (NWP §13.2) extends `event_type` with the full topology-stream set: `member_joined`, `member_left`, `member_updated`, `anchor_state`, `resync_required`. NWP v0.13 (CR-0002 Phase 2) adds the optional per-event `cgn_est` field (uint32, estimated CGN cost of this push event's payload) for agent-side cumulative-budget accounting. |
 | `0x03` | StreamFrame | Stable | NPS-1-NCP §4.3 | Streaming data chunk with formal flow control (`window_size` backpressure protocol). Used for large datasets, real-time push, or payload fragmentation. |
 | `0x04` | CapsFrame | Stable | NPS-1-NCP §4.4 | Capsule response frame. Wraps a complete response body with anchor reference and pagination cursor. Also used for server-side connection capability negotiation. Supports `inline_anchor` for zero-RTT schema refresh. |
 | `0x05` | ~~AlignFrame~~ | **Deprecated** | NPS-1-NCP §4.5 | Multi-AI state alignment. **Superseded by NOP AlignStream (0x43).** New implementations MUST NOT emit this frame type. |
-| `0x06` | HelloFrame | Stable | NPS-1-NCP §4.6 | Native-mode client handshake frame. Sent by the Agent immediately after TCP/QUIC connect to declare protocol version, encoding capabilities, and `max_frame_payload`. Server responds with CapsFrame. Not used in HTTP mode. |
+| `0x06` | HelloFrame | Stable | NPS-1-NCP §4.6 | Native-mode client handshake frame. Sent by the Agent immediately after TCP/QUIC connect to declare protocol version, encoding capabilities, `max_frame_payload`, and (NCP v0.8) `ping_interval_ms` (uint32; 0 = disabled). Server responds with CapsFrame. Not used in HTTP mode. |
+| `0x07` | NopFrame | Stable | NPS-1-NCP §4.8 | Keepalive / heartbeat frame (added NCP v0.8). Null payload (the single byte `0x07`). Either peer MAY send at any time after the handshake; the receiver MUST accept and SHOULD reply with another NopFrame. When `HelloFrame.ping_interval_ms` > 0, both peers SHOULD send at that interval; the dead-peer detection threshold is 3 × `ping_interval_ms` (NCP §7.6). Timeout surfaces as `NCP-KEEPALIVE-TIMEOUT` → `NPS-SERVER-TIMEOUT`. |
 
-**Reserved in NCP range:** `0x07–0x0F`.
+**Reserved in NCP range:** `0x08–0x0F`.
 
 > **Special reservation — `0x4E`**: The byte `0x4E` (ASCII `N`) is reserved by NPS-RFC-0001 as the first byte of the native-mode connection preamble `b"NPS/1.0\n"`. Servers MUST NOT interpret `0x4E` as a frame type when it is read as the very first byte after the transport handshake.
 
@@ -52,7 +53,7 @@ Neural Web Protocol — query, action, and subscription.
 |------|------------|--------|----------------|-------------|
 | `0x10` | QueryFrame | Draft | NPS-2-NWP §6 | Structured data query for Memory Nodes. Supports filtering, field selection, cursor pagination, ordering, vector search, streaming mode, aggregation, and (NPS-CR-0002) optional `type` field for reserved namespaces (`topology.snapshot`, `topology.stream`). Unrecognized `type` values MUST be rejected with `NWP-RESERVED-TYPE-UNSUPPORTED`. |
 | `0x11` | ActionFrame | Draft | NPS-2-NWP §7 | Operation invocation for Action and Complex Nodes. Supports sync/async execution, idempotency, `callback_url`, priority, `request_id`, and system-reserved actions (`system.task.status`, `system.task.cancel`). |
-| `0x12` | SubscribeFrame | Draft | NPS-2-NWP §8 | Change subscription management for Memory Nodes. Actions: `subscribe` / `unsubscribe` / `ping`. Server pushes DiffFrame (0x02) updates with monotonic `seq`. HTTP mode uses Server-Sent Events. Supports optional `filter`, `heartbeat_interval`, and `resume_from_seq` for lossless reconnection. NPS-CR-0002 adds optional `type` field for `topology.stream` subscriptions. |
+| `0x12` | SubscribeFrame | Stable | NPS-2-NWP §13 | Change subscription management for Memory and Anchor Nodes. The CR-0006 formal wire shape (NWP v0.13) uses `subscription_id` (UUID v4), a QueryFrame-compatible `filter`, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` for lossless resume; the server pushes DiffFrame (0x02) events until cancellation or closure. HTTP mode uses Server-Sent Events. NPS-CR-0002 adds an optional `type` field — set `type="topology.stream"` for the §12.2 cluster change feed. Unrecognized `type` values MUST be rejected with `NWP-RESERVED-TYPE-UNSUPPORTED`. `topology.stream` subscriptions MUST carry both `topology:read` and `topology:subscribe` (NWP §12.4). |
 
 **Reserved in NWP range:** `0x13–0x1F`.
 
@@ -64,9 +65,9 @@ Neural Identity Protocol — identity declarations, trust chains, and revocation
 
 | Byte | Frame Name | Status | Spec Reference | Description |
 |------|------------|--------|----------------|-------------|
-| `0x20` | IdentFrame | Draft | NPS-3-NIP §5.1 | Agent identity declaration and certificate. Carries NID, public key, capabilities, scope, optional metadata (`model_family`, `tokenizer`), and (NPS-RFC-0003) optional `assurance_level` (`anonymous` / `attested` / `verified`). Used as the connection handshake. |
-| `0x21` | TrustFrame | Draft | NPS-3-NIP §5.2 | Cross-CA trust chain delegation. Allows one organization CA to grant scoped trust to another CA. |
-| `0x22` | RevokeFrame | Draft | NPS-3-NIP §5.3 | NID or capability revocation. Takes immediate effect upon CA acknowledgment. |
+| `0x20` | IdentFrame | Proposed | NPS-3-NIP §5.1 | Agent identity declaration and certificate. Carries NID, public key, capabilities, scope, optional metadata (`model_family`, `tokenizer`), and (NPS-RFC-0003) optional `assurance_level` (`anonymous` / `attested` / `verified`). NIP v0.7–0.10 add `cert_chain` + `cert_format` (DER chain + encoding), `ocsp_staple` (base64url DER OCSP, NIP v0.9), and `node_roles` (string[] self-declared role tags, NIP v0.10) — all excluded from the Ed25519-signed payload. Used as the connection handshake. |
+| `0x21` | TrustFrame | Proposed | NPS-3-NIP §5.2 | Cross-CA trust chain delegation. One CA (`grantor_nid`) authorizes another CA (`grantee_ca`) to issue IdentFrames whose `trust_scope` and `nodes` patterns are honored by nodes that trust the grantor; carries `issued_at` / `expires_at` / serial / `signer_nid`, signed Ed25519 or ECDSA P-256 over canonical JSON. |
+| `0x22` | RevokeFrame | Proposed | NPS-3-NIP §5.3 | NID or capability revocation. Takes immediate effect upon CA acknowledgment. |
 
 **Reserved in NIP range:** `0x23–0x2F`.
 
@@ -78,9 +79,9 @@ Neural Discovery Protocol — presence announcement, address resolution, and gra
 
 | Byte | Frame Name | Status | Spec Reference | Description |
 |------|------------|--------|----------------|-------------|
-| `0x30` | AnnounceFrame | Draft | NPS-4-NDP §3.1 | Node or Agent presence broadcast. Announces NID, physical addresses, capabilities, TTL, `activation_mode` (`ephemeral` / `resident` / `hybrid`), and (NPS-CR-0001) `node_roles` array (`memory` / `action` / `complex` / `anchor` / `bridge`). Legacy `"gateway"` value in `node_roles` is rejected with `NDP-ANNOUNCE-ROLE-REMOVED`. Must be signed with the IdentFrame private key. |
+| `0x30` | AnnounceFrame | Draft | NPS-4-NDP §3.1 | Node or Agent presence broadcast. Announces NID, physical addresses, capabilities, TTL, `activation_mode` (`ephemeral` / `resident` / `hybrid`), and (NPS-CR-0001) `node_roles` array (`memory` / `action` / `complex` / `anchor` / `bridge`; renamed from `node_kind` in NDP v0.8 — parsers MUST accept `node_kind` as an alias through alpha.5 only). Legacy `"gateway"` value is rejected with `NDP-ANNOUNCE-ROLE-REMOVED`. NDP v0.9 changes `spawn_spec_ref` from a URI string to a structured schema object and adds `heartbeat_interval_ms` (uint32, default 60 000 ms; 0 = disabled; stale announcers surface `NDP-ANNOUNCE-STALE` → `NPS-CLIENT-NOT-FOUND`). Must be signed with the IdentFrame private key. |
 | `0x31` | ResolveFrame | Draft | NPS-4-NDP §3.2 | Resolves a `nwp://` URL to a physical endpoint (host:port + certificate fingerprint). |
-| `0x32` | GraphFrame | Draft | NPS-4-NDP §3.3 | Node graph synchronization and change subscription. Supports full and incremental sync modes. |
+| `0x32` | GraphFrame | Draft | NPS-4-NDP §5 | Node graph synchronization. Rewritten in NDP v0.8 to the §5 topology-snapshot format: `graph_id`, `nodes` (`nid` / `cluster_anchor` / `node_roles`), `edges` (`from_nid` / `to_nid` / `latency_ms` / `protocol`), `ttl`, and `metadata`. Limits: max 256 nodes / 1024 edges (`NDP-GRAPH-INVALID`, `NDP-GRAPH-TOO-LARGE`). Supports full and incremental sync modes. |
 
 **Reserved in NDP range:** `0x33–0x3F`.
 
@@ -116,7 +117,8 @@ Neural Orchestration Protocol — DAG task dispatch, delegation, synchronization
 | Range | Status |
 |-------|--------|
 | `0x05` | Deprecated (AlignFrame, superseded by 0x43) |
-| `0x07–0x0F` | Reserved — NCP expansion |
+| `0x07` | Assigned — NopFrame (keepalive/heartbeat, NCP v0.8) |
+| `0x08–0x0F` | Reserved — NCP expansion |
 | `0x13–0x1F` | Reserved — NWP expansion |
 | `0x23–0x2F` | Reserved — NIP expansion |
 | `0x33–0x3F` | Reserved — NDP expansion |
@@ -147,4 +149,4 @@ Do not implement or ship a new frame type before the RFC is accepted. The `frame
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

@@ -1,13 +1,13 @@
 # Operator: AaaS Profile (L1 / L2 / L3)
 
 > **Audience:** Operators (especially AaaS providers — Agent-as-a-Service vendors)
-> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
+> **Status:** ✅ Content complete — v1.0.0-alpha.13
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The **NPS-AaaS Profile** (Agent-as-a-Service Compliance Specification) defines what a *service* must expose to be considered a conformant NPS AaaS provider. It answers: "Does my service present the right NPS endpoints to AI agents?" The companion **Node Profile** answers a separate question: "Is my host a conformant participant in the NPS network?" The two are orthogonal — see [Operator Conformance Certification](Operator-Conformance-Certification) for the relationship.
 
-**Spec**: `spec/services/NPS-AaaS-Profile.md` (v0.6, Status: Proposed)
-**Depends-On**: NCP v0.6, NWP v0.10, NIP v0.6, NDP v0.6, NOP v0.4
+**Spec**: `spec/services/NPS-AaaS-Profile.md` (v0.7, Status: Proposed)
+**Depends-On**: NCP v0.7, NWP v0.13, NIP v0.9, NDP v0.8, NOP v0.6, token-budget v0.5
 
 ---
 
@@ -23,7 +23,7 @@ Without AaaS, each platform exposes an incompatible API and agents must carry pe
 | Non-standard, unobservable internal orchestration | NOP DAG orchestration + OpenTelemetry tracing |
 | High token overhead for AI accessing traditional DBs | Vector Proxy Layer vectorization middleware |
 | No Agent identity / permission standard | NIP NID identity + scope delegation chain |
-| No service quality guarantees | CGN Token Budget + back-pressure control |
+| No service quality guarantees | CGN-Estimate Token Budget + back-pressure control (CGN-Billing for commercial settlement) |
 
 ---
 
@@ -68,8 +68,8 @@ The AaaS Profile defines three tiers:
 | Level | Name | One-line summary |
 |-------|------|-----------------|
 | **L1** | Basic | Anchor Node + NIP auth + NWM service catalog |
-| **L2** | Standard | L1 + NOP orchestration + OTel tracing + Token Budget + topology queries + reputation policy |
-| **L3** | Advanced | L2 + Vector Proxy Layer + K-of-N fault tolerance + audit log |
+| **L2** | Standard | L1 + NOP orchestration + OTel tracing + CGN-Estimate Token Budget + topology queries + reputation policy |
+| **L3** | Advanced | L2 + Vector Proxy Layer + K-of-N fault tolerance + audit log + CGN-Billing settlement records |
 
 ---
 
@@ -86,7 +86,7 @@ Level 1 is the minimum viable NPS surface. An L1 service can be discovered, auth
 | L1-05 | MUST return NPS standard status codes and error frames | NCP |
 | L1-06 | SHOULD support both HTTP mode and native mode dual transport | NCP |
 
-**Required spec versions at L1**: NCP v0.6, NWP v0.10, NIP v0.6, NDP v0.6.
+**Required spec versions at L1**: NCP v0.7, NWP v0.13, NIP v0.9, NDP v0.8.
 
 **NWM manifest minimum shape**:
 
@@ -113,7 +113,7 @@ Level 2 adds full NOP orchestration, observability, topology queries, and a repu
 |--------|-------------|---------|
 | L2-01 | MUST use NOP TaskFrame for internal task orchestration | NOP |
 | L2-02 | MUST inject OpenTelemetry trace in `TaskFrame.context` | NOP |
-| L2-03 | MUST support CGN Token Budget with `token_est` in responses | CGN |
+| L2-03 | MUST support CGN-Estimate Token Budget with `token_est` in responses (budget / quota / telemetry surface only — not commercial settlement) | CGN-Estimate |
 | L2-04 | MUST support NOP preflight mechanism | NOP |
 | L2-05 | MUST implement NOP retry and timeout semantics | NOP |
 | L2-06 | SHOULD support async Actions (`ActionFrame.async=true`) | NWP |
@@ -149,19 +149,28 @@ Publish this under the `reputation_policy` key in your NWM. See [Operator Reputa
 
 ## Level 3 — Advanced Compliance
 
-Level 3 is currently partially specified. Headline requirements:
+Level 3 adds vectorized data access, K-of-N fault tolerance, audit logging, and — as of
+spec v0.7 — **CGN-Billing** commercial-settlement requirements. Headline requirements:
 
 | Req ID | Requirement | Protocol |
 |--------|-------------|---------|
 | L3-01 | MUST deploy a Vector Proxy Layer for vectorized queries | NWP |
-| L3-02 | MUST support NWP `vector_search` interface (NWP §6.4) | NWP |
+| L3-02 | MUST support NWP `vector_search` interface (NWP §6.4) | NWP §6.4 |
 | L3-03 | MUST implement K-of-N sync fault tolerance (`SyncFrame.min_required`) | NOP |
 | L3-04 | MUST maintain audit logs (NOP §8.3) | NOP |
 | L3-05 | MUST implement scope delegation chain security (max 3 levels) | NIP + NOP |
 | L3-06 | SHOULD support automatic schema discovery (DB schema → AnchorFrame) | NWP |
-| L3-07 | SHOULD support hot vector index updates | Vector Proxy |
+| L3-07 | SHOULD support hot vector index updates (incremental rebuild on data changes) | Vector Proxy |
+| L3-08 | MUST emit **CGN-Billing** records (not generic CGN / CGN-Estimate) for any commercial settlement flow, per token-budget §2.1 / §6.3. Implies `verified_tokenizer`-tier resolution (NIP §5.1), NID-signed metering records, no sampling, no byte-size fallback, and audit-log integration sufficient for dispute / chargeback. The `X-NWP-Tokens-Profile`, `X-NWP-Billing-Record`, and `X-NWP-Billing-Tokenizer-Tier` response headers MUST appear on every billed response. | CGN-Billing + NIP + NPS-RFC-0004 |
 
-**Required spec versions at L3**: same as L2 plus NOP v0.4 with K-of-N sync.
+> **CGN-Estimate vs CGN-Billing (token-budget v0.5).** CGN split into two profiles:
+> **CGN-Estimate** covers budgets / quota / telemetry (sampling and byte-size fallback
+> permitted, ±5 % drift, no signing) and is what L2-03 requires; **CGN-Billing** covers
+> commercial settlement and is what L3-08 requires (verified tokenizer, NID-signed records,
+> no sampling/fallback, audit-log integration, version-pinned exchange-rate table). Absent
+> the `X-NWP-Tokens-Profile` header, a response defaults to CGN-Estimate.
+
+**Required spec versions at L3**: same as L2, plus NOP v0.6 (K-of-N sync) and token-budget v0.5 (CGN-Billing).
 
 ---
 
@@ -180,12 +189,18 @@ Full certification guidance is in [Operator Conformance Certification](Operator-
 
 | Spec | L1 | L2 | L3 |
 |------|----|----|----|
-| NCP | v0.6 | v0.6 | v0.6 |
-| NWP | v0.10 | v0.10 | v0.10 |
-| NIP | v0.6 | v0.6 | v0.6 |
-| NDP | v0.6 | v0.6 | v0.6 |
-| NOP | — | v0.4 | v0.4 |
+| NCP | v0.7 | v0.7 | v0.7 |
+| NWP | v0.13 | v0.13 | v0.13 |
+| NIP | v0.9 | v0.9 | v0.9 |
+| NDP | v0.8 | v0.8 | v0.8 |
+| NOP | — | v0.6 | v0.6 |
+| token-budget | — | v0.5 (CGN-Estimate) | v0.5 (CGN-Estimate + CGN-Billing) |
 | NPS-RFC-0004 | — | Phase 3 (STH gossip) | Phase 3 |
+
+> These are the spec versions the **AaaS Profile v0.7** depends on (its `Depends-On`
+> line). The suite as a whole is at v1.0.0-alpha.13; individual protocol specs have
+> advanced further (e.g. NCP v0.8, NWP v0.14, NIP v0.10, NDP v0.9, NOP v0.7) — the AaaS
+> requirements are pinned to the versions above.
 
 ---
 
@@ -197,5 +212,5 @@ Full certification guidance is in [Operator Conformance Certification](Operator-
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*
 

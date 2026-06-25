@@ -1,8 +1,8 @@
 # Protocol: NDP — Neural Discovery Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
-**Spec**: `spec/NPS-4-NDP.md` v0.6 · **Port**: 17433 (shared) / 17436 (optional dedicated)
+**Spec**: `spec/NPS-4-NDP.md` v0.9 · **Port**: 17433 (shared) / 17436 (optional dedicated)
 
 NDP is DNS for the AI era. Where DNS maps human-readable domain names to IP addresses, NDP maps NPS identities to physical endpoints and capability profiles — without a central registry. Nodes announce their own presence and capabilities; resolvers cache those announcements with a TTL. Agents discover nodes by querying the local registry, DNS TXT records, or the NPS Cloud Registry, in that priority order.
 
@@ -73,7 +73,10 @@ A Node or Agent broadcasts its presence and capabilities. Receivers cache the an
 | `activation_endpoint` | object | Push target for `resident` / `hybrid` publishers; same shape as `addresses[]` entry. REQUIRED when `activation_mode` is `resident` or `hybrid` |
 | `cluster_anchor` | string (NID) | For non-Anchor nodes joining a cluster: identifies the Anchor Node they register with. Absent for standalone nodes and Anchor Nodes themselves. (NPS-CR-0001) |
 | `bridge_protocols` | array of strings | For Bridge Nodes: supported external protocols (see Bridge Node section). MUST be absent for non-Bridge nodes. (NPS-CR-0001) |
-| `spawn_spec_ref` | string | Opaque reference for constructing an Agent process on demand (ephemeral/hybrid cold start; standardized at NPS-Node Profile L3) |
+| `heartbeat_interval_ms` | uint32 | How often this node re-announces itself (milliseconds); default `60000` (`0` = disabled). Receivers SHOULD treat the node as offline if no AnnounceFrame arrives within 3× this interval — see staleness below (NDP v0.9) |
+| `spawn_spec_ref` | string ref → SpawnSpec | Reference the publishing daemon resolves to a structured **SpawnSpec** object (OCI image + command + resource_limits) for constructing an Agent process on demand (ephemeral/hybrid cold start; Profile L3). The type changed from a plain URI string to a structured schema object in NDP v0.9 — see SpawnSpec Schema below |
+| `health` | string | Publisher liveness self-report (NDP v0.9): `"healthy"` / `"degraded"` / `"draining"`. Absent ⇒ `"healthy"`. `"draining"` signals shutdown — SHOULD NOT receive new traffic |
+| `last_seen` | string | ISO 8601 UTC liveness beat (NDP v0.9). When present, a Registry uses `last_seen + ttl` (not `timestamp + ttl`) as the resolve-time freshness deadline |
 | `signature` | string | Ed25519 signature with the publisher's IdentFrame private key — prevents announcement forgery |
 
 ### node_roles Field (renamed from node_kind in NDP v0.6)
@@ -97,6 +100,24 @@ The legacy value `"gateway"` was removed in v1.0-alpha.3 (NPS-CR-0001). Parsers 
 | `hybrid` | Attempt push to `activation_endpoint` first; fall back to inbox if unreachable within wake budget | Publisher wakes from hibernation on first frame; push target resumes once awake |
 
 Backward compatibility: NPS v1.0-alpha.2 publishers did not emit `activation_mode`. Receivers MUST treat an absent field as `ephemeral`. A receiver MUST NOT reject an `AnnounceFrame` solely for lacking this field.
+
+### Heartbeat and Announce Staleness (NDP v0.9)
+
+`heartbeat_interval_ms` (uint32, default `60000`, `0` = disabled) declares how often a node re-announces itself. Receivers SHOULD treat a node as offline once `3× heartbeat_interval_ms` has elapsed with no fresh AnnounceFrame, returning `NDP-ANNOUNCE-STALE` (mapped to `NPS-CLIENT-NOT-FOUND`) for that NID.
+
+This announce-time staleness is distinct from resolve-time staleness: a Registry also computes a freshness deadline of `(last_seen ?? timestamp) + ttl` per entry and returns `NDP-RESOLVE-STALE` rather than serve an expired endpoint. The resolved object SHOULD echo the entry's `health` so callers can avoid a `draining` node even while it is still within TTL.
+
+### SpawnSpec Schema (resolved form of spawn_spec_ref, NDP v0.9)
+
+In NDP v0.9 the `spawn_spec_ref` type changed from a plain URI string to a structured **SpawnSpec** schema object describing how an ephemeral Agent node is instantiated on demand (Profile L3). Resolution rules (inline `spawnspec:` base64url-JSON data URI or an `https://`/`nwp://` URL) are standardized by NPS-CR-0007 §5.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `oci_image` | string | yes | OCI container image reference, e.g. `"registry.example.com/my-agent:v1.2"` |
+| `command` | array[string] | no | Command override (Docker `CMD` equivalent) |
+| `resource_limits` | object | no | Resource constraints: `cpu_millicores` (uint32) and `memory_mb` (uint32) |
+
+Only relevant at Profile L3 (spawn-capable registries). Nodes at L1/L2 MAY include it; L1/L2 receivers SHOULD ignore it.
 
 ### Bridge Node: bridge_protocols (NPS-CR-0001)
 
@@ -129,9 +150,27 @@ Resolves an `nwp://` URL to a physical endpoint. The request carries the `target
 
 If the target cannot be resolved across all available modes, the resolver returns `NDP-RESOLVE-NOT-FOUND`. If multiple registries return conflicting results, `NDP-RESOLVE-AMBIGUOUS` is returned.
 
-### GraphFrame (0x32)
+### GraphFrame (0x32) — §5 Topology Snapshot
 
-Topology synchronization between NDP registries. Used for registry-to-registry gossip and change subscriptions. Carries a `seq` (monotonically increasing graph version), and either a full `nodes` array (`initial_sync: true`) or a JSON Patch (`initial_sync: false`) for incremental updates. The `seq` must be contiguous; gaps return `NDP-GRAPH-SEQ-GAP`.
+In NDP v0.8 the GraphFrame was rewritten to a **topology-snapshot** format with explicit node and edge lists, replacing the prior `initial_sync` / `patch` / `seq` scheme. It carries a full or partial topology snapshot for registry-to-registry gossip and change subscriptions.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `graph_id` | string | yes | Opaque identifier for this snapshot (UUID v4 or stable registry key) |
+| `nodes` | array | yes | Array of `NdpGraphNode` objects; **maximum 256** |
+| `edges` | array | yes | Array of `NdpGraphEdge` objects; **maximum 1024** |
+| `ttl` | uint32 | no | Seconds this snapshot is considered fresh; default `60` |
+| `metadata` | object | no | Arbitrary key-value metadata attached to this snapshot |
+
+**NdpGraphNode:** `nid` (string, required), `cluster_anchor` (string NID, optional), `node_roles` (array[string], optional — same vocabulary as AnnounceFrame).
+
+**NdpGraphEdge:** `from_nid` (string, required), `to_nid` (string, required), `latency_ms` (uint32, optional), `protocol` (string, optional — `"tcp"` / `"quic"` / `"http"`).
+
+**Validation:**
+- `nodes.length` > 256 or `edges.length` > 1024 → `NDP-GRAPH-TOO-LARGE`.
+- Every `from_nid` / `to_nid` MUST appear in `nodes`, and no self-edge (`from_nid == to_nid`) → otherwise `NDP-GRAPH-INVALID`.
+
+The legacy `NDP-GRAPH-SEQ-GAP` error remains defined for the older contiguous-sequence semantics.
 
 ---
 
@@ -163,6 +202,41 @@ In other words: NDP feeds topology data into the Anchor Node; NWP §12 is how cl
 
 ---
 
+## Registry Security Profiles (NDP v0.8)
+
+Every NDP Registry deployment MUST declare exactly one of three security profiles. The profile is configuration of the Registry (not of any AnnounceFrame): it determines which AnnounceFrames the Registry accepts, retains, and serves. Implementations MUST refuse to start without an explicit profile (no implicit default).
+
+| Profile | Issuer allowlist | CA-attested NID | Replay window | Federation |
+|---------|------------------|-----------------|---------------|------------|
+| `local-dev` (LOCAL_DEV) | not enforced | not required | `0` (replay defense disabled) | not allowed |
+| `org-private` (ORG_PRIVATE) | required (set of CA fingerprints) | SHOULD | `300s` | not allowed |
+| `public-federated` (PUBLIC_FEDERATED) | enforced via CA trust chain | MUST | `300s` | allowed (bilateral trust agreement) |
+
+- **`local-dev`**: single-host / single-developer only; MUST refuse to start on a non-loopback interface without a logged operator override. Not for any traffic-bearing service.
+- **`org-private`**: a single organization's intranet registry; non-allowlisted signing chains rejected with `NDP-ISSUER-NOT-ALLOWED`; absent-but-required CA-attested NID rejected with `NDP-CA-ATTEST-REQUIRED`. Federation disabled.
+- **`public-federated`**: public-internet registries (e.g. NPS Cloud); CA-attested NID MUST be required; federation MAY be enabled.
+
+---
+
+## Federation Forwarding (NDP §9, v0.8)
+
+Only a `public-federated` registry forwards AnnounceFrames across federation links. When such a registry receives an AnnounceFrame from a peer registry it MUST:
+
+1. Forward the frame to its own subscribers, appending its forwarding NID to the `ndp-forwarded-by` request header (comma-separated list of NIDs).
+2. Drop the frame and return `NDP-FEDERATION-LOOP` if its own NID already appears in `ndp-forwarded-by` (loop detection).
+3. Drop the frame silently if the hop count (length of `ndp-forwarded-by`) exceeds **3** hops.
+
+`local-dev` and `org-private` registries MUST NOT forward AnnounceFrames; they MAY log a warning if a forwarded frame arrives.
+
+**`ndp-forwarded-by` header format** — comma-separated NPS NIDs, one entry per hop:
+```
+ndp-forwarded-by: urn:nps:agent:registry-a.example.com:r1, urn:nps:agent:registry-b.example.com:r2
+```
+
+The `nps-ledger` daemon mirrors this loop-detection scheme on `POST /v1/log/federation/push` via the `X-NPS-Forwarded-By` header (same max 3 hops, same `NDP-FEDERATION-LOOP`).
+
+---
+
 ## Error Codes
 
 | Error Code | NPS Status | Description |
@@ -170,13 +244,22 @@ In other words: NDP feeds topology data into the Anchor Node; NWP §12 is how cl
 | `NDP-RESOLVE-NOT-FOUND` | `NPS-CLIENT-NOT-FOUND` | `nwp://` address could not be resolved across any available mode |
 | `NDP-RESOLVE-AMBIGUOUS` | `NPS-CLIENT-CONFLICT` | Conflicting resolution results from multiple registries |
 | `NDP-RESOLVE-TIMEOUT` | `NPS-SERVER-TIMEOUT` | Resolution request timed out |
+| `NDP-RESOLVE-STALE` | `NPS-CLIENT-NOT-FOUND` | Resolved entry's freshness deadline `(last_seen ?? timestamp) + ttl` is in the past; stale registration MUST NOT be served (NDP v0.9) |
 | `NDP-ANNOUNCE-SIGNATURE-INVALID` | `NPS-AUTH-UNAUTHENTICATED` | AnnounceFrame signature verification failed |
 | `NDP-ANNOUNCE-NID-MISMATCH` | `NPS-CLIENT-BAD-FRAME` | NID in AnnounceFrame does not match the signing certificate |
 | `NDP-ANNOUNCE-ROLE-REMOVED` | `NPS-CLIENT-BAD-FRAME` | `node_roles` contains the retired `"gateway"` value (NPS-CR-0001); response SHOULD include a `hint` pointing to NPS-CR-0001 |
 | `NDP-ANNOUNCE-ROLE-UNKNOWN` | `NPS-CLIENT-BAD-FRAME` | `node_roles` contains an unrecognized value |
+| `NDP-ANNOUNCE-STALE` | `NPS-CLIENT-NOT-FOUND` | AnnounceFrame heartbeat has expired (3× `heartbeat_interval_ms` elapsed with no re-announce) (NDP v0.9) |
+| `NDP-ANNOUNCE-CONFLICT` | `NPS-CLIENT-CONFLICT` | Two AnnounceFrames share the same `nid` and `graph_seq` but differ in content (registry poisoning attempt) (NDP v0.7) |
+| `NDP-GRAPH-SEQ-ROLLBACK` | `NPS-CLIENT-BAD-FRAME` | AnnounceFrame `graph_seq` ≤ the last accepted value for this NID (rollback attempt) (NDP v0.7) |
 | `NDP-GRAPH-SEQ-GAP` | `NPS-STREAM-SEQ-GAP` | GraphFrame sequence numbers are not contiguous |
+| `NDP-GRAPH-TOO-LARGE` | `NPS-CLIENT-BAD-FRAME` | GraphFrame `nodes` > 256 or `edges` > 1024 (NDP v0.8) |
+| `NDP-GRAPH-INVALID` | `NPS-CLIENT-BAD-FRAME` | GraphFrame edge references a NID not in the nodes list, or a self-edge was detected (NDP v0.8) |
+| `NDP-ISSUER-NOT-ALLOWED` | `NPS-AUTH-FORBIDDEN` | AnnounceFrame issuer (signing CA) is not in the active registry profile's issuer allowlist (NDP v0.7) |
+| `NDP-CA-ATTEST-REQUIRED` | `NPS-AUTH-UNAUTHENTICATED` | Active registry profile requires a CA-attested NID and the certificate chain does not anchor in the configured trust roots (NDP v0.7) |
+| `NDP-FEDERATION-LOOP` | `NPS-CLIENT-CONFLICT` | AnnounceFrame already carries the receiving registry's NID in `ndp-forwarded-by`, or hop count exceeds 3 (NDP v0.8 §9) |
 | `NDP-REGISTRY-UNAVAILABLE` | `NPS-SERVER-UNAVAILABLE` | NDP Registry temporarily unavailable |
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

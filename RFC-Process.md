@@ -1,6 +1,6 @@
 # RFC Process
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 An RFC (Request for Comments) is the formal mechanism for proposing and deciding non-trivial changes to the NPS suite. The source documents live in `spec/rfcs/` inside the NPS-Dev monorepo.
 
@@ -171,7 +171,9 @@ Once merged to `dev` with `Status: Accepted`, implementation work can start in a
 
 ### RFC-0002 — Adopt X.509 + ACME for NID certificates (long-running EXPERIMENTAL)
 
-This RFC is in a deliberately extended `Proposed` / EXPERIMENTAL state because one of its normative requirements — assigning a private OID for the `nid-assurance-level` X.509 extension — depends on receipt of an IANA Private Enterprise Number (PEN). Until the PEN is received, the RFC uses a provisional OID (`1.3.6.1.4.1.99999.1`) and carries an EXPERIMENTAL gate in the spec text.
+This RFC spent a deliberately extended period in a `Proposed` / EXPERIMENTAL state because one of its normative requirements — assigning a private OID for the `nid-assurance-level` X.509 extension — depended on receipt of an IANA Private Enterprise Number (PEN). While the PEN was pending, the RFC used a provisional OID (`1.3.6.1.4.1.99999.1`) and carried an EXPERIMENTAL gate in the spec text.
+
+**The dependency has since resolved:** IANA **PEN 65715** was assigned 2026-05-08. CR-0004 wired it in — all NPS X.509 OIDs now anchor to `1.3.6.1.4.1.65715`, replacing the provisional `1.3.6.1.4.1.99999` arc. Certificates issued under the old arc MUST be revoked and re-issued.
 
 **Lesson for multi-dependency RFCs:** gate the provisional behavior explicitly in the spec text so operators know exactly when the behavior will stabilize. Track the external dependency (the IANA PEN submission) in an open issue linked from the RFC's §10 Open Questions. Do not block other work on the external dependency; mark the gated sections clearly and move on.
 
@@ -191,6 +193,34 @@ This RFC introduced an append-only, Certificate-Transparency-style audit log for
 
 ---
 
+### RFC-0005 — Reputation Policy Enforcement
+
+This RFC builds on RFC-0004's reputation log by defining how reputation signals are *enforced* as policy (rather than merely recorded). It governs how nodes consult the append-only reputation log when making trust decisions.
+
+**Lesson:** RFC-0005 illustrates the natural progression from an observability primitive (RFC-0004's CT-style log) to a policy layer that consumes it — a follow-on RFC referencing the §11 Future Work of its predecessor.
+
+---
+
+### RFC-0006 — NCP native-mode transport (Draft)
+
+**Status: Draft.** This RFC specifies NCP's native (non-HTTP) transport: TCP length-prefix framing with the `NcpNativeClient` / `NcpServer` / `NcpSession` surface (the .NET reference implementation landed in alpha.11). It pairs with RFC-0001's connection preamble, which every native-mode client MUST send before its first `HelloFrame`.
+
+**Lesson:** A `Draft` RFC can still have reference-implementation work underway behind the feature flag (per the Phase 1 exit criterion) while the wire spec is finalized.
+
+---
+
+## Current RFCs at a Glance
+
+| RFC | Title | Status |
+|-----|-------|--------|
+| RFC-0001 | NCP connection preamble | Active |
+| RFC-0002 | X.509 + ACME for NID certificates | Active (PEN 65715 assigned; provisional OID retired via CR-0004) |
+| RFC-0004 | NID reputation log | Active |
+| RFC-0005 | Reputation Policy Enforcement | Active |
+| RFC-0006 | NCP native-mode transport | Draft |
+
+---
+
 ## Related Pages
 
 - [CR Process](CR-Process) — lightweight pre-1.0 change mechanism
@@ -198,4 +228,4 @@ This RFC introduced an append-only, Certificate-Transparency-style audit log for
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

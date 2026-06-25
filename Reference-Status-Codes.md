@@ -1,6 +1,6 @@
 # Reference: Status Codes
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 NPS status codes are the **coarse classification layer** of the two-level error system. Where protocol error codes (e.g. `NCP-ANCHOR-NOT-FOUND`) tell you exactly what went wrong, status codes group errors into broad transport-visible categories used for retry logic, HTTP mapping in overlay mode, and SDK-level error classification.
 
@@ -64,6 +64,8 @@ These indicate a problem with the request itself — bad framing, missing resour
 | `NPS-CLIENT-CONFLICT` | 409 | Resource state conflict (duplicate key, stale anchor, task already in terminal state) |
 | `NPS-CLIENT-GONE` | 410 | Resource permanently removed |
 | `NPS-CLIENT-UNPROCESSABLE` | 422 | Request is syntactically valid but semantically unprocessable |
+
+> **Spec note (alpha.13).** Two status codes referenced by alpha.6–alpha.13 error codes are not yet rows in the authoritative `spec/status-codes.md` (v0.4): `NPS-CLIENT-RATE-LIMITED` (used by `NWP-REPUTATION-THROTTLED`; cf. `NPS-LIMIT-RATE`) and `NPS-CLIENT-REQUEST-TOO-LARGE` (used by `NWP-CGN-LIMIT-EXCEEDED`). The error-code mappings follow `spec/error-codes.md`; the status-code table will be reconciled upstream.
 
 ---
 
@@ -149,4 +151,4 @@ The `status` field carries the NPS status code (coarse). The `error` field carri
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

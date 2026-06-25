@@ -1,6 +1,6 @@
 # SDK Quickstart
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
@@ -22,16 +22,20 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 
 | Language | Install command | Current pin |
 |----------|-----------------|-------------|
-| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.5.2` | `1.0.0-alpha.5.2` |
-| Python | `pip install nps-lib==1.0.0a5.2` | `1.0.0a5.2` |
-| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.5.2` | `1.0.0-alpha.5.2` |
-| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.5.2")` | `1.0.0-alpha.5.2` |
-| Rust | `nps-sdk = "=1.0.0-alpha.5.2"` | `=1.0.0-alpha.5.2` (exact pin) |
-| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.5.2` | `v1.0.0-alpha.5.2` |
+| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.13` | `1.0.0-alpha.13` |
+| Python | `pip install nps-lib==1.0.0a13` | `1.0.0a13` |
+| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.13` | `1.0.0-alpha.13` |
+| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.13")` | `1.0.0-alpha.13` |
+| Rust | `nps-sdk = "=1.0.0-alpha.13"` | `=1.0.0-alpha.13` (exact pin) |
+| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.13` | `v1.0.0-alpha.13` |
 
 > **Python package name:** The PyPI distribution name is `nps-lib` (not `nps-sdk` — that name is taken by an unrelated package). The Python import namespace is `nps_sdk`.
 
 > **Rust pinning:** Use the `=` prefix for alpha releases to prevent Cargo from silently upgrading to a later alpha.
+
+> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.13`. Pin the explicit version above for reproducible builds.
+
+> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 supersedes it with `MessagePack 3.1.7`; pin to `1.0.0-alpha.13`.
 
 ---
 
@@ -146,11 +150,25 @@ Tier-1 JSON is convenient for debugging but produces roughly 2.5× more bytes th
 
 ### Ignoring the `AssuranceLevel` empty-string case
 
-`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.5.2`.
+`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.13`.
 
 ### Mixing suite versions
 
 All NuGet/PyPI/npm/Maven/crates.io packages within the same language SDK are versioned together. Using `LabAcacia.NPS.Core 1.0.0-alpha.5` alongside `LabAcacia.NPS.NWP 1.0.0-alpha.5.2` is unsupported. Pin the whole suite to one version tag.
+
+---
+
+## What's in the alpha.13 SDK feature set
+
+All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the same alpha.13 protocol surface:
+
+- **NCP** — `NopFrame` (0x07) zero-payload keepalive/heartbeat; `HelloFrame.ping_interval_ms` (uint32, 0 = disabled; dead-peer threshold = 3 × interval).
+- **NIP** — `IdentFrame.node_roles` (self-declared node-role tags, excluded from the Ed25519-signed payload).
+- **NDP** — `AnnounceFrame.spawn_spec_ref` as a structured schema object (was a URI string); `AnnounceFrame.heartbeat_interval_ms` (uint32, default 60000 ms, 0 = disabled).
+- **NOP** — `TaskFrame.result_ttl_seconds` (uint32, default 3600 s, omitted from wire at default).
+- **NWP** — `X-NWM-Version` HTTP response header; NWM `manifest_version` (uint32 monotonic counter) and `manifest_updated_at` (ISO 8601).
+- `ReputationLogClient` (CT-style reputation log, dual Ed25519 signatures) has been available across all six SDKs since **alpha.7**.
+- The .NET SDK additionally ships NCP **native-mode transport** (`NcpNativeClient` / `NcpServer` / `NcpSession`) since **alpha.11**.
 
 ---
 
@@ -163,4 +181,4 @@ All NuGet/PyPI/npm/Maven/crates.io packages within the same language SDK are ver
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

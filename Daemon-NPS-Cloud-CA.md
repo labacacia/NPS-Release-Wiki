@@ -1,6 +1,6 @@
 # Daemon: nps-cloud-ca
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** NPS Cloud subscribers and operators
 > **Distribution note:** `innolotus/nps-cloud-ca` is a **private** repository. This page documents only the protocol-visible interface. Internal product and billing details are in the private repo.
@@ -10,7 +10,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-cloud-ca/`
 - **Distribution:** `innolotus/nps-cloud-ca` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `innolotus/nps-cloud-ca:1.0.0-alpha.5.2` (private registry)
+- **Docker image:** `innolotus/nps-cloud-ca:1.0.0-alpha.13` (private registry)
 - **Default port:** `:17435` (NIP optional-dedicated per NPS-3 §1)
 - **Layer:** L3
 - **Timeline:** Ships publicly with NPS Cloud GA, planned 2027 Q1+
@@ -32,11 +32,11 @@
 
 ---
 
-## Implementation status (alpha.5)
+## Implementation status (alpha.13)
 
 The current release is a **Phase 1 deferral skeleton**. The URL surface is present but all issuance endpoints return `NIP-CA-NOT-READY` (HTTP 503) with a pointer to the OSS CA so callers fail informatively. The process name, port, and Docker image tag are stable from alpha.3 to lock in the deployment surface.
 
-The daemon's own X.509 and ACME pipeline is planned for alpha.4 alongside NPS-RFC-0002.
+The daemon's own X.509 and ACME pipeline remains planned for a future release alongside NPS-RFC-0002.
 
 ---
 
@@ -51,8 +51,20 @@ These endpoints define the public protocol surface. Internal product behaviour (
 | `GET` | `/v1/nid/{nid}/status` | Query the status of a NID (active / revoked / expired). Returns the current `IdentFrame` metadata. |
 | `GET` | `/v1/crl` | Certificate Revocation List for all NIDs issued by this CA instance. |
 | `GET` | `/v1/ocsp` | OCSP responder endpoint. |
+| `POST` | `/v1/orchestrators/groups/{group}/register` | CR-0003: register an orchestrator group; mints a `group-`-prefixed NID. |
+| `DELETE` | `/v1/orchestrators/groups/{group}/revoke` | CR-0003: revoke a group NID (cascades to children via `parent_revoked`). |
+| `POST` | `/v1/orchestrators/groups/{group}/sessions/issue` | CR-0003: issue a `session-`-prefixed NID under a group, recording `lineage`. |
+| `GET` | `/v1/orchestrators/groups/{group}/sessions` | CR-0003: list active session NIDs for a group. |
 | `GET` | `/.well-known/nps-ca` | CA discovery document (NID, public key, policy URL). |
-| `GET` | `/health` | Standard NPS health envelope. |
+| `GET` | `/health` | Standard NPS health envelope (legacy). |
+| `GET` | `/healthz` | Kubernetes-style liveness probe (added alpha.6+). |
+| `GET` | `/readyz` | Kubernetes-style readiness probe (added alpha.6+). |
+
+> **CR-0005 RA model:** registration may flow through a Registration Authority — bootstrap tokens admit a node into a pending-registration queue that an operator approves before issuance. See [Daemon NIP-CA-Server](Daemon-NIP-CA-Server) for the shared RA mechanics.
+
+> **IANA PEN 65715:** all NPS X.509 OIDs anchor to the IANA-assigned arc `1.3.6.1.4.1.65715` (CR-0004, assigned 2026-05-08), replacing the provisional `1.3.6.1.4.1.99999` arc. Issued certificates carry `id-nps-node-roles` (`65715.2.2`) and `id-nps-capabilities` (`65715.2.3`); `IdentFrame.ocsp_staple` (base64url DER OCSP) is supported.
+
+> **Metrics port:** `/metrics` is exposed on the **management port 17436**, never on the public CA port 17435.
 
 ---
 
@@ -62,7 +74,7 @@ These endpoints define the public protocol surface. Internal product behaviour (
 {
   "status": "ok",
   "daemon": "nps-cloud-ca",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "layer": 3,
   "role": "NPS Cloud NID Certificate Authority",
   "port": 17435
@@ -77,8 +89,11 @@ During the Phase 1 skeleton period, the health endpoint returns `200 ok` while i
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `NPSCLOUDCA_PORT` | `17435` | TCP port to bind. NIP optional-dedicated per NPS-3 §1. |
+| `NPSCLOUDCA_PORT` | `17435` | Public CA port to bind. NIP optional-dedicated per NPS-3 §1. Does **not** expose `/metrics`. |
+| `NPSCLOUDCA_MGMT_PORT` | `17436` | Management port. Hosts `/metrics` (and operational probes) separately from the public CA port. |
 | `NPSCLOUDCA_HOST` | `0.0.0.0` | Bind address. |
+
+On `SIGTERM` the daemon performs a graceful shutdown with a 30 s drain window before exiting.
 
 Full configuration (tenant database, billing integration, CA key management) is documented in the private `innolotus/nps-cloud-ca` repository.
 
@@ -92,4 +107,4 @@ Full configuration (tenant database, billing integration, CA key management) is 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

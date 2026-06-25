@@ -1,10 +1,17 @@
 # Operator Daemons Reference
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
+> **Status:** ✅ Content complete — v1.0.0-alpha.13
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/nps-daemons` bundle; two additional daemons are private to the NPS Cloud platform.
+
+> **Operational endpoints (alpha.6+).** **npsd** and **nip-ca-server** expose `GET /healthz`
+> (liveness), `GET /readyz` (readiness), and `GET /metrics` (Prometheus format) alongside the
+> legacy `GET /health`. On `SIGTERM` they perform a graceful drain (default 30 s) before exit.
+> **nip-ca-server** serves `/metrics` on its **management port `17436`** — the public CA port
+> `17435` no longer exposes `/metrics`. The bundle ships `deploy/docker-compose/`,
+> `deploy/systemd/`, and a `Makefile` (`up` / `down` / `install-systemd`).
 
 ---
 
@@ -25,7 +32,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 - Generates and persists the host's root Ed25519 keypair on first start (`root.ed25519.pkcs8`, mode `0600`). This satisfies Node-Profile L1 conformance case `TC-N1-NIP-01`.
 - Issues **sub-NIDs** for agents hosted on this machine, signed with the root key. Sub-NID records are stored in a SQLite database.
 - Maintains a **per-NID inbox queue** with long-poll, ack, priority, TTL, and depth caps.
-- Serves `GET /.nwm` (daemon-self Neural Web Manifest) and `GET /health`.
+- Serves `GET /.nwm` (daemon-self Neural Web Manifest), `GET /health`, plus `GET /healthz`, `GET /readyz`, and `GET /metrics` (alpha.6+).
 
 ### Required environment variables
 
@@ -46,7 +53,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "layer": "L1",
   "role": "node",
   "port": 17433,
@@ -69,7 +76,10 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 | `DELETE` | `/v1/inbox/{nid}/{message_id}` | Ack and remove a message. Idempotent. |
 | `GET` | `/v1/inbox/{nid}/depth` | Current pending message count. |
 | `GET` | `/.nwm` | Daemon-self Neural Web Manifest. |
-| `GET` | `/health` | Liveness probe. |
+| `GET` | `/health` | Liveness probe (legacy shape). |
+| `GET` | `/healthz` | Kubernetes-style liveness probe. |
+| `GET` | `/readyz` | Readiness probe (accepting traffic). |
+| `GET` | `/metrics` | Prometheus-format metrics. |
 
 ### Scaling
 
@@ -97,6 +107,17 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 `nps-runner` is the task scheduler and FaaS runtime. It watches the local npsd inbox for JSON spawn-spec messages, spawns worker subprocesses on demand, and manages their full lifecycle — stdout/stderr capture, idle timeout, max-runtime deadline, concurrency cap, and completion notifications. It does not bind a server port; all communication is outbound to npsd.
 
 Typical ratio: **1 npsd : N runners** (N = number of machines or worker pools).
+
+### NOP L3 runtime lease (CR-0007)
+
+Since alpha.13, nps-runner implements the **NOP L3 runtime integration** lease protocol
+([NPS-CR-0007](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md)).
+A runner claims a `TaskFrame` from the inbox, takes an exclusive **lease** on it, and renews
+the lease while executing; a concurrent claim on a leased task returns `NOP-CLAIM-CONFLICT`
+(HTTP 409). On lease expiry another runner may re-claim, and already-terminal DAG nodes are
+not re-executed (`dedup_key` match). The current reference build ships this as a **NOP L3
+lease** integration; see the [NPS-Node-L3 conformance suite](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L3.md)
+(`TC-N3-Claim-*`, `TC-N3-Spawn-*`, `TC-N3-Life-*`).
 
 ### Required environment variables
 
@@ -149,11 +170,11 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 
 `nps-gateway` is the public-facing NPS Internet ingress. It terminates NCP HTTP-mode traffic from the Internet and routes it upstream to the local `npsd`. When fully implemented, it handles TLS termination, rate limiting, NeuronHub-customer authentication, CGN debit triggering, and NPS-RFC-0004 reputation checks.
 
-> **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-gateway` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring is in progress as of alpha.5.
+> **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-gateway` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring remains in progress as of alpha.13.
 
-### Current status (alpha.5)
+### Current status (alpha.13)
 
-Phase 1 skeleton: public-facing HTTP listener with `/health`. Real ingress logic (TLS termination, rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is being phased in at alpha.5+. The deployment surface (process name, Docker image tag) is stable.
+Phase 1 skeleton: public-facing HTTP listener with `/health`. Real ingress logic (TLS termination, rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in as of alpha.13. The deployment surface (process name, Docker image tag) is stable.
 
 ### Required environment variables
 
@@ -172,7 +193,7 @@ The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or 
 {
   "status": "ok",
   "daemon": "nps-gateway",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "uptime_s": 120
 }
 ```
@@ -220,7 +241,7 @@ By default, `nps-registry` runs with an ephemeral in-memory store. Set `NPSREGIS
 {
   "status": "ok",
   "daemon": "nps-registry",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "storage": "sqlite",
   "seq": 17,
   "uptime_s": 3600
@@ -254,6 +275,7 @@ Run one `nps-registry` instance per cluster, fronted by an internal load balance
 | 1 | alpha.3 | HTTP API: `POST /v1/log/entries` (submit) + `GET /v1/log/entries` (query). No Merkle proofs. |
 | 2 | alpha.4 | RFC 9162 Merkle tree, operator-signed STH (`GET /v1/log/sth`), inclusion proofs (`GET /v1/log/proof?seq=N`). Operator keypair generated on first boot at `${NPSLEDGER_DATA_DIR}/operator.ed25519.pkcs8`. |
 | 3 | alpha.5 | STH Gossip Protocol. `GET /v1/log/gossip/sth` returns `own_sth` + `peer_sths`. Background gossip push-pull cycle with fork detection. |
+| — | alpha.11 | Federation push: `POST /v1/log/federation/push` — batch reputation-entry push between federated registries with `X-NPS-Forwarded-By` loop detection (NDP §9, max 3 hops, `NDP-FEDERATION-LOOP`). |
 
 ### Required environment variables
 
@@ -273,7 +295,7 @@ Run one `nps-registry` instance per cluster, fronted by an internal load balance
 {
   "status": "ok",
   "daemon": "nps-ledger",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "phase": 3,
   "storage": "sqlite",
   "log_id": "urn:nps:log:operator-a1b2c3d4e5f6g7h8",
@@ -307,7 +329,7 @@ For full operating instructions, see [Operator Reputation Log](Operator-Reputati
 
 | Property | Value |
 |----------|-------|
-| **Port** | `17435` (default via Docker Compose) |
+| **Port** | `17435` (public CA, default via Docker Compose); `17436` (management — `/metrics`, `/healthz`, `/readyz`) |
 | **Distribution** | `labacacia/nip-ca-server` (PUBLIC) |
 | **Repository** | [github.com/labacacia/nip-ca-server](https://github.com/labacacia/nip-ca-server) |
 | **Docker image** | `ghcr.io/labacacia/nip-ca-server:{suite_version}` |
@@ -351,7 +373,13 @@ For full operating instructions, see [Operator Reputation Log](Operator-Reputati
 | `GET` | `/v1/ca/cert` | CA public key |
 | `GET` | `/v1/crl` | Certificate Revocation List |
 | `GET` | `/.well-known/nps-ca` | CA discovery document |
-| `GET` | `/health` | Liveness probe |
+| `GET` | `/health` | Liveness probe (legacy shape, public CA port) |
+
+> **Management port (alpha.6+).** `nip-ca-server` exposes `GET /healthz`, `GET /readyz`,
+> and `GET /metrics` (Prometheus format) on its **management port `17436`**. The public CA
+> port `17435` no longer serves `/metrics`. Keep `17436` off the public Internet (bind it to
+> an internal interface or restrict it via firewall). On `SIGTERM` the server drains
+> in-flight requests for up to 30 s before exiting.
 
 Write endpoints require `Authorization: Bearer <token>` when `NIPCA__OPERATORAPIKEY` is set.
 
@@ -373,6 +401,40 @@ curl http://localhost:17435/health
 
 ---
 
+## nps-probe — Conformance CLI
+
+| Property | Value |
+|----------|-------|
+| **Type** | Command-line tool (no long-running port) |
+| **Version** | v0.2 |
+| **Distribution** | `labacacia/nps-daemons` tooling (PUBLIC) |
+
+### Purpose
+
+`nps-probe` is the conformance / smoke-test CLI for NPS deployments. It drives an
+implementation under test as a paired peer and runs a battery of checks against the
+expected NPS surface (handshake, identity, discovery, inbox, and — as of v0.2 — NWM
+`trust_anchors` validation as **Check 5**). Use it to validate a freshly stood-up
+cluster or as part of CI before claiming a conformance level. For the full
+self-attestation flow see [Operator Conformance Certification](Operator-Conformance-Certification).
+
+---
+
+## NPS-NWP-Manager — Cluster Manifest Manager (stub)
+
+| Property | Value |
+|----------|-------|
+| **Version** | v0.1 (stub) |
+| **Distribution** | preview |
+
+### Purpose
+
+`NPS-NWP-Manager` is an early v0.1 **stub** for centralized management of NWP/NWM
+cluster manifests. The current build exposes only `GET /health` and `GET /v1/nodes`;
+it is a preview surface and not yet a production component.
+
+---
+
 ## See also
 
 - [Operator Quickstart: Daemon Bundle](Operator-Quickstart-Bundle) — getting the four OSS daemons running end-to-end
@@ -381,5 +443,5 @@ curl http://localhost:17435/health
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*
 

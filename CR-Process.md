@@ -1,6 +1,6 @@
 # CR (Change Request) Process
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 A Change Request (CR) is the lightweight design artifact used during the **pre-1.0** phase of the NPS suite to record the intent, motivation, and shape of a specification or implementation change before (or alongside) the code that lands it. The source documents live in `spec/cr/` inside NPS-Dev.
 
@@ -140,6 +140,38 @@ The removal commitment is binding. If removal slips, a new CR entry must be file
 
 ---
 
+### CR-0006 — NWP SubscribeFrame
+
+**What it changed:** Formalized NWP `SubscribeFrame` as §13 of the NWP spec — a `subscription_id` (UUID v4), a QueryFrame-compatible filter, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` for lossless resume. It also promoted the `topology:subscribe` capability from SHOULD to MUST in the authorization model (NWP §12.4) and standardized the `bridge_target` schema (`protocol`, `endpoint`, `headers`).
+
+**Relation to CR-0002:** CR-0002 reserved the `topology.stream` query subtype; CR-0006 specifies the concrete frame and subscription lifecycle that delivers that stream.
+
+**Status:** Accepted 2026-05-28. Landed in NWP v0.13.
+
+---
+
+### CR-0007 — NOP L3 runtime integration
+
+**What it changed:** Integrated the NOP L3 runtime with the `nps-runner` daemon via a task lease, so orchestrated NOP tasks can be executed by a runtime lease holder.
+
+**Status:** Implemented (NOP v0.7 / `nps-runner`).
+
+---
+
+## Current CRs at a Glance
+
+| CR | Title | Status |
+|----|-------|--------|
+| CR-0001 | Gateway Node → Anchor + Bridge Node | Implemented (alpha.3) |
+| CR-0002 | Standard topology query types | Implemented (alpha.4) |
+| CR-0003 | Group / session NIDs | Implemented (NIP) |
+| CR-0004 | IANA PEN 65715 wire-in | Implemented 2026-05-08 (landed v1.0-alpha.6) |
+| CR-0005 | NIP-CA RA model | Implemented (landed v1.0-alpha.7) |
+| CR-0006 | NWP SubscribeFrame | Accepted 2026-05-28 (landed v1.0.0-alpha.11, NWP v0.13) |
+| CR-0007 | NOP L3 runtime integration | Implemented (NOP v0.7) |
+
+---
+
 ## Related Pages
 
 - [RFC Process](RFC-Process) — formal post-1.0 change mechanism
@@ -147,4 +179,4 @@ The removal commitment is binding. If removal slips, a new CR entry must be file
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

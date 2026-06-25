@@ -1,6 +1,6 @@
 # Example: Cross-SDK Interop
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 **Repo:** `labacacia/NPS-examples`, directory: `cross-sdk-interop/` (source in NPS-Dev `demos/cross-sdk-interop/`)
 
@@ -118,6 +118,20 @@ The fix was to add Java and Go to the parity matrix before tagging alpha.5. Now 
 
 ---
 
+## Six-SDK Feature Parity (alpha.13)
+
+As of v1.0.0-alpha.13, all six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship the same protocol feature set, and the cross-SDK matrix exercises each of these for byte- and behavior-level parity:
+
+- **NCP `NopFrame` (0x07)** — zero-payload keepalive/heartbeat (NCP v0.8); either peer MAY send it after the handshake. Paired with `HelloFrame.ping_interval_ms` (uint32, 0 = disabled).
+- **NIP `node_roles`** — `IdentFrame.node_roles` self-declared node-role tags (NIP v0.10), the current name for the topology/discovery role field. The legacy `node_kind` alias was accepted through alpha.5 only.
+- **NDP `spawn_spec_ref` schema object** — the `AnnounceFrame.spawn_spec_ref` type changed from a URI string to a structured SpawnSpec schema object (NDP v0.9), alongside `heartbeat_interval_ms`.
+- **NOP `result_ttl_seconds`** — `TaskFrame.result_ttl_seconds` (uint32, default 3 600 s, omitted from the wire at default) (NOP v0.7).
+- **NWP `X-NWM-Version`** — the `X-NWM-Version` response-header constant plus `manifest_version` / `manifest_updated_at` on `GET /.nwm` (NWP v0.14).
+
+A good cross-SDK invariant is one where all six SDKs must produce identical wire bytes or identical decoded values for any of the fields above — for example, that omitting `result_ttl_seconds` at its default produces byte-identical TaskFrames across all six encoders.
+
+---
+
 ## How to Add a New Cross-SDK Test
 
 1. **Identify a wire-level invariant.** What value should every SDK produce for a given input? The invariant must be observable from the wire (e.g. a method return value, a serialized byte sequence, a field in a response frame).
@@ -166,4 +180,4 @@ Runtimes that are not on the CI runner's PATH are skipped gracefully — the tes
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

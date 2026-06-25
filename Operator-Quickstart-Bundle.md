@@ -1,7 +1,7 @@
 # Operator Quickstart: Daemon Bundle
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
+> **Status:** ✅ Content complete — v1.0.0-alpha.13
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-runner**, **nps-gateway**, and **nps-registry** — in a single git repository with a reference `docker-compose.yml`. This is the recommended starting point for operators who want to run a self-hosted NPS cluster. (The private daemons **nps-ledger** and **nps-cloud-ca** ship separately; see [Operator Daemons Reference](Operator-Daemons-Reference).)
@@ -28,11 +28,20 @@ The repository root contains:
 | Path | Description |
 |------|-------------|
 | `docker-compose.yml` | Reference four-service composition |
+| `deploy/docker-compose/` | Curated Compose overlays (dev / prod, optional nip-ca-server sidecar) |
+| `deploy/systemd/` | systemd unit files for native installs |
+| `Makefile` | Convenience targets — `make up` / `make down` / `make install-systemd` |
 | `npsd/` | npsd daemon source and Dockerfile |
 | `nps-runner/` | nps-runner daemon source and Dockerfile |
 | `nps-gateway/` | nps-gateway daemon source and Dockerfile |
 | `nps-registry/` | nps-registry daemon source and Dockerfile |
 | `CHANGELOG.md` | Per-release notes |
+
+> **Makefile shortcuts (alpha.6+).** From the repository root: `make up` brings the
+> Compose stack up (wraps `docker compose up -d`), `make down` tears it down, and
+> `make install-systemd` installs the units from `deploy/systemd/` for a native
+> deployment. See `deploy/docker-compose/` and `deploy/systemd/` for the underlying
+> files.
 
 ---
 
@@ -142,7 +151,7 @@ Expected npsd response shape:
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "layer": "L1",
   "role": "node",
   "port": 17433,
@@ -150,6 +159,34 @@ Expected npsd response shape:
   "uptime_s": 42
 }
 ```
+
+### Kubernetes-style probes and metrics
+
+As of alpha.6+, **npsd** and **nip-ca-server** also expose dedicated operational
+endpoints alongside `/health`:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /healthz` | Liveness probe (process is up) |
+| `GET /readyz` | Readiness probe (dependencies ready, accepting traffic) |
+| `GET /metrics` | Prometheus-format metrics (frame counters, inbox depth, handshake latency, etc.) |
+
+```bash
+curl -s http://localhost:17433/healthz
+curl -s http://localhost:17433/readyz
+curl -s http://localhost:17433/metrics
+```
+
+> **nip-ca-server `/metrics` port note.** From alpha.6+, `nip-ca-server` serves
+> `/metrics` on its **management port `17436`**, not the public CA port `17435`.
+> The public CA port no longer exposes `/metrics`. Scrape
+> `http://<ca-host>:17436/metrics` and keep `17436` off the public Internet.
+
+### Graceful shutdown
+
+On `SIGTERM`, npsd and nip-ca-server perform a **graceful drain** (default 30 s):
+they stop accepting new connections, finish in-flight requests, flush inbox/state,
+then exit. Configure your orchestrator's termination grace period to ≥ 30 s.
 
 ---
 
@@ -179,10 +216,10 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 1. Pin all services to the new suite version in `docker-compose.yml`:
 
    ```yaml
-   image: labacacia/npsd:1.0.0-alpha.5        # change to target version
-   image: labacacia/nps-runner:1.0.0-alpha.5
-   image: labacacia/nps-gateway:1.0.0-alpha.5
-   image: labacacia/nps-registry:1.0.0-alpha.5
+   image: labacacia/npsd:1.0.0-alpha.13        # change to target version
+   image: labacacia/nps-runner:1.0.0-alpha.13
+   image: labacacia/nps-gateway:1.0.0-alpha.13
+   image: labacacia/nps-registry:1.0.0-alpha.13
    ```
 
 2. Back up all named volumes (see above).
@@ -219,8 +256,8 @@ Download from the [nps-daemons releases page](https://github.com/labacacia/nps-d
 
 ```bash
 # Set the suite version (Debian format: ~ separates pre-release)
-DEB_VER="1.0.0~alpha.5"
-SUITE_VER="1.0.0-alpha.5"
+DEB_VER="1.0.0~alpha.13"
+SUITE_VER="1.0.0-alpha.13"
 
 for pkg in npsd nps-runner nps-gateway nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}_${DEB_VER}_amd64.deb"
@@ -273,9 +310,9 @@ Data directories under `/var/lib/nps/` are not removed on uninstall (`apt purge`
 ### Fedora / RHEL (x86_64)
 
 ```bash
-SUITE_VER="1.0.0-alpha.5"
+SUITE_VER="1.0.0-alpha.13"
 RPM_VER="1.0.0"
-RPM_REL="0.alpha.5.1"   # for stable releases: "1"
+RPM_REL="0.alpha.13"   # for stable releases: "1"
 
 for pkg in npsd nps-runner nps-gateway nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
@@ -305,7 +342,7 @@ sudo rpm -e npsd nps-runner nps-gateway nps-registry
 Each daemon ships as a per-daemon `.msi` installer. Run as Administrator.
 
 ```powershell
-$ver = "1.0.0-alpha.5"
+$ver = "1.0.0-alpha.13"
 
 foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
@@ -366,4 +403,4 @@ foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5*
+*Last reviewed at suite version: v1.0.0-alpha.13*

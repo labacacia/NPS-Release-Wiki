@@ -1,6 +1,6 @@
 # Reference: Cognon (CGN) Budget
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 ## What Is a Cognon?
 
@@ -13,6 +13,35 @@ The name "Cognon" derives from "cognitive unit": a minimal quantum of AI reasoni
 Different models count tokens differently. GPT-4o, Claude, Gemini, and LLaMA 3 all use different tokenizers. A response that costs 200 tokens from one model may cost 210 from another. Raw token counts are therefore not portable across a heterogeneous NPS deployment where nodes may run different models.
 
 CGN solves this by defining a reference baseline (GPT-4 / `cl100k_base` = 1.0 CGN per native token) and publishing exchange rates for other model families. Budget caps set in CGN are semantically consistent regardless of which model a node uses internally.
+
+---
+
+## Two CGN Profiles: CGN-Estimate vs CGN-Billing
+
+Since token-budget v0.5, CGN is defined in **two named profiles** with non-overlapping conformance requirements (issue #40). Every CGN value carried on the wire MUST be unambiguously associated with exactly one profile; counterparties MUST NOT mix the two.
+
+| Profile | Purpose | Used by |
+|---------|---------|---------|
+| **CGN-Estimate** | Estimation, budget hints, telemetry, sampling-tolerant flows | `X-NWP-Budget` enforcement, CapsFrame `token_est`, push-stream per-event `cgn_est` reporting |
+| **CGN-Billing** | Commercial settlement, dispute and chargeback handling | Invoiced metering and NID-signed accounting records exchanged between counterparties |
+
+**CGN-Estimate (estimation-grade)**:
+
+- Tokenizer source MAY be `declared_tokenizer` (NIP §5.1) or any higher tier.
+- The byte-size fallback (`ceil(UTF-8_bytes / 4)`) is permitted.
+- Sampling is permitted for high-frequency scenarios.
+- Exchange-rate drift up to ±5 % against the model-native count is acceptable.
+- Records are unsigned; no audit-log integration is required.
+
+**CGN-Billing (settlement-grade)** — a node emitting CGN-Billing records MUST satisfy **all** of:
+
+- The tokenizer used MUST be the `verified_tokenizer` tier (NIP §5.1). `declared_tokenizer`, `observed_tokenizer_profile`, and the byte-size fallback are **forbidden** as billing inputs.
+- Each metering record MUST be NID-signed by the issuing node and persisted in an audit log compatible with NOP §8.3 (and, where deployed, NPS-RFC-0004 logging).
+- Sampling MUST NOT be used; every billed CGN value MUST be computed exactly, record-by-record.
+- The ±5 % drift envelope does NOT apply — billing rates are an exact contract term.
+- The exchange-rate-table version MUST be pinned by both counterparties at session start (or earlier) and recorded inside the signed metering record.
+
+A response that omits the CGN-Billing profile markers (see [§4.2 headers](#response-consumption-headers)) MUST be interpreted as CGN-Estimate, regardless of any commercial agreement — **silence is never a settlement signal**, and nodes MUST NOT settle off CGN-Estimate-only responses.
 
 ---
 
@@ -113,13 +142,27 @@ When a response would exceed `X-NWP-Budget`:
 
 ### Reading Consumption
 
-The node reports actual consumption in response headers:
+<a name="response-consumption-headers"></a>
+
+The node reports actual consumption in response headers (token-budget §4.2):
 
 ```
 X-NWP-Tokens: 312
 X-NWP-Tokens-Native: 298
 X-NWP-Tokenizer-Used: cl100k_base
+X-NWP-Tokens-Profile: estimate
 ```
+
+| Header | Profile | Description |
+|--------|---------|-------------|
+| `X-NWP-Tokens` | CGN-Estimate | Actual CGN consumed by this response (estimation-grade) |
+| `X-NWP-Tokens-Native` | CGN-Estimate | Native token consumption (when the tokenizer is known) |
+| `X-NWP-Tokenizer-Used` | both | Tokenizer identifier actually used by the node |
+| `X-NWP-Tokens-Profile` | both | Either `estimate` or `billing`. Absent or `estimate` MUST be treated as CGN-Estimate by the counterparty. |
+| `X-NWP-Billing-Record` | CGN-Billing | Reference (URI or content-hash) to the signed metering record. MUST be present iff the response is billed under CGN-Billing. |
+| `X-NWP-Billing-Tokenizer-Tier` | CGN-Billing | MUST be `verified_tokenizer`. Absent → not billable. |
+
+A response that omits both `X-NWP-Billing-Record` and `X-NWP-Billing-Tokenizer-Tier` MUST be interpreted as CGN-Estimate, regardless of any commercial agreement. The `X-NWP-Tokens-Profile: billing`, `X-NWP-Billing-Record`, and `X-NWP-Billing-Tokenizer-Tier: verified_tokenizer` headers MUST all be present on every CGN-Billing response.
 
 ---
 
@@ -162,7 +205,9 @@ Enforcing `X-NWP-Budget` on push streams would require the node to buffer future
 
 - Node implementations SHOULD ship with at least the `cl100k_base` (GPT-4 family) tokenizer built in.
 - The exchange-rate table SHOULD be hot-reloadable configuration, not hard-coded.
-- For high-frequency scenarios, token estimation MAY be sampled rather than computed record-by-record.
+- For high-frequency scenarios, token estimation MAY be sampled rather than computed record-by-record — but **only under CGN-Estimate**. Sampled estimates inherit the `declared_tokenizer` restriction and MUST NOT be the sole basis for billing, settlement, quota elevation, reputation, or authorization.
+- CGN-Billing forbids sampling and the byte-size fallback; every billed value MUST be computed exactly at the `verified_tokenizer` tier and emitted with the §4.2 billing headers.
+- The default profile for any CGN value carried without an explicit profile marker is **CGN-Estimate**.
 - The `token_est` field in CapsFrame and the `cgn_est` field in NWM ActionSpec are always in CGN units.
 
 ---
@@ -174,4 +219,4 @@ Enforcing `X-NWP-Budget` on push streams would require the node to buffer future
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

@@ -1,6 +1,6 @@
 # Example: Ingress Playground
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 **Repo:** `labacacia/NPS-examples`, directory: `ingress-playground/` (source in NPS-Dev `demos/ingress-playground/`)
 
@@ -91,7 +91,7 @@ POST http://127.0.0.1:17482/mcp
   "result": {
     "content": [
       { "type": "text",
-        "text": "{\"frame_type\":4,\"preferred_tier\":1,\"anchor_ref\":\"nps://demo/ingress-playground/anchors/greeting/v1\",\"count\":1,\"data\":[{\"greeting\":\"Hello, Ada!\",\"via\":\"MCP\",\"upstream_node\":\"NWP Action Node — ingress-playground upstream\"}],\"token_est\":0}"
+        "text": "{\"frame_type\":4,\"preferred_tier\":1,\"anchor_ref\":\"nps://demo/ingress-playground/anchors/greeting/v1\",\"count\":1,\"data\":[{\"greeting\":\"Hello, Ada!\",\"via\":\"MCP\",\"upstream_node\":\"NWP Action Node — ingress-playground upstream\"}],\"cgn_est\":0}"
       }
     ],
     "isError": false
@@ -119,7 +119,7 @@ The client sends `tasks/send` to `:17483/a2a` with `skillId: "greetings.hello"`.
               "anchor_ref": "nps://demo/ingress-playground/anchors/greeting/v1",
               "count": 1,
               "data": [ { "greeting": "Hello, Ada!", "via": "A2A", … } ],
-              "token_est": 0
+              "cgn_est": 0
             }
           }
         ]
@@ -139,7 +139,7 @@ The client calls `NwpIngress.Invoke` over h2c (plaintext HTTP/2) to `:17484`. Th
   "anchor_ref": "nps://demo/ingress-playground/anchors/greeting/v1",
   "count": 1,
   "data": [ { "greeting": "Hello, Ada!", "via": "gRPC", … } ],
-  "token_est": 0
+  "cgn_est": 0
 }
 ```
 
@@ -204,4 +204,4 @@ demos/ingress-playground/
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

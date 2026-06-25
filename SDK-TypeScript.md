@@ -1,6 +1,6 @@
 # SDK — TypeScript
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP. Dual ESM + CJS build; works in Node.js 22+ and in the browser via the ESM bundle.
 
@@ -9,12 +9,14 @@ TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocol
 ## Installation
 
 ```bash
-npm install @labacacia/nps-sdk@1.0.0-alpha.5.2
+npm install @labacacia/nps-sdk@1.0.0-alpha.13
 ```
 
 **Requirements:** Node.js 22+. The ESM build also works in modern browsers (Chrome 120+, Firefox 121+, Safari 17+) via a bundler.
 
-**Tests:** 284 passing, ≥ 98% coverage.
+> **`alpha` dist-tag:** `npm install @labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.13`. alpha.12 was withdrawn; pin the explicit version for reproducible builds.
+
+**Tests:** 284+ passing, ≥ 98% coverage.
 
 ---
 
@@ -29,9 +31,9 @@ The package ships both an ESM build (for Node.js 22+ native modules and browser 
 ```typescript
 import { ... } from "@labacacia/nps-sdk";           // everything (re-export barrel)
 import { ... } from "@labacacia/nps-sdk/core";       // codec, frames, registry, cache
-import { ... } from "@labacacia/nps-sdk/ncp";        // AnchorFrame, CapsFrame, StreamFrame, HelloFrame, …
+import { ... } from "@labacacia/nps-sdk/ncp";        // AnchorFrame, CapsFrame, StreamFrame, HelloFrame, NopFrame, …
 import { ... } from "@labacacia/nps-sdk/nwp";        // NwpClient, QueryFrame, ActionFrame, NwpErrorCodes
-import { ... } from "@labacacia/nps-sdk/nip";        // NipIdentity, IdentFrame, TrustFrame, RevokeFrame, AssuranceLevel
+import { ... } from "@labacacia/nps-sdk/nip";        // NipIdentity, IdentFrame (incl. nodeRoles), TrustFrame, RevokeFrame, AssuranceLevel
 import { ... } from "@labacacia/nps-sdk/ndp";        // InMemoryNdpRegistry, NdpAnnounceValidator, AnnounceFrame, resolveWithDns
 import { ... } from "@labacacia/nps-sdk/nop";        // NopClient, NopTaskStatus, TaskFrame, …
 ```
@@ -169,6 +171,19 @@ node node_modules/tsup/dist/cli-default.js
 
 ---
 
+## alpha.13 feature set
+
+The TypeScript SDK ships the common alpha.13 protocol surface (parity across all six SDKs):
+
+- **NCP** — `NopFrame` keepalive/heartbeat; `HelloFrame.ping_interval_ms` (0 disables; dead-peer threshold = 3 × interval).
+- **NIP** — `IdentFrame.nodeRoles` (self-declared node-role tags; excluded from the Ed25519-signed payload).
+- **NDP** — `AnnounceFrame.spawnSpecRef` as a structured schema object (was a URI string); `AnnounceFrame.heartbeatIntervalMs` (default 60000 ms, 0 disables).
+- **NOP** — `TaskFrame.resultTtlSeconds` (default 3600 s, omitted from wire at default).
+- **NWP** — `X-NWM-Version` response header; NWM `manifestVersion` / `manifestUpdatedAt`.
+- **`ReputationLogClient`** — CT-style reputation log with dual Ed25519 signatures (`SignedTreeHead`, `InclusionProof`, RFC 9162 Merkle fold). Shipped in the TypeScript SDK since **alpha.6** (the other five SDKs gained it in alpha.7).
+
+---
+
 ## See also
 
 - [SDK Quickstart](SDK-Quickstart) — language-agnostic first steps and install table
@@ -177,4 +192,4 @@ node node_modules/tsup/dist/cli-default.js
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

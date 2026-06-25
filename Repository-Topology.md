@@ -1,6 +1,6 @@
 # Repository Topology
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 This page maps every NPS-related repository, its role, and how it relates to the central source monorepo.
 
@@ -74,7 +74,7 @@ These repos exist as public stubs with README placeholder files. CI tracks them 
 | Repo | Organization | Planned purpose |
 |------|-------------|-----------------|
 | `NPS-Studio` | labacacia | Frame-stream visualizer / debugger (NPS-Dev alpha.6 queue) |
-| `NPS-NWP-Manager` | labacacia | Web-based NWM authoring and node management tool |
+| `NPS-NWP-Manager` | labacacia | Web-based NWM authoring and node management tool — now ships a runnable **v0.1 stub** (`GET /health`, `GET /v1/nodes`) as of alpha.13 |
 | `NPS-sdk-cpp` | labacacia | C++ SDK |
 | `NPS-sdk-php` | labacacia | PHP SDK |
 
@@ -123,4 +123,4 @@ All public labacacia repos are mirrored to Gitee (`gitee.com/labacacia/`) via `t
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

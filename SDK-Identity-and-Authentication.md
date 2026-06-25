@@ -1,6 +1,6 @@
 # SDK How-To: Identity and Authentication
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Developers integrating NPS identity into an Agent or Node implementation.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -75,7 +75,7 @@ The Cloud CA is the only path today that can issue **`verified` (L2)** assurance
 
 ### Path 3: ACME (future — not yet available for production)
 
-NPS-RFC-0002 defines an ACME-compatible challenge type (`agent-01`) for automated NID issuance. It is currently gated behind an `EXPERIMENTAL` marker and requires a registered IANA OID (`1.3.6.1.4.1.99999.1` is a placeholder; PEN assignment is pending as of v1.0.0-alpha.5). Do not use this path in production.
+NPS-RFC-0002 defines an ACME-compatible challenge type (`agent-01`) for automated NID issuance. It is currently gated behind an `EXPERIMENTAL` marker. As of NIP v0.9, the NPS X.509 OIDs anchor to the IANA-assigned **PEN 65715** (assigned to LabAcacia 2026-05-08, NPS-CR-0004), replacing the provisional `1.3.6.1.4.1.99999` arc — the `id-nid-assurance-level` extension is `1.3.6.1.4.1.65715.2.1`. Certificates issued under the old provisional arc MUST be revoked and re-issued. Do not use this path in production until RFC-0002 reaches Accepted.
 
 ---
 
@@ -144,6 +144,39 @@ The `metadata` object is excluded from signature computation and MAY be updated 
 }
 ```
 
+**Certificate fields (`cert_format` / `cert_chain`, NIP v0.7+):**
+
+The IdentFrame carries the issuing certificate so receivers can validate the chain:
+
+- `cert_format` (required) — certificate encoding, one of `"x509-der"` or `"raw-pubkey"`.
+- `cert_chain` (required when `cert_format = "x509-der"`) — array of base64url-encoded DER certificates, leaf first. MUST be omitted when `cert_format = "raw-pubkey"`.
+
+Both fields are **excluded from the signed canonical JSON** (same exclusion pattern as `metadata`); see Receiver-side verification.
+
+**`ocsp_staple` (optional, NIP v0.9):**
+
+An Agent MAY attach a pre-fetched OCSP response in `ocsp_staple` (base64url-encoded DER `OCSPResponse`) so the receiving Node can check revocation status without a live OCSP round-trip. Receivers SHOULD verify the staple signature and `nextUpdate`; an elapsed `nextUpdate` returns `NIP-OCSP-STAPLE-EXPIRED`. When absent, the Node MAY perform an online OCSP lookup against `NWM.ocsp_url`.
+
+**`node_roles` (optional, NIP v0.10):**
+
+Self-declared node-role tags (e.g. `["memory", "orchestrator"]`), same vocabulary as NDP `AnnounceFrame.node_roles`. Like `cert_format` / `cert_chain`, `node_roles` is **excluded from the Ed25519-signed payload**. At Phase 1–2 it is self-declared and informational; at the Phase 3 flag day it MUST match the `id-nps-node-roles` X.509 extension (`1.3.6.1.4.1.65715.2.2`), and a mismatch returns `NIP-CERT-NODE-ROLES-MISMATCH` (`NPS-CLIENT-BAD-FRAME`). Use `node_roles`, never the legacy `node_kind` field (`node_kind` was a parse-only alias through alpha.5 only).
+
+**`lineage` (optional, NPS-CR-0003):**
+
+When the NID is an orchestrator **group** or a short-lived **session**, the IdentFrame carries a signed `lineage` object. Unlike `metadata`, `lineage` **is part of the signed canonical JSON** — tampering invalidates the CA signature. Group and session NIDs use reserved identifier prefixes (`group-` / `session-`):
+
+```json
+"lineage": {
+  "role":       "session",
+  "parent_nid": "urn:nps:agent:ca.example.com:group-7f3c9e1a-b2d8-4c6f-9a01",
+  "group_nid":  "urn:nps:agent:ca.example.com:group-7f3c9e1a-b2d8-4c6f-9a01",
+  "session_id": "session-1714672800-f3a92c0b",
+  "purpose":    "data-extraction-job-42"
+}
+```
+
+Group NIDs default to 365-day validity; session NIDs default to 1 hour (max 24 hours), with the portion after `session-` of the form `{unix-timestamp}-{random}` (≥8 hex chars). See Receiver-side verification for the parent chain-check step.
+
 **Standard capability values to include:**
 
 | Capability | Purpose |
@@ -151,7 +184,9 @@ The `metadata` object is excluded from signature computation and MAY be updated 
 | `nwp:query` | May query Memory Nodes |
 | `nwp:action` | May invoke Action Nodes |
 | `nwp:stream` | May receive StreamFrame responses |
+| `ncp:stream` | May initiate NCP streaming |
 | `nop:delegate` | May delegate subtasks |
+| `nop:orchestrate` | May act as an orchestrator and emit TaskFrames |
 | `topology:read` | May read Anchor Node topology (required if your Agent monitors cluster health) |
 
 ---
@@ -168,7 +203,7 @@ NPS-RFC-0003 defines three tiers. The tier travels in `IdentFrame.assurance_leve
 
 The levels are **ordered**: `anonymous < attested < verified`. A request whose level is below the Node's declared minimum is rejected with `NWP-AUTH-ASSURANCE-TOO-LOW` (`NPS-AUTH-FORBIDDEN`). The response SHOULD include a `hint` pointing to a CA enrolment URL.
 
-**Note on L1 availability:** `"attested"` formally requires RFC-0002 to be in Accepted status with a registered IANA OID. The provisional implementation using OID `1.3.6.1.4.1.99999.1` does NOT satisfy this criterion for conformance or production purposes until the PEN is assigned. Check [the IANA PEN status](https://pen.iana.org/) before relying on L1 for regulated use cases.
+**Note on L1 availability:** `"attested"` formally requires RFC-0002 to be in Accepted status. The IANA PEN has now been assigned — **PEN 65715** (to LabAcacia, 2026-05-08, NPS-CR-0004) — and the `id-nid-assurance-level` X.509 extension uses OID `1.3.6.1.4.1.65715.2.1` (replacing the provisional `1.3.6.1.4.1.99999` arc; certs under the old arc MUST be revoked and re-issued). Confirm RFC-0002 is in Accepted status before relying on L1 for regulated use cases.
 
 **Phase gate:** Phase 1–2 (current) enforcement is opt-in (`SHOULD check, MAY enforce`). Starting the Phase 3 flag day, enforcement is `MUST`, and violations return `NIP-ASSURANCE-MISMATCH`.
 
@@ -199,19 +234,26 @@ The rationale: blank = no assertion made; the protocol default is the weakest ti
 When a Node receives an IdentFrame, it MUST perform these checks in order:
 
 ```
-1. Check expires_at > now                → NIP-CERT-EXPIRED
-2. Check issued_by ∈ NWM.trusted_issuers → NIP-CERT-UNTRUSTED-ISSUER
-3. Verify Ed25519 signature              → NIP-CERT-SIGNATURE-INVALID
-4. OCSP or local CRL check (if configured) → NIP-CERT-REVOKED
-5. Check required capabilities present   → NIP-CERT-CAPABILITY-MISSING
-6. Check scope.nodes covers target path  → NWP-AUTH-NID-SCOPE-VIOLATION
+1.  Check expires_at > now                → NIP-CERT-EXPIRED
+2.  Check issued_by ∈ NWM.trusted_issuers → NIP-CERT-UNTRUSTED-ISSUER
+3.  Verify Ed25519 signature              → NIP-CERT-SIGNATURE-INVALID
+3a. (CR-0003) If lineage.parent_nid present, OCSP-lookup the parent
+                                          → NIP-CERT-PARENT-REVOKED
+4.  OCSP staple / lookup / local CRL check → NIP-CERT-REVOKED
+                                            (stale staple → NIP-OCSP-STAPLE-EXPIRED)
+5.  Check required capabilities present   → NIP-CERT-CAPABILITY-MISSING
+6.  Check scope.nodes covers target path  → NWP-AUTH-NID-SCOPE-VIOLATION
 ```
 
 All checks pass → authorize the request.
 
+Step **3a** (NPS-CR-0003) is mandatory whenever `lineage.parent_nid` is present, regardless of whether the session NID is still within its own validity window — a revoked or expired group NID cascades to its sessions (`parent_revoked` reason on the group's RevokeFrame).
+
+At step 4, if the IdentFrame carries an `ocsp_staple` (NIP v0.9), verify the staple signature against the issuing CA cert and check `nextUpdate`; a passed staple supersedes cached revocation state and the Node SHOULD NOT make a live OCSP request. An elapsed `nextUpdate` returns `NIP-OCSP-STAPLE-EXPIRED`.
+
 **Signature verification (canonical form):**
 
-Reconstruct the JSON with `signature` field removed, keys sorted alphabetically, no whitespace. Feed the UTF-8 bytes to your Ed25519 verify function along with the public key from `pub_key`.
+Reconstruct the JSON with the `signature` field removed (and the unsigned `metadata`, `cert_format`, `cert_chain`, and `node_roles` fields excluded), keys sorted alphabetically, no whitespace. Note `lineage` **is** signed and stays in. Feed the UTF-8 bytes to your Ed25519 verify function along with the public key from `pub_key`.
 
 ```
 // Pseudo-code (applies to every SDK)
@@ -246,7 +288,7 @@ Set `min_assurance_level` at two levels:
 
 ```json
 {
-  "nwp": "0.4",
+  "nwp": "0.14",
   "node_type": "action",
   "min_assurance_level": "attested",
   ...
@@ -295,6 +337,8 @@ function check_assurance_gate(request, action_spec, nwm):
 
 The reputation log (NPS-RFC-0004) records behavioral incidents per NID in a Certificate-Transparency-style append-only feed. A Node may optionally configure a `reputation_policy` in its NWM to reject Agents with certain incident types.
 
+All six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship a **`ReputationLogClient`** (RFC-0004 Phase 2, added in alpha.7) for querying and verifying log entries. Entries use a **dual Ed25519 signature** model — the issuer signs the entry, then the log operator re-signs for the ordering commitment — and the client verifies inclusion against a `SignedTreeHead` using an `InclusionProof` with an RFC 9162-style Merkle fold.
+
 **At AaaS L2 (recommended minimum policy):**
 
 Reject Agents with:
@@ -304,8 +348,9 @@ Reject Agents with:
 **Querying the log at admission time:**
 
 ```
-// Pseudo-code
+// Pseudo-code (ReputationLogClient, all six SDKs)
 entries = reputation_log_client.query(subject_nid = agent_nid)
+// Phase 2: verify each entry's inclusion proof against the SignedTreeHead
 for entry in entries:
     if matches_reject_rule(entry, policy):
         raise AuthError(
@@ -342,9 +387,9 @@ if level not in KNOWN_LEVELS:
 
 ## See also
 
-- [Protocol NIP](Protocol-NIP) — full NIP spec including TrustFrame, RevokeFrame, CA hierarchy
+- [Protocol NIP](Protocol-NIP) — full NIP spec (v0.10) including TrustFrame, RevokeFrame, `cert_chain`/`ocsp_staple`/`node_roles`, lineage, the PEN 65715 OID arc (`id-nps-node-roles` 65715.2.2 / `id-nps-capabilities` 65715.2.3), CA hierarchy
 - [Operator Reputation Log](Operator-Reputation-Log) — operating an RFC-0004-compliant log
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

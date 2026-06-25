@@ -1,6 +1,6 @@
 # SDK Common Patterns
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Developers building Agents or Nodes with any NPS SDK.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -136,7 +136,7 @@ for each frame:
 
 ## Subscriptions
 
-A subscription (`SubscribeFrame` with `action = "subscribe"`) establishes a long-lived push channel for incremental changes.
+A subscription (`SubscribeFrame` with `action = "subscribe"`) establishes a long-lived push channel for incremental changes. NWP v0.13 (CR-0006, accepted 2026-05-28) gives `SubscribeFrame` a formal spec (§13): a `subscription_id` (UUID v4), a QueryFrame-compatible filter, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` for lossless resume. The `topology:subscribe` capability is required (MUST, §12.4) for topology subscriptions.
 
 ### Establishing a subscription
 
@@ -144,49 +144,45 @@ A subscription (`SubscribeFrame` with `action = "subscribe"`) establishes a long
 subscribe_frame = {
     "frame": "0x12",
     "action": "subscribe",
-    "stream_id": new_uuid(),
+    "subscription_id": new_uuid(),          // UUID v4
     "anchor_ref": schema_ref,
     "filter": { "status": { "$eq": "active" } },
-    "heartbeat_interval": 30
+    "heartbeat_interval_ms": 30000,
+    "max_events": 0                          // 0 = unbounded
 }
 send(subscribe_frame)
 
 // Wait for acknowledgement CapsFrame
 ack = receive_caps_frame(anchor_ref = "nps:system:subscribe:ack")
 assert ack.data[0].status == "subscribed"
-last_seq = ack.data[0].last_seq
+cursor = ack.data[0].cursor
 
 // Enter push loop
 while connected:
     diff = receive_diff_frame()
     apply_diff(diff.patch)
-    last_seq = diff.seq
+    cursor = diff.cursor
 ```
 
-### Reconnection and gap detection
+### Reconnection and lossless resume
 
-If the connection drops, reconnect with `resume_from_seq = last_seq`:
+If the connection drops, reconnect with the last opaque `cursor` to resume without loss:
 
 ```
 subscribe_frame = {
     ...
     "action": "subscribe",
-    "resume_from_seq": last_seq
+    "subscription_id": subscription_id,
+    "cursor": cursor                        // opaque resume token (CR-0006)
 }
 ```
 
-If `last_seq` is outside the node's buffer window (typically 10 minutes or 10,000 events), the node returns `NWP-SUBSCRIBE-SEQ-TOO-OLD`. In that case:
+If the `cursor` is outside the node's buffer window (typically 10 minutes or 10,000 events), the node returns `NWP-SUBSCRIBE-SEQ-TOO-OLD`. In that case:
 
 1. Issue a fresh full QueryFrame (no streaming) to re-sync state.
-2. Re-subscribe without `resume_from_seq`.
+2. Re-subscribe without a `cursor`.
 
-Always compare incoming `seq` values to detect gaps:
-
-```
-if diff.seq != last_seq + 1:
-    log_warn("Sequence gap detected; re-subscribing")
-    resubscribe(resume_from_seq = last_seq)
-```
+The node emits a `heartbeat_interval_ms` keepalive on the channel; if no event or heartbeat arrives within ~3× that interval, treat the channel as dead and resume from the last `cursor`.
 
 ### Cancellation
 
@@ -194,7 +190,7 @@ if diff.seq != last_seq + 1:
 cancel_frame = {
     "frame": "0x12",
     "action": "unsubscribe",
-    "stream_id": stream_id
+    "subscription_id": subscription_id
 }
 send(cancel_frame)
 ```
@@ -222,10 +218,11 @@ Do not include capabilities you do not actually support — the Node may use the
 
 ### Checking node capabilities before issuing requests (Agent side)
 
-Read the NWM before the first request and cache it (use `manifest_version` for conditional re-fetch):
+Read the NWM before the first request and cache it. From NWP v0.14, every `GET /.nwm` carries an `X-NWM-Version` response header equal to the manifest's monotonic `manifest_version` (uint32, with `manifest_updated_at` as an ISO 8601 timestamp). Cache that value and send `If-None-Match: <manifest_version>` to get a cheap `304 Not Modified` when nothing changed:
 
 ```
-nwm = fetch_nwm("nwp://api.example.com/orders/.nwm")
+nwm = fetch_nwm("nwp://api.example.com/orders/.nwm")   // record X-NWM-Version
+// later: GET /.nwm with `If-None-Match: <cached manifest_version>` → 304 if unchanged
 
 if not nwm.capabilities.stream_query:
     // Fall back to paginated single queries
@@ -254,6 +251,8 @@ if required_cap not in caller_caps:
 ## Token budget (CGN)
 
 NPS uses **Cognon (CGN)** as a model-agnostic token-accounting unit. Nodes consume CGN against your declared budget and report actual usage in response headers.
+
+> **CGN-Estimate vs CGN-Billing (token-budget v0.5+).** CGN is split into two profiles. **CGN-Estimate** covers budgets/quota/telemetry — sampling and byte-size fallback are permitted (±5 % drift), no signing. **CGN-Billing** covers commercial settlement — it requires the `verified_tokenizer` tier (NIP §5.1), NID-signed metering records, no sampling/fallback, and audit-log integration. Profile is carried by the §4.2 headers `X-NWP-Tokens-Profile`, `X-NWP-Billing-Record`, and `X-NWP-Billing-Tokenizer-Tier`; if these are silent the response defaults to CGN-Estimate.
 
 ### Setting a budget on requests
 
@@ -329,42 +328,44 @@ If the actual response exceeds `X-NWP-Budget`, the node will either trim the res
 
 ### Always pin to the suite version
 
-NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.5.2`). Pin to this suite version, not to per-package/per-SDK versions.
+NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.13`). Pin to this suite version, not to per-package/per-SDK versions.
 
 **Correct:**
 ```
 # requirements.txt (Python)
-nps-lib==1.0.0-alpha.5.2
+nps-lib==1.0.0-alpha.13
 ```
 
 ```xml
 <!-- .csproj (.NET) -->
-<PackageReference Include="NPS.Core" Version="1.0.0-alpha.5.2" />
+<PackageReference Include="NPS.Core" Version="1.0.0-alpha.13" />
 ```
 
 **Incorrect:** pinning each NPS package to a different version (e.g., `NPS.Core` at alpha.5 while `NPS.NWP` is at alpha.4) creates cross-package incompatibilities that are hard to diagnose.
 
-### Straddling alpha.5.1 and alpha.5.2 servers
+> **No alpha sub-versions since alpha.6.** Releases now advance `alpha.N → alpha.N+1` (e.g. the current `1.0.0-alpha.13`); there is no `alpha.5.x`-style hotfix sequence going forward. The shims below cover field renames that landed during the alpha.5.x line and are needed only when interoperating with old (pre-alpha.6) peers.
 
-If your deployment is mid-upgrade and some servers are still running alpha.5.1 while others have been upgraded to alpha.5.2, be aware of the `estimated_npt` → `cgn_est` field rename. Write client code that checks both fields with a fallback:
+### Legacy field-name shims (pre-alpha.6 peers)
+
+The `estimated_npt` → `cgn_est` rename landed in alpha.5.2. When talking to peers that predate it, write client code that checks both fields with a fallback:
 
 ```
-// Pseudo-code — works against both alpha.5.1 and alpha.5.2 servers
+// Pseudo-code — tolerates pre-alpha.5.2 servers that still send estimated_npt
 function read_cgn_estimate(action_spec):
     return action_spec.cgn_est ?? action_spec.estimated_npt ?? null
 ```
 
-Once all servers are upgraded, drop the `estimated_npt` fallback.
+Once all peers are on alpha.6+, drop the `estimated_npt` fallback. The current field name is `cgn_est`.
 
-Similarly, for `node_kind` vs `node_roles` in NDP (renamed at NWP v0.9 / NDP v0.6 in alpha.5):
+Similarly, `node_kind` was renamed to `node_roles` in NDP/NIP. `node_kind` was an accepted alias **through alpha.5 only**; from alpha.6 clients MUST send `node_roles` (`topology.filter.node_roles`). When reading from a pre-alpha.6 peer:
 
 ```
-// Read node roles from NDP AnnounceFrame; accept both field names
-function read_node_roles(announce_frame):
-    return announce_frame.node_roles ?? announce_frame.node_kind ?? []
+// Read node roles from NDP AnnounceFrame / NIP IdentFrame; accept the legacy alias
+function read_node_roles(frame):
+    return frame.node_roles ?? frame.node_kind ?? []
 ```
 
-These shims are transitional. Remove them after confirming all peers are on alpha.5.2.
+These shims are transitional. Remove them after confirming all peers are on alpha.6+.
 
 ---
 
@@ -414,4 +415,4 @@ JSON is also the safe fallback for exploratory calls to third-party nodes whose 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

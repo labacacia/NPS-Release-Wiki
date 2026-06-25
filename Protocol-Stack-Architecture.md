@@ -1,7 +1,7 @@
 # Protocol Stack Architecture
 
 > **Audience:** Newcomers and protocol designers
-> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
+> **Status:** ✅ Content complete — v1.0.0-alpha.13
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page explains *how* the five NPS layers relate to each other and *why* the boundaries are drawn where they are. For per-protocol reference, see the individual [Protocol-NCP](Protocol-NCP), [Protocol-NWP](Protocol-NWP), [Protocol-NIP](Protocol-NIP), [Protocol-NDP](Protocol-NDP), and [Protocol-NOP](Protocol-NOP) pages.
@@ -33,6 +33,7 @@ This page explains *how* the five NPS layers relate to each other and *why* the 
 ├─────────────────────────────────────────────────────────────────────────┤
 │  L1   NCP — Neural Communication Protocol                (0x01–0x0F)   │
 │       AnchorFrame · DiffFrame · StreamFrame · CapsFrame · HelloFrame    │
+│       · NopFrame (keepalive)                                            │
 │       Framing · encoding tiers (JSON / MsgPack) · schema deduplication  │
 │       No dependencies                                                   │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -88,7 +89,7 @@ A common question is why NIP (identity) and NDP (discovery) are drawn at the sam
 
 **NDP is not inside NWP because discovery precedes access.** Before an agent can send a `QueryFrame` (NWP), it must know the physical (host, port) for the target `nwp://` URL. That resolution is NDP's job. Making NDP a peer rather than a sub-layer of NWP keeps the resolution concern separate from the access concern and allows independent deployment of NDP resolvers.
 
-**NOP sits above all of L2** because it orchestrates *across* NWP calls (dispatching `ActionFrame` sequences) and *requires* NIP identity verification at every delegation step. It cannot operate without an identity substrate (NIP) and an access protocol (NWP).
+**NOP sits above all of L2** because it orchestrates *across* NWP calls (dispatching `ActionFrame` sequences) and *requires* NIP identity verification at every delegation step. It cannot operate without an identity substrate (NIP) and an access protocol (NWP). As of NOP v0.7, L3 runtime execution is integrated via the `nps-runner` daemon lease ([NPS-CR-0007](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md)).
 
 ---
 
@@ -115,13 +116,15 @@ Every NPS frame is identified by a single leading byte. The byte namespace is pa
 
 | Byte range | Protocol | Assigned frames |
 |------------|----------|-----------------|
-| `0x01–0x0F` | **NCP** | `AnchorFrame (0x01)`, `DiffFrame (0x02)`, `StreamFrame (0x03)`, `CapsFrame (0x04)`, `AlignFrame (0x05, deprecated)`, `HelloFrame (0x06)` |
+| `0x01–0x0F` | **NCP** | `AnchorFrame (0x01)`, `DiffFrame (0x02)`, `StreamFrame (0x03)`, `CapsFrame (0x04)`, `AlignFrame (0x05, deprecated)`, `HelloFrame (0x06)`, `NopFrame (0x07)` |
 | `0x10–0x1F` | **NWP** | `QueryFrame (0x10)`, `ActionFrame (0x11)`, `SubscribeFrame (0x12)` |
 | `0x20–0x2F` | **NIP** | `IdentFrame (0x20)`, `TrustFrame (0x21)`, `RevokeFrame (0x22)` |
-| `0x30–0x3F` | **NDP** | `AnnounceFrame (0x30)`, `ResolveFrame (0x31)`, `GraphFrame (0x32)` |
+| `0x30–0x3F` | **NDP** | `AnnounceFrame (0x30)`, `ResolveFrame (0x31)`, `GraphFrame (0x32)` (§5 topology-snapshot format since NDP v0.8) |
 | `0x40–0x4F` | **NOP** | `TaskFrame (0x40)`, `DelegateFrame (0x41)`, `SyncFrame (0x42)`, `AlignStream (0x43)` |
 | `0xF0–0xFD`, `0xFF` | Reserved | Reserved for future extension — MUST NOT be assigned without a spec update |
 | `0xFE` | **System** | `ErrorFrame` — unified error frame for all protocol layers |
+
+`NopFrame (0x07)` is a zero-payload keepalive/heartbeat frame added in NCP v0.8: either peer MAY send it after the handshake. The ping cadence is negotiated via `HelloFrame.ping_interval_ms` (uint32, `0` = disabled), and a peer is considered dead after 3 × the interval (`NCP-KEEPALIVE-TIMEOUT`, mapped to `NPS-SERVER-TIMEOUT`).
 
 The special byte `0x4E` (ASCII `N`, the first byte of the native-mode preamble `NPS/1.0\n`) is reserved by [NPS-RFC-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.md) and MUST NOT be used as a frame type when encountered as the very first byte of a native-mode connection.
 
@@ -194,4 +197,4 @@ The key distinction is that HTTP and gRPC are general-purpose RPC mechanisms tha
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

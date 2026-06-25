@@ -1,6 +1,6 @@
 # SDK Tutorial: Building a Bridge Node
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Developers implementing NPS↔non-NPS protocol translation (MCP, A2A, gRPC, HTTP).
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -58,10 +58,12 @@ The NWM for a Bridge Node uses `node_type: "bridge"` and lists the supported ext
 
 ```json
 {
-  "nwp": "0.4",
+  "nwp": "0.14",
   "node_id": "urn:nps:node:api.example.com:mcp-bridge",
   "node_type": "bridge",
   "display_name": "Example MCP Bridge",
+  "manifest_version": 1,
+  "manifest_updated_at": "2026-06-13T00:00:00Z",
   "wire_formats": ["ncp-capsule", "msgpack", "json"],
   "preferred_format": "msgpack",
   "capabilities": {
@@ -120,7 +122,23 @@ The AnnounceFrame (NDP 0x30) carries the authoritative role declaration for disc
 
 Additional protocol values MAY be registered through future CRs. The list is open-ended to allow third-party adapters without requiring a spec change.
 
-**`bridge_target` schema:** The concrete shape of the `bridge_target` object that callers pass inside an ActionFrame is **implementation-defined at this release** (CR-0001 §3.2 defers standardization to a follow-up CR per protocol). Document your chosen shape in your node's NWM description or ActionSpec `params_anchor`. Do not assume callers know the schema — publish it.
+**`bridge_target` schema:** As of **NWP v0.13 (CR-0006)** the `bridge_target` object that callers pass inside an ActionFrame is **standardized** with three fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `protocol` | string | External protocol selector — one of the `bridge_protocols` standard values (`"http"` / `"grpc"` / `"mcp"` / `"a2a"`). |
+| `endpoint` | string | Target endpoint URI in the external protocol's address space (e.g. `"https://mcp.example.com/tools/search"`). |
+| `headers` | object | Optional map of protocol-level headers/metadata to forward (e.g. HTTP headers, gRPC metadata). |
+
+```json
+"bridge_target": {
+  "protocol": "mcp",
+  "endpoint": "mcp.example.com/tools/search",
+  "headers": { "x-tenant": "acme" }
+}
+```
+
+Earlier releases (prior to NWP v0.13) treated this shape as implementation-defined per CR-0001 §3.2; the standardized schema above is now the canonical form. Any per-protocol extensions beyond these three fields SHOULD still be documented in your node's NWM description or ActionSpec `params_anchor`.
 
 **`node_roles` MUST match `node_type`:** The NWP constraint is that `node_type` in the NWM MUST be one of the values declared in `node_roles`. For a pure Bridge Node: `node_type = "bridge"` and `node_roles` must include `"bridge"`. A multi-role node (e.g., `"bridge"` + `"action"`) must include both in `node_roles`.
 
@@ -128,7 +146,7 @@ Additional protocol values MAY be registered through future CRs. The list is ope
 
 ## Step 3 — Handle inbound ActionFrame with bridge_target
 
-The ActionFrame arriving at a Bridge Node MUST carry a `bridge_target` parameter inside `params` (until a dedicated top-level field is standardized). The Bridge Node's translation loop:
+The ActionFrame arriving at a Bridge Node MUST carry a `bridge_target` object (standardized schema, see Step 2) inside `params`. The Bridge Node's translation loop:
 
 ```
 Caller           Bridge Node                        External System
@@ -163,7 +181,7 @@ function handle_action_frame(action_frame, nwm):
     // Call the external system
     try:
         external_response = handler.call(bridge_target, action_frame.params)
-        return caps_frame(data = external_response, token_est = measure_cgn(external_response))
+        return caps_frame(data = external_response, cgn_est = measure_cgn(external_response))
     except ExternalError as e:
         return error_frame(translate_error(e))   // see Step 4
 ```
@@ -248,7 +266,7 @@ Three open-source reference implementations are available:
 
 These ingress packages carry the inverse direction from a Bridge Node, but their protocol-translation logic (MCP tool schema mapping, A2A task state machine, gRPC proto-to-NPS frame mapping) is the most complete reference for each protocol's quirks. Study the translation layer and adapt it for the outbound path.
 
-A dedicated `NPS-mcp-bridge` (outbound direction) is on the alpha.6 task queue.
+A dedicated outbound (NPS → external) MCP bridge remains a roadmap item; as of alpha.13 the shipped MCP compatibility component is the inbound `LabAcacia.McpIngress` (in the `labacacia/NPS-mcp-bridge` repo), pinned at `v1.0.0-alpha.8` and not part of the alpha.13 release train — use its translation layer as a reference, not as a versioned suite dependency.
 
 ---
 
@@ -259,4 +277,4 @@ A dedicated `NPS-mcp-bridge` (outbound direction) is on the alpha.6 task queue.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

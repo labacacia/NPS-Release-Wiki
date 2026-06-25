@@ -1,6 +1,6 @@
 # Daemon: npsd
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/npsd/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/npsd:1.0.0-alpha.5.2`
+- **Docker image:** `labacacia/npsd:1.0.0-alpha.13`
 - **Default port:** `127.0.0.1:17433` (loopback only — never expose directly to the Internet)
 - **Layer:** L1
 
@@ -20,8 +20,8 @@
 1. **Root keypair management** — On first start `npsd` generates an Ed25519 root keypair and persists it to `${NPSD_DATA_DIR}/root.ed25519.pkcs8` with POSIX mode `0600`. This satisfies NPS-Node Profile conformance test `TC-N1-NIP-01`.
 2. **Sub-NID issuance** — Mints child NIDs derived from the host root NID. Carrier IdentFrames are signed with the root key. Records are stored in `${NPSD_DATA_DIR}/sub-nids.sqlite`.
 3. **Per-NID inbox queue** — Short-term in-memory queue per sub-NID with long-poll, ack, configurable depth caps, message priority, and TTL. Resident agents poll their own inbox or long-poll for push-style delivery.
-4. **`GET /.nwm`** — Daemon-self Neural Web Manifest declaring all routes.
-5. **`GET /health`** — Docker `HEALTHCHECK` / systemd liveness probe.
+4. **`GET /.nwm`** — Daemon-self Neural Web Manifest declaring all routes. Responses carry the `X-NWM-Version` header (the manifest's `manifest_version` uint32 counter); clients MAY use `If-None-Match: <manifest_version>` for conditional `304 Not Modified` requests (NWP v0.14).
+5. **Operability endpoints** — `GET /healthz` (liveness), `GET /readyz` (readiness), and `GET /metrics` (Prometheus exposition) for Docker `HEALTHCHECK` / systemd probes and scraping. The legacy `GET /health` JSON probe remains available.
 
 ---
 
@@ -49,8 +49,11 @@
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/health` | Liveness probe. |
-| `GET` | `/.nwm` | Daemon-self Neural Web Manifest. |
+| `GET` | `/healthz` | Liveness probe (process is up). Returns `200 OK`. |
+| `GET` | `/readyz` | Readiness probe (root keypair loaded, data dir writable, ready to serve). Returns `200 OK` when ready, `503` otherwise. |
+| `GET` | `/metrics` | Prometheus exposition (inbox depth, sub-NID counts, request latency, etc.). |
+| `GET` | `/health` | Legacy JSON liveness probe (retained for compatibility). |
+| `GET` | `/.nwm` | Daemon-self Neural Web Manifest. Carries `X-NWM-Version` response header (NWP v0.14). |
 
 ---
 
@@ -60,7 +63,7 @@
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.5.2",
+  "version": "1.0.0-alpha.13",
   "layer": 1,
   "role": "protocol-access-host",
   "port": 17433,
@@ -70,6 +73,12 @@
 ```
 
 All error responses carry `{error, status, message}` per the NPS error-code namespace.
+
+---
+
+## Graceful shutdown
+
+On `SIGTERM`, `npsd` performs a graceful shutdown with a **30-second drain window**: it stops accepting new connections, allows in-flight requests and long-poll waits to complete, flushes pending state, and then exits. Send `SIGTERM` (the default for `docker stop` and systemd) rather than `SIGKILL` so inbox and sub-NID state are persisted cleanly.
 
 ---
 
@@ -90,7 +99,7 @@ All error responses carry `{error, status, message}` per the NPS error-code name
 
 ```yaml
 npsd:
-  image: labacacia/npsd:1.0.0-alpha.5.2
+  image: labacacia/npsd:1.0.0-alpha.13
   restart: unless-stopped
   ports:
     - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-gateway
@@ -158,4 +167,4 @@ The recipient NID's inbox has hit `NPSD_MAX_INBOX_DEPTH_PER_NID` (default 1024).
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

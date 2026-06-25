@@ -1,6 +1,6 @@
 # SDK Tutorial: Building an Anchor Node
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 > **Audience:** Developers standing up a cluster entry point that routes NPS traffic and optionally exposes topology query endpoints.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -43,6 +43,8 @@ An Anchor Node MAY simultaneously declare additional roles (for example `["ancho
 
 Every NWP node MUST expose a manifest at `GET /.nwm` with `Content-Type: application/nwp-manifest+json`.
 
+As of **NWP v0.14**, the manifest carries `manifest_version` (uint32 monotonic counter, starts at 1, incremented by 1 on every structural change) and `manifest_updated_at` (ISO 8601 timestamp). The server MUST emit an `X-NWM-Version: <uint32>` HTTP response header on every `GET /.nwm` and SHOULD honour `If-None-Match: <uint32>` conditional requests, returning `304 Not Modified` when the caller's version matches the current one.
+
 For an Anchor Node:
 
 - `node_type` MUST be `"anchor"` — NOT `"gateway"` (removed).
@@ -53,10 +55,12 @@ For an Anchor Node:
 
 ```json
 {
-  "nwp": "0.4",
+  "nwp": "0.14",
   "node_id": "urn:nps:node:api.example.com:agent-service",
   "node_type": "anchor",
   "display_name": "Example AaaS Anchor",
+  "manifest_version": 1,
+  "manifest_updated_at": "2026-06-13T00:00:00Z",
   "wire_formats": ["ncp-capsule", "msgpack", "json"],
   "preferred_format": "msgpack",
   "capabilities": {
@@ -95,7 +99,7 @@ Add `min_assurance_level` at the top level if you want to require a minimum iden
 }
 ```
 
-Use `node_roles`, never the legacy `node_kind` field. As of NDP v0.6, `node_kind` is an accepted alias through alpha.5 for parsing, but `node_roles` is the canonical form for publishing.
+Use `node_roles`, never the legacy `node_kind` field. `node_kind` was an accepted parse-only alias **through alpha.5 only**; from alpha.6 onward clients MUST send `node_roles` (including in `topology.filter.node_roles`) and `node_kind` is no longer accepted.
 
 ---
 
@@ -208,12 +212,17 @@ A single-shot query returning the current cluster state. Received as a `QueryFra
 
 A continuous event feed. Received as a `SubscribeFrame (0x12)` with `type = "topology.stream"`.
 
+As of **NWP v0.13 (CR-0006)** the `SubscribeFrame` is formally specified in NWP §13: it carries a `subscription_id` (UUID v4), a QueryFrame-compatible filter, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` that the server returns and the client replays for lossless resume after a disconnect.
+
 ```json
 {
   "frame": "0x12",
   "action": "subscribe",
   "type": "topology.stream",
-  "stream_id": "550e8400-...",
+  "subscription_id": "550e8400-e29b-41d4-a716-446655440000",
+  "heartbeat_interval_ms": 30000,
+  "max_events": 0,
+  "cursor": null,
   "topology": {
     "scope": "cluster",
     "filter": {
@@ -222,6 +231,8 @@ A continuous event feed. Received as a `SubscribeFrame (0x12)` with `type = "top
   }
 }
 ```
+
+To resume after a disconnect, re-send the `SubscribeFrame` with the last `cursor` value the server emitted; the server replays from that point without gaps.
 
 Push events as `DiffFrame (0x02)`. The `event_type` field uses topology-specific values:
 
@@ -233,7 +244,7 @@ Push events as `DiffFrame (0x02)`. The `event_type` field uses topology-specific
 | `anchor_state` | Internal Anchor state change (e.g., `version_rebased`) |
 | `resync_required` | Subscriber's `since_version` is outside the retention window |
 
-Cancellation: the subscriber sends `SubscribeFrame(action="unsubscribe", stream_id=...)`.
+Cancellation: the subscriber sends `SubscribeFrame(action="unsubscribe", subscription_id=...)`.
 
 **Consistency guarantee:** a snapshot at `version: V` combined with all stream events `V+1, V+2, …` yields a consistent live view. Per-event latency is not guaranteed.
 
@@ -246,6 +257,8 @@ All `topology.*` requests MUST be authenticated before serving. The minimum bind
 **Primary gate — capability check:**
 
 The requesting NID MUST declare `topology:read` in its `IdentFrame.capabilities`. If absent, return `NWP-TOPOLOGY-UNAUTHORIZED` (`NPS-AUTH-FORBIDDEN`). Do NOT return a silent empty response.
+
+For the live `topology.stream` feed specifically, the requester MUST also declare `topology:subscribe`. This capability was SHOULD at NWP v0.12 and became MUST at **NWP v0.13 (CR-0006, §12.4)** for the authorization model around `SubscribeFrame`.
 
 In HTTP mode, the request will carry an `X-NWP-Capabilities` header (derived from the agent's IdentFrame). Check it:
 
@@ -329,11 +342,11 @@ Passing implementations MAY copy the `NPS-NODE-L1-CERTIFIED.md` template to thei
 
 ## See also
 
-- [Protocol NWP](Protocol-NWP) — full NWP spec including QueryFrame §6, SubscribeFrame §8, topology §12
+- [Protocol NWP](Protocol-NWP) — full NWP spec (v0.14) including QueryFrame §6, SubscribeFrame §13, topology §12
 - [Operator AaaS Profile](Operator-AaaS-Profile) — full L1/L2/L3 compliance requirements
 - [Operator Conformance Certification](Operator-Conformance-Certification) — test runner, self-attestation templates
 - [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node) — the sibling node type for NPS↔external translation
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

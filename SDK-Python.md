@@ -1,6 +1,6 @@
 # SDK — Python
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 Python client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -9,20 +9,22 @@ Python client library for the Neural Protocol Suite. Covers all five protocols: 
 ## Installation
 
 ```bash
-pip install nps-lib==1.0.0a5.2
+pip install nps-lib==1.0.0a13
 ```
 
 For development extras (pytest, coverage, linting):
 
 ```bash
-pip install "nps-lib[dev]==1.0.0a5.2"
+pip install "nps-lib[dev]==1.0.0a13"
 ```
 
 > **Package name:** The PyPI distribution is `nps-lib`. The name `nps-sdk` is taken by an unrelated package (Ingenico). The Python import namespace is always `nps_sdk`.
 
 **Requirements:** Python 3.11+. Dependencies: `msgpack`, `httpx`, `cryptography`.
 
-**Tests:** 221 passing, ≥ 90% coverage target.
+**Tests:** 221+ passing, ≥ 90% coverage target.
+
+> **Suite version:** This SDK tracks suite `v1.0.0-alpha.13`. alpha.12 was withdrawn; pin `nps-lib==1.0.0a13`.
 
 ---
 
@@ -31,14 +33,14 @@ pip install "nps-lib[dev]==1.0.0a5.2"
 | Module | Description |
 |--------|-------------|
 | `nps_sdk.core` | Frame header, `NpsFrameCodec` (Tier-1 JSON / Tier-2 MsgPack), `FrameRegistry`, `AnchorFrameCache`, exceptions |
-| `nps_sdk.ncp` | NCP frames: `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame` |
+| `nps_sdk.ncp` | NCP frames: `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame` (incl. `ping_interval_ms`), `ErrorFrame`, `NopFrame` (keepalive/heartbeat) |
 | `nps_sdk.nwp` | NWP frames: `QueryFrame`, `ActionFrame`; async `NwpClient`; `NwpErrorCodes` (30 constants) |
-| `nps_sdk.nip` | NIP frames: `IdentFrame` (v2 dual-trust), `TrustFrame`, `RevokeFrame`; `NipIdentity` (Ed25519); `NipIdentVerifier` + `NipVerifierOptions` (RFC-0002 §8.1 dual-trust); `AssuranceLevel` (RFC-0003) |
+| `nps_sdk.nip` | NIP frames: `IdentFrame` (v2 dual-trust, incl. `node_roles`), `TrustFrame`, `RevokeFrame`; `NipIdentity` (Ed25519); `NipIdentVerifier` + `NipVerifierOptions` (RFC-0002 §8.1 dual-trust); `AssuranceLevel` (RFC-0003) |
 | `nps_sdk.nip.x509` | RFC-0002 X.509 NID certs: `NipX509Builder`, `NipX509Verifier`, `NpsX509Oids` |
 | `nps_sdk.nip.acme` | RFC-0002 ACME `agent-01`: `AcmeClient`, `AcmeServer` (in-process), JWS helpers, messages |
-| `nps_sdk.ndp` | NDP frames: `AnnounceFrame`, `ResolveFrame`, `GraphFrame`; in-memory registry and validator; `resolve_via_dns` DNS TXT fallback |
+| `nps_sdk.ndp` | NDP frames: `AnnounceFrame` (incl. structured `spawn_spec_ref` + `heartbeat_interval_ms`), `ResolveFrame`, `GraphFrame`; in-memory registry and validator; `resolve_via_dns` DNS TXT fallback |
 | `nps_sdk.ndp.dns_txt` | `resolve_via_dns(target, dns_lookup=None)` — looks up `_nps-node.<host>` TXT records when a target is not in the in-memory registry |
-| `nps_sdk.nop` | NOP frames: `TaskFrame`, `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`; async `NopClient` |
+| `nps_sdk.nop` | NOP frames: `TaskFrame` (incl. `result_ttl_seconds`), `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`; async `NopClient` |
 
 ---
 
@@ -210,6 +212,19 @@ pytest -k test_nip     # NIP tests only
 
 ---
 
+## alpha.13 feature set
+
+The Python SDK ships the common alpha.13 protocol surface (parity across all six SDKs):
+
+- **NCP** — `NopFrame` keepalive/heartbeat; `HelloFrame.ping_interval_ms` (0 disables; dead-peer threshold = 3 × interval).
+- **NIP** — `IdentFrame.node_roles` (self-declared node-role tags; excluded from the Ed25519-signed payload, same pattern as `cert_format`/`cert_chain`).
+- **NDP** — `AnnounceFrame.spawn_spec_ref` as a structured schema object (was a URI string); `AnnounceFrame.heartbeat_interval_ms` (default 60000 ms, 0 disables).
+- **NOP** — `TaskFrame.result_ttl_seconds` (default 3600 s, omitted from wire at default).
+- **NWP** — `X-NWM-Version` response header; NWM `manifest_version` / `manifest_updated_at`.
+- **`ReputationLogClient`** — CT-style reputation log with dual Ed25519 signatures (`SignedTreeHead`, `InclusionProof`, RFC 9162 Merkle fold). Available since **alpha.7**.
+
+---
+
 ## See also
 
 - [SDK Quickstart](SDK-Quickstart) — language-agnostic first steps and install table
@@ -218,4 +233,4 @@ pytest -k test_nip     # NIP tests only
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

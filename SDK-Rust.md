@@ -1,6 +1,6 @@
 # SDK — Rust
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 Rust client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -12,7 +12,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nps-sdk = "=1.0.0-alpha.5.2"
+nps-sdk = "=1.0.0-alpha.13"
 tokio   = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
@@ -29,11 +29,11 @@ tokio   = { version = "1", features = ["rt-multi-thread", "macros"] }
 | Crate | Description |
 |-------|-------------|
 | `nps-core` | Frame header, `NpsFrameCodec` (Tier-1 JSON / Tier-2 MsgPack), `FrameRegistry`, anchor cache, `NpsError` |
-| `nps-ncp` | NCP frames: `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame` |
-| `nps-nwp` | NWP frames: `QueryFrame`, `ActionFrame`, `AsyncActionResponse`; async `NwpClient` (reqwest); `error_codes` module (30 constants) |
-| `nps-nip` | NIP frames: `IdentFrame`, `TrustFrame`, `RevokeFrame`; `NipIdentity` (Ed25519 key management); `nps_nip::x509`; `nps_nip::acme` |
-| `nps-ndp` | NDP frames: `AnnounceFrame`, `ResolveFrame`, `GraphFrame`; `InMemoryNdpRegistry`; `NdpAnnounceValidator`; `resolve_via_dns`, `DnsTxtLookup` trait, `parse_nps_txt_record` |
-| `nps-nop` | NOP frames: `TaskFrame`, `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`; `BackoffStrategy`; `NopClient` |
+| `nps-ncp` | NCP frames: `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame` (`ping_interval_ms`), `NopFrame` (0x07 keepalive), `ErrorFrame` |
+| `nps-nwp` | NWP frames: `QueryFrame`, `ActionFrame`, `AsyncActionResponse`; async `NwpClient` (reqwest; reads `X-NWM-Version` and `manifest_version`/`manifest_updated_at` for conditional `.nwm` re-fetch); `error_codes` module (30 constants) |
+| `nps-nip` | NIP frames: `IdentFrame` (incl. `node_roles` self-declared role tags), `TrustFrame`, `RevokeFrame`; `NipIdentity` (Ed25519 key management); `ReputationLogClient` (RFC-0004 Phase 2, added in alpha.7); `nps_nip::x509` (anchored to IANA PEN 65715); `nps_nip::acme` |
+| `nps-ndp` | NDP frames: `AnnounceFrame` (`spawn_spec_ref` structured schema object; `heartbeat_interval_ms`), `ResolveFrame`, `GraphFrame`; `InMemoryNdpRegistry`; `NdpAnnounceValidator`; `resolve_via_dns`, `DnsTxtLookup` trait, `parse_nps_txt_record` |
+| `nps-nop` | NOP frames: `TaskFrame` (`result_ttl_seconds`), `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`; `BackoffStrategy`; `NopClient` |
 | `nps-sdk` | Re-export umbrella crate — all protocols under `nps_sdk::` namespace |
 
 All crates are in the same Cargo workspace. You can depend on the umbrella `nps-sdk` crate or on individual crates if you only need specific protocols.
@@ -167,6 +167,7 @@ All `NpsError` variants implement `std::error::Error` and are compatible with `a
 | `StreamFrame` | 0x03 | `nps-ncp` |
 | `CapsFrame` | 0x04 | `nps-ncp` |
 | `HelloFrame` | 0x06 | `nps-ncp` |
+| `NopFrame` | 0x07 | `nps-ncp` |
 | `ErrorFrame` | 0xFE | `nps-ncp` |
 | `QueryFrame` | 0x10 | `nps-nwp` |
 | `ActionFrame` | 0x11 | `nps-nwp` |
@@ -208,4 +209,4 @@ Test breakdown: `nps-core` 27, `nps-ndp` 25, `nps-nip` 16, `nps-nop` 20. Total: 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

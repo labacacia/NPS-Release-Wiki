@@ -1,6 +1,6 @@
 # SDK — Java
 
-**Status:** ✅ Content complete — v1.0.0-alpha.5.2
+**Status:** ✅ Content complete — v1.0.0-alpha.13
 
 Java client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -12,7 +12,7 @@ Java client library for the Neural Protocol Suite. Covers all five protocols: NC
 
 ```kotlin
 dependencies {
-    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.5.2")
+    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.13")
 }
 ```
 
@@ -22,7 +22,7 @@ dependencies {
 <dependency>
   <groupId>com.labacacia.nps</groupId>
   <artifactId>nps-java</artifactId>
-  <version>1.0.0-alpha.5.2</version>
+  <version>1.0.0-alpha.13</version>
 </dependency>
 ```
 
@@ -47,13 +47,13 @@ dependencies {
 | Package | Description |
 |---------|-------------|
 | `com.labacacia.nps.core` | Frame header, `NpsFrameCodec` (Tier-1 JSON / Tier-2 MsgPack), `NpsRegistries`, `AnchorFrameCache`, exceptions |
-| `com.labacacia.nps.ncp` | NCP frames: `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame` |
-| `com.labacacia.nps.nwp` | NWP frames: `QueryFrame`, `ActionFrame`, `AsyncActionResponse`; `NwpClient` (HTTP); `NwpErrorCodes` (30 constants) |
-| `com.labacacia.nps.nip` | NIP frames: `IdentFrame`, `TrustFrame`, `RevokeFrame`; `NipIdentity` (Ed25519); `NipIdentVerifier` (RFC-0002 §8.1 dual-trust); `AssuranceLevel` (RFC-0003) |
-| `com.labacacia.nps.nip.x509` | RFC-0002 X.509 NID certs: `NipX509Builder`, `NipX509Verifier`, `Ed25519PublicKeys`, `NpsX509Oids` |
+| `com.labacacia.nps.ncp` | NCP frames: `AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `NopFrame` (0x07 keepalive), `ErrorFrame`. `HelloFrame.pingIntervalMs` drives keepalive/dead-peer detection |
+| `com.labacacia.nps.nwp` | NWP frames: `QueryFrame`, `ActionFrame`, `AsyncActionResponse`; `NwpClient` (HTTP; reads `X-NWM-Version` and `manifest_version`/`manifest_updated_at` for conditional `.nwm` re-fetch); `NwpErrorCodes` (30 constants) |
+| `com.labacacia.nps.nip` | NIP frames: `IdentFrame` (incl. `nodeRoles` self-declared role tags), `TrustFrame`, `RevokeFrame`; `NipIdentity` (Ed25519); `NipIdentVerifier` (RFC-0002 §8.1 dual-trust); `AssuranceLevel` (RFC-0003); `ReputationLogClient` (RFC-0004 Phase 2, added in alpha.7) |
+| `com.labacacia.nps.nip.x509` | RFC-0002 X.509 NID certs: `NipX509Builder`, `NipX509Verifier`, `Ed25519PublicKeys`, `NpsX509Oids` (anchored to IANA PEN 65715) |
 | `com.labacacia.nps.nip.acme` | RFC-0002 ACME `agent-01`: `AcmeClient`, `AcmeServer` (in-process), `AcmeJws`, `AcmeMessages` |
-| `com.labacacia.nps.ndp` | NDP frames: `AnnounceFrame`, `ResolveFrame`, `GraphFrame`; `InMemoryNdpRegistry`; `NdpAnnounceValidator`; `resolveViaDns` (DNS TXT fallback); `DnsTxtLookup`, `SystemDnsTxtLookup`, `NpsDnsTxt` |
-| `com.labacacia.nps.nop` | NOP frames: `TaskFrame`, `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`; `BackoffStrategy`; `NopTaskStatus` |
+| `com.labacacia.nps.ndp` | NDP frames: `AnnounceFrame` (`spawnSpecRef` structured schema object; `heartbeatIntervalMs`), `ResolveFrame`, `GraphFrame`; `InMemoryNdpRegistry`; `NdpAnnounceValidator`; `resolveViaDns` (DNS TXT fallback); `DnsTxtLookup`, `SystemDnsTxtLookup`, `NpsDnsTxt` |
+| `com.labacacia.nps.nop` | NOP frames: `TaskFrame` (`resultTtlSeconds`), `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`; `BackoffStrategy`; `NopTaskStatus` |
 
 ---
 
@@ -183,6 +183,7 @@ The library works without any wrapper. Java records map naturally to Kotlin data
 | `StreamFrame` | 0x03 | NCP |
 | `CapsFrame` | 0x04 | NCP |
 | `HelloFrame` | 0x06 | NCP |
+| `NopFrame` | 0x07 | NCP |
 | `ErrorFrame` | 0xFE | NCP |
 | `QueryFrame` | 0x10 | NWP |
 | `ActionFrame` | 0x11 | NWP |
@@ -221,4 +222,4 @@ Test classes: `AnchorFrameCacheTest` (12), `FrameHeaderTest` (8), `NpsFrameCodec
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*

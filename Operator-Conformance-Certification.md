@@ -1,7 +1,7 @@
 # Operator: Node Conformance & Certification
 
 > **Audience:** Operators + node implementers
-> **Status:** ✅ Content complete — v1.0.0-alpha.5.2
+> **Status:** ✅ Content complete — v1.0.0-alpha.13
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 NPS has two orthogonal compliance profiles. This page explains how they relate and how to run the conformance test suite and publish a self-attestation.
@@ -40,7 +40,7 @@ Three cases (NIP-04, NDP-04, NWP-05) may be recorded as **N/A** if the implement
 
 ### Test methodology: paired-peer
 
-Every L1 case is run with a **peer** — any implementation that already passes L1, or the .NET reference SDK (`NPS.Core` + `NPS.NDP` + `NPS.NIP` + `NPS.NWP` at v1.0.0-alpha.3 or later). Run every case against the Implementation Under Test (IUT) paired with the peer. Use a fresh IUT state (wipe the key store, registry, and inbox) between cases unless the case is explicitly continuation-oriented.
+Every L1 case is run with a **peer** — any implementation that already passes L1, or the .NET reference SDK (`NPS.Core` + `NPS.NDP` + `NPS.NIP` + `NPS.NWP` at v1.0.0-alpha.11 or later). Run every case against the Implementation Under Test (IUT) paired with the peer. Use a fresh IUT state (wipe the key store, registry, and inbox) between cases unless the case is explicitly continuation-oriented.
 
 Test environment requirements:
 - Network: loopback only; no external DNS or inter-host routing required.
@@ -50,21 +50,72 @@ Test environment requirements:
 
 ---
 
-## Node-Profile Level 2: additional test cases
+## Node-Profile Level 2: published suite
 
-Level 2 extends L1 with interactive requirements. Detailed requirement IDs (`N2-NCP-*` etc.) are tracked under NPS-Roadmap Phase 2; the conformance document (`spec/services/conformance/NPS-Node-L2.md`) is planned but not yet published.
+Level 2 extends L1 with interactive requirements. The conformance document
+(`spec/services/conformance/NPS-Node-L2.md`) is **published** (Draft v0.3) and currently
+covers the **L2-08 topology read-back** requirement (NPS-CR-0002) plus the **NCP-over-TLS
+ingress** admission gate (NPS-RFC-0006 §6). The remaining L2 requirements (L2-01 through
+L2-07 — NOP orchestration, OTel tracing, CGN Token Budget, preflight, retry/timeout, async
+actions, AlignStream back-pressure) have their test cases tracked in follow-up CRs and are
+out of scope for the current L2 document.
 
-Headline L2 additions on top of L1:
+### L2-08 topology cases (12, all MUST pass)
 
-| Domain | Addition |
-|--------|---------|
-| NCP | Tier-2 MsgPack MUST be negotiated and used |
-| NIP | Trust-chain validation against a configured trust anchor MUST succeed |
-| NDP | GraphFrame subscription MUST work; node SHOULD react to incremental changes within the `seq` window |
-| NWP | ActionFrame push and Subscribe MUST work; Anchor Nodes MUST respond to `topology.snapshot` / `topology.stream` (NPS-2 §12) |
-| NOP | TaskFrame and DelegateFrame MUST be accepted |
-| Activation | `resident` mode MUST be supported |
-| Observability | Prometheus-style metrics endpoint MUST be exposed (frame counters, inbox depth, connection count, handshake latency histogram) |
+The L2-08 scope defines **12 `TC-N2-*` cases** — all MUST pass; partial claims are not
+allowed:
+
+| Group | Cases | What they cover |
+|-------|-------|-----------------|
+| Topology snapshot | `TC-N2-AnchorTopo-01` … `-03` | 3-member snapshot; version monotonicity; sub-Anchor `child_anchor` / `member_count` |
+| Topology negative paths | `TC-N2-AnchorTopo-04` … `-08` | one MUST-reject per error code: `NWP-TOPOLOGY-UNAUTHORIZED` (missing `topology:read`), `NWP-TOPOLOGY-DEPTH-UNSUPPORTED`, `NWP-TOPOLOGY-UNSUPPORTED-SCOPE`, `NWP-TOPOLOGY-FILTER-UNSUPPORTED`, `NWP-RESERVED-TYPE-UNSUPPORTED` |
+| Topology stream | `TC-N2-AnchorStream-01` … `-04` | `member_joined`; `member_left` on TTL expiry; resume from `topology.since_version`; `resync_required` when version too old |
+
+### NCP-over-TLS ingress cases (NPS-RFC-0006 §6)
+
+For an IUT terminating native-mode NCP-over-TLS at an L2 ingress (e.g. `nps-ingress`):
+
+| Case | Covers |
+|------|--------|
+| `TC-N2-Tls-01` | ALPN `nps/1.0` negotiated over TLS 1.3; unknown ALPN failed with alert `no_application_protocol` (120) |
+| `TC-N2-Tls-02` | Mutual TLS required (`RequireClientCert = true`) |
+| `TC-N2-Tls-03` | Client cert validates to a trust anchor and binds the session NID |
+| `TC-N2-Tls-04` | IdentFrame/certificate NID mismatch → `NCP-NID-MISMATCH` |
+
+The paired peer for L2 is any L2-passing implementation, or the .NET reference
+(`NPS.NWP.Anchor` + `NPS.NDP`) at v1.0.0-alpha.11 or later. Copy
+`NPS-NODE-L2-CERTIFIED.md` to your repository root, fill it in, and sign with the IUT's
+root key — same flow as L1.
+
+---
+
+## Node-Profile Level 3: published suite (runtime / FaaS)
+
+The L3 conformance document (`spec/services/conformance/NPS-Node-L3.md`, Draft v0.1) covers
+the **NOP L3 runtime integration** introduced by [NPS-CR-0007](https://github.com/labacacia/NPS-Release/tree/main/spec/cr/)
+— the `nps-runner` ↔ NOP orchestration interface. L3 is strictly additive over the NOP
+orchestration semantics and the L1/L2 node suites; it adds the task-claim protocol,
+`spawn_spec_ref` resolution, and idle/max-runtime lifecycle enforcement.
+
+| Group | Cases | What they cover |
+|-------|-------|-----------------|
+| Task-claim protocol | `TC-N3-Claim-01` … `-03` | concurrent claim → exactly one granted, other gets `NOP-CLAIM-CONFLICT` (409); lease-expiry reclaim without re-executing terminal nodes (`dedup_key`); lease renewal |
+| `spawn_spec_ref` resolution | `TC-N3-Spawn-01` … `-03` | inline `spawnspec:` base64url-JSON; `https://`/`nwp://` fetch + schema validation; unresolvable/invalid → `NOP-SPAWN-SPEC-INVALID` (400) |
+| Lifecycle enforcement | `TC-N3-Life-01` … `-02` | `NOP-RUNTIME-IDLE-TIMEOUT` / `NOP-RUNTIME-MAX-RUNTIME` (504); node `FAILED`; worker reaped |
+| End-to-end & saga | `TC-N3-DAG-01`, `TC-N3-Saga-01` | 3-node linear DAG end-to-end; reverse-topological saga rollback (`COMPENSATING → COMPENSATED`) |
+
+Third-party certification (NPS Cloud CA) remains targeted for L3 in 2027 Q1+; self-certification
+is sufficient at this release.
+
+---
+
+## Running checks with nps-probe
+
+The `nps-probe` conformance CLI (v0.2) drives an implementation under test as a paired peer
+and runs the standard NPS surface checks (handshake, identity, discovery, inbox). As of
+v0.2 it adds **Check 5: NWM `trust_anchors` validation**, verifying that an Anchor's NWM
+declares a well-formed `trust_anchors` array of CA NID URNs (NWP §13 / CR-0006). Run it
+against a freshly stood-up cluster or in CI before claiming a conformance level.
 
 ---
 
@@ -85,7 +136,7 @@ Headline L2 additions on top of L1:
      },
      "peer": {
        "name": "nps-dotnet-reference",
-       "version": "1.0.0-alpha.5.2"
+       "version": "1.0.0-alpha.11"
      },
      "run": {
        "date": "2026-05-03T00:00:00Z",
@@ -109,7 +160,7 @@ Headline L2 additions on top of L1:
 
 6. Publish the filled-in `NPS-NODE-L1-CERTIFIED.md` at your repository root as a public claim of compliance.
 
-Self-certification is sufficient for L1 and L2 at this release. Third-party certification via NPS Cloud CA is targeted for L3 in 2027 Q1+.
+Self-certification is sufficient for L1, L2, and L3 at this release. Third-party certification via NPS Cloud CA is targeted for L3 in 2027 Q1+.
 
 ---
 
@@ -149,9 +200,13 @@ All conformance documents and attestation templates are in the `spec/services/co
 | File | Purpose |
 |------|---------|
 | `NPS-Node-L1.md` | L1 conformance suite (21 `TC-N1-*` test cases, paired-peer methodology, results manifest schema) |
-| `NPS-NODE-L1-CERTIFIED.md` | Self-declaration template; copy to your repository root when all 21 cases pass |
+| `NPS-NODE-L1-CERTIFIED.md` | L1 self-declaration template; copy to your repository root when all 21 cases pass |
+| `NPS-Node-L2.md` | L2 conformance suite (Draft v0.3 — 12 `TC-N2-AnchorTopo*`/`AnchorStream*` cases for L2-08, plus `TC-N2-Tls-*` NCP-over-TLS ingress cases) |
+| `NPS-NODE-L2-CERTIFIED.md` | L2 self-declaration template |
+| `NPS-Node-L3.md` | L3 conformance suite (Draft v0.1 — `TC-N3-Claim-*` / `TC-N3-Spawn-*` / `TC-N3-Life-*` / `TC-N3-DAG-01` / `TC-N3-Saga-01`, NPS-CR-0007 runtime integration) |
 
-L2 and L3 suites and templates will be published when the corresponding requirement IDs are finalized (see NPS-Roadmap Phase 2 and Phase 3).
+The remaining L2 requirement cases (L2-01 … L2-07) and an `NPS-NODE-L3-CERTIFIED.md` template
+will be published as the corresponding follow-up CRs land (see NPS-Roadmap).
 
 ---
 
@@ -162,4 +217,4 @@ L2 and L3 suites and templates will be published when the corresponding requirem
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.5.2*
+*Last reviewed at suite version: v1.0.0-alpha.13*
