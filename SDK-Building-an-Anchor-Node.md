@@ -1,6 +1,6 @@
 # SDK Tutorial: Building an Anchor Node
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 > **Audience:** Developers standing up a cluster entry point that routes NPS traffic and optionally exposes topology query endpoints.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -349,4 +349,4 @@ Passing implementations MAY copy the `NPS-NODE-L1-CERTIFIED.md` template to thei
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

@@ -1,6 +1,6 @@
 # SDK Tutorial: Building a Bridge Node
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 > **Audience:** Developers implementing NPS↔non-NPS protocol translation (MCP, A2A, gRPC, HTTP).
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -266,7 +266,7 @@ Three open-source reference implementations are available:
 
 These ingress packages carry the inverse direction from a Bridge Node, but their protocol-translation logic (MCP tool schema mapping, A2A task state machine, gRPC proto-to-NPS frame mapping) is the most complete reference for each protocol's quirks. Study the translation layer and adapt it for the outbound path.
 
-A dedicated outbound (NPS → external) MCP bridge remains a roadmap item; as of alpha.13 the shipped MCP compatibility component is the inbound `LabAcacia.McpIngress` (in the `labacacia/NPS-mcp-bridge` repo), pinned at `v1.0.0-alpha.8` and not part of the alpha.13 release train — use its translation layer as a reference, not as a versioned suite dependency.
+A dedicated outbound (NPS → external) MCP bridge remains a roadmap item. As of alpha.14, the inbound ingress packages above are versioned with the suite release train and provide the reference translation layers for outbound bridge work.
 
 ---
 
@@ -277,4 +277,4 @@ A dedicated outbound (NPS → external) MCP bridge remains a roadmap item; as of
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

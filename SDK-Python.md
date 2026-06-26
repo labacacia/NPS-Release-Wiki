@@ -1,6 +1,6 @@
 # SDK — Python
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 Python client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -9,13 +9,13 @@ Python client library for the Neural Protocol Suite. Covers all five protocols: 
 ## Installation
 
 ```bash
-pip install nps-lib==1.0.0a13
+pip install nps-lib==1.0.0a14
 ```
 
 For development extras (pytest, coverage, linting):
 
 ```bash
-pip install "nps-lib[dev]==1.0.0a13"
+pip install "nps-lib[dev]==1.0.0a14"
 ```
 
 > **Package name:** The PyPI distribution is `nps-lib`. The name `nps-sdk` is taken by an unrelated package (Ingenico). The Python import namespace is always `nps_sdk`.
@@ -24,7 +24,7 @@ pip install "nps-lib[dev]==1.0.0a13"
 
 **Tests:** 221+ passing, ≥ 90% coverage target.
 
-> **Suite version:** This SDK tracks suite `v1.0.0-alpha.13`. alpha.12 was withdrawn; pin `nps-lib==1.0.0a13`.
+> **Suite version:** This SDK tracks suite `v1.0.0-alpha.14`. alpha.12 was withdrawn; pin `nps-lib==1.0.0a14`.
 
 ---
 
@@ -212,9 +212,9 @@ pytest -k test_nip     # NIP tests only
 
 ---
 
-## alpha.13 feature set
+## alpha.14 feature set
 
-The Python SDK ships the common alpha.13 protocol surface (parity across all six SDKs):
+The Python SDK ships the alpha.13 parity surface plus the alpha.14 release additions:
 
 - **NCP** — `NopFrame` keepalive/heartbeat; `HelloFrame.ping_interval_ms` (0 disables; dead-peer threshold = 3 × interval).
 - **NIP** — `IdentFrame.node_roles` (self-declared node-role tags; excluded from the Ed25519-signed payload, same pattern as `cert_format`/`cert_chain`).
@@ -233,4 +233,4 @@ The Python SDK ships the common alpha.13 protocol surface (parity across all six
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

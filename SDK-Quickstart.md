@@ -1,6 +1,6 @@
 # SDK Quickstart
 
-**Status:** ✅ Latest published packages — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
+**Status:** ✅ Latest published packages — v1.0.0-alpha.14
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
@@ -22,22 +22,22 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 
 | Language | Install command | Current pin |
 |----------|-----------------|-------------|
-| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.13` | `1.0.0-alpha.13` |
-| Python | `pip install nps-lib==1.0.0a13` | `1.0.0a13` |
-| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.13` | `1.0.0-alpha.13` |
-| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.13")` | `1.0.0-alpha.13` |
-| Rust | `nps-sdk = "=1.0.0-alpha.13"` | `=1.0.0-alpha.13` (exact pin) |
-| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.13` | `v1.0.0-alpha.13` |
+| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.14` | `1.0.0-alpha.14` |
+| Python | `pip install nps-lib==1.0.0a14` | `1.0.0a14` |
+| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.14` | `1.0.0-alpha.14` |
+| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.14")` | `1.0.0-alpha.14` |
+| Rust | `nps-sdk = "=1.0.0-alpha.14"` | `=1.0.0-alpha.14` (exact pin) |
+| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.14` | `v1.0.0-alpha.14` |
 
 > **Python package name:** The PyPI distribution name is `nps-lib` (not `nps-sdk` — that name is taken by an unrelated package). The Python import namespace is `nps_sdk`.
 
 > **Rust pinning:** Use the `=` prefix for alpha releases to prevent Cargo from silently upgrading to a later alpha.
 
-> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.13`. Pin the explicit version above for reproducible builds.
+> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.14`. Pin the explicit version above for reproducible builds.
 
-> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 supersedes it with `MessagePack 3.1.7`; pin to `1.0.0-alpha.13`.
+> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.14 is the current pin.
 
-> **alpha.14 candidate docs:** Source and specs are staged for typed remote NIP CA clients, native-mode NWP serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, and .NET native NCP TLS/mTLS hardening. Keep install pins on alpha.13 until alpha.14 artifacts are cut.
+> **alpha.14 release docs:** Source and specs now cover typed remote NIP CA clients, native-mode NWP serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, and .NET native NCP TLS/mTLS hardening.
 
 ---
 
@@ -152,7 +152,7 @@ Tier-1 JSON is convenient for debugging but produces roughly 2.5× more bytes th
 
 ### Ignoring the `AssuranceLevel` empty-string case
 
-`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.13`.
+`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.14`.
 
 ### Mixing suite versions
 
@@ -160,9 +160,9 @@ All NuGet/PyPI/npm/Maven/crates.io packages within the same language SDK are ver
 
 ---
 
-## Published alpha.13 feature set and alpha.14 candidate delta
+## Published alpha.14 feature set
 
-All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the same alpha.13 protocol surface:
+All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the alpha.13 parity surface plus the alpha.14 release additions:
 
 - **NCP** — `NopFrame` (0x07) zero-payload keepalive/heartbeat; `HelloFrame.ping_interval_ms` (uint32, 0 = disabled; dead-peer threshold = 3 × interval).
 - **NIP** — `IdentFrame.node_roles` (self-declared node-role tags, excluded from the Ed25519-signed payload).
@@ -172,7 +172,7 @@ All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the same alpha.13 p
 - `ReputationLogClient` (CT-style reputation log, dual Ed25519 signatures) has been available across all six SDKs since **alpha.7**.
 - The .NET SDK additionally ships NCP **native-mode transport** (`NcpNativeClient` / `NcpServer` / `NcpSession`) since **alpha.11**.
 
-The alpha.14 candidate source tree adds the next documentation boundary:
+The alpha.14 release adds:
 
 - **Remote NIP CA clients** — typed client surfaces for issue, renew, revoke, CRL, and OCSP flows.
 - **Native NWP serving helpers** — SDK helpers for serving NWP nodes over native NCP sessions, rather than only HTTP middleware.
@@ -190,4 +190,4 @@ The alpha.14 candidate source tree adds the next documentation boundary:
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*
+*Last reviewed for published packages: v1.0.0-alpha.14*

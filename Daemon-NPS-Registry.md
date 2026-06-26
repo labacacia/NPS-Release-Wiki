@@ -1,6 +1,6 @@
 # Daemon: nps-registry
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-registry/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-registry:1.0.0-alpha.13`
+- **Docker image:** `labacacia/nps-registry:1.0.0-alpha.14`
 - **Default port:** `:17436` (NDP optional-dedicated port per NPS-4)
 - **Layer:** L2
 
@@ -50,7 +50,7 @@ As of NDP v0.9 the AnnounceFrame carries two additional fields the registry hono
 {
   "status": "ok",
   "daemon": "nps-registry",
-  "version": "1.0.0-alpha.13",
+  "version": "1.0.0-alpha.14",
   "layer": 2,
   "role": "NDP cross-machine discovery registry",
   "storage": "sqlite",
@@ -76,7 +76,7 @@ On `SIGTERM`, `nps-registry` drains gracefully over a **30-second window**: it s
 
 ```yaml
 nps-registry:
-  image: labacacia/nps-registry:1.0.0-alpha.13
+  image: labacacia/nps-registry:1.0.0-alpha.14
   restart: unless-stopped
   ports:
     - "${NPS_REGISTRY_PORT:-17436}:17436"
@@ -86,7 +86,7 @@ To enable persistence, add a volume mount and set `NPSREGISTRY_SQLITE_PATH`:
 
 ```yaml
 nps-registry:
-  image: labacacia/nps-registry:1.0.0-alpha.13
+  image: labacacia/nps-registry:1.0.0-alpha.14
   restart: unless-stopped
   ports:
     - "17436:17436"
@@ -182,4 +182,4 @@ The registry may be using an in-memory store and has been restarted (clearing al
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

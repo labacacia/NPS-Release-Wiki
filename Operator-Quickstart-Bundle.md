@@ -1,7 +1,7 @@
 # Operator Quickstart: Daemon Bundle
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Latest published bundle — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
+> **Status:** ✅ Latest published bundle — v1.0.0-alpha.14
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-runner**, **nps-ingress**, and **nps-registry** — in a single git repository with a reference `docker-compose.yml`. This is the recommended starting point for operators who want to run a self-hosted NPS cluster. (The private daemons **nps-ledger** and **nps-cloud-ca** ship separately; see [Operator Daemons Reference](Operator-Daemons-Reference).)
@@ -151,7 +151,7 @@ Expected npsd response shape:
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.13",
+  "version": "1.0.0-alpha.14",
   "layer": "L1",
   "role": "node",
   "port": 17433,
@@ -216,10 +216,10 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 1. Pin all services to the new suite version in `docker-compose.yml`:
 
    ```yaml
-   image: labacacia/npsd:1.0.0-alpha.13        # change to target version
-   image: labacacia/nps-runner:1.0.0-alpha.13
-   image: labacacia/nps-ingress:1.0.0-alpha.13
-   image: labacacia/nps-registry:1.0.0-alpha.13
+   image: labacacia/npsd:1.0.0-alpha.14        # change to target version
+   image: labacacia/nps-runner:1.0.0-alpha.14
+   image: labacacia/nps-ingress:1.0.0-alpha.14
+   image: labacacia/nps-registry:1.0.0-alpha.14
    ```
 
 2. Back up all named volumes (see above).
@@ -256,8 +256,8 @@ Download from the [nps-daemons releases page](https://github.com/labacacia/nps-d
 
 ```bash
 # Set the suite version (Debian format: ~ separates pre-release)
-DEB_VER="1.0.0~alpha.13"
-SUITE_VER="1.0.0-alpha.13"
+DEB_VER="1.0.0~alpha.14"
+SUITE_VER="1.0.0-alpha.14"
 
 for pkg in npsd nps-runner nps-ingress nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}_${DEB_VER}_amd64.deb"
@@ -310,9 +310,9 @@ Data directories under `/var/lib/nps/` are not removed on uninstall (`apt purge`
 ### Fedora / RHEL (x86_64)
 
 ```bash
-SUITE_VER="1.0.0-alpha.13"
+SUITE_VER="1.0.0-alpha.14"
 RPM_VER="1.0.0"
-RPM_REL="0.alpha.13"   # for stable releases: "1"
+RPM_REL="0.alpha.14"   # for stable releases: "1"
 
 for pkg in npsd nps-runner nps-ingress nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
@@ -342,7 +342,7 @@ sudo rpm -e npsd nps-runner nps-ingress nps-registry
 Each daemon ships as a per-daemon `.msi` installer. Run as Administrator.
 
 ```powershell
-$ver = "1.0.0-alpha.13"
+$ver = "1.0.0-alpha.14"
 
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
@@ -403,4 +403,4 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*
+*Last reviewed for published packages: v1.0.0-alpha.14*

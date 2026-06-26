@@ -1,6 +1,6 @@
 # Example: Cross-SDK Interop
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 **Repo:** `labacacia/NPS-examples`, directory: `cross-sdk-interop/` (source in NPS-Dev `demos/cross-sdk-interop/`)
 
@@ -118,9 +118,9 @@ The fix was to add Java and Go to the parity matrix before tagging alpha.5. Now 
 
 ---
 
-## Six-SDK Feature Parity (alpha.13)
+## Six-SDK Feature Parity (alpha.14)
 
-As of v1.0.0-alpha.13, all six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship the same protocol feature set, and the cross-SDK matrix exercises each of these for byte- and behavior-level parity:
+As of v1.0.0-alpha.14, all six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship the same protocol feature set, and the cross-SDK matrix exercises each of these for byte- and behavior-level parity:
 
 - **NCP `NopFrame` (0x07)** — zero-payload keepalive/heartbeat (NCP v0.8); either peer MAY send it after the handshake. Paired with `HelloFrame.ping_interval_ms` (uint32, 0 = disabled).
 - **NIP `node_roles`** — `IdentFrame.node_roles` self-declared node-role tags (NIP v0.10), the current name for the topology/discovery role field. The legacy `node_kind` alias was accepted through alpha.5 only.
@@ -180,4 +180,4 @@ Runtimes that are not on the CI runner's PATH are skipped gracefully — the tes
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

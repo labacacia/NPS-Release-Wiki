@@ -1,7 +1,7 @@
 # Glossary
 
 > **Audience:** Anyone (reference)
-> **Status:** ✅ Content complete — v1.0.0-alpha.13
+> **Status:** ✅ Content complete — v1.0.0-alpha.14
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 >
 > Each entry: one-sentence definition followed by the primary spec reference in parentheses.
@@ -121,7 +121,7 @@
 
 **SubscribeFrame** — The NWP change-subscription frame (0x12); its formal wire shape was standardized in CR-0006 (NWP v0.13, §13) with `subscription_id` (UUID v4), a QueryFrame-compatible `filter`, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` for lossless resume, and an optional `type` field that selects reserved namespaces such as `topology.stream`; topology subscriptions require both `topology:read` and `topology:subscribe` capabilities (NWP §12.4). ([NPS-2 §13](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [NPS-CR-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0006-subscribe-frame.md))
 
-**Suite Version** — The top-level version identifier for an NPS release as a whole (e.g., `v1.0.0-alpha.13`); distinct from individual sub-protocol versions (NCP v0.8, NWP v0.14, NIP v0.10, NDP v0.9, NOP v0.7) which are tracked per spec document. ([NPS-0 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
+**Suite Version** — The top-level version identifier for an NPS release as a whole (e.g., `v1.0.0-alpha.14`); distinct from individual sub-protocol versions (NCP v0.8, NWP v0.14, NIP v0.10, NDP v0.9, NOP v0.7) which are tracked per spec document. ([NPS-0 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
 
 ---
 
@@ -143,4 +143,4 @@ The table below records field and term renames that affect wire compatibility. D
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

@@ -1,7 +1,7 @@
 # What Is NPS?
 
 > **Audience:** Newcomers — no prior knowledge of NPS required
-> **Status:** ✅ Content complete — v1.0.0-alpha.13
+> **Status:** ✅ Content complete — v1.0.0-alpha.14
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 ---
@@ -117,4 +117,4 @@ NPS does not replace MCP — it adds a network layer *beneath* it. MCP answers "
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

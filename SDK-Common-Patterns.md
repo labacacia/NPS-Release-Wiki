@@ -1,6 +1,6 @@
 # SDK Common Patterns
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 > **Audience:** Developers building Agents or Nodes with any NPS SDK.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -328,22 +328,22 @@ If the actual response exceeds `X-NWP-Budget`, the node will either trim the res
 
 ### Always pin to the suite version
 
-NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.13`). Pin to this suite version, not to per-package/per-SDK versions.
+NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.14`). Pin to this suite version, not to per-package/per-SDK versions.
 
 **Correct:**
 ```
 # requirements.txt (Python)
-nps-lib==1.0.0-alpha.13
+nps-lib==1.0.0-alpha.14
 ```
 
 ```xml
 <!-- .csproj (.NET) -->
-<PackageReference Include="NPS.Core" Version="1.0.0-alpha.13" />
+<PackageReference Include="NPS.Core" Version="1.0.0-alpha.14" />
 ```
 
 **Incorrect:** pinning each NPS package to a different version (e.g., `NPS.Core` at alpha.5 while `NPS.NWP` is at alpha.4) creates cross-package incompatibilities that are hard to diagnose.
 
-> **No alpha sub-versions since alpha.6.** Releases now advance `alpha.N → alpha.N+1` (e.g. the current `1.0.0-alpha.13`); there is no `alpha.5.x`-style hotfix sequence going forward. The shims below cover field renames that landed during the alpha.5.x line and are needed only when interoperating with old (pre-alpha.6) peers.
+> **No alpha sub-versions since alpha.6.** Releases now advance `alpha.N → alpha.N+1` (e.g. the current `1.0.0-alpha.14`); there is no `alpha.5.x`-style hotfix sequence going forward. The shims below cover field renames that landed during the alpha.5.x line and are needed only when interoperating with old (pre-alpha.6) peers.
 
 ### Legacy field-name shims (pre-alpha.6 peers)
 
@@ -415,4 +415,4 @@ JSON is also the safe fallback for exploratory calls to third-party nodes whose 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

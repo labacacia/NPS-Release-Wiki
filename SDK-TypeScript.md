@@ -1,6 +1,6 @@
 # SDK — TypeScript
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP. Dual ESM + CJS build; works in Node.js 22+ and in the browser via the ESM bundle.
 
@@ -9,12 +9,12 @@ TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocol
 ## Installation
 
 ```bash
-npm install @labacacia/nps-sdk@1.0.0-alpha.13
+npm install @labacacia/nps-sdk@1.0.0-alpha.14
 ```
 
 **Requirements:** Node.js 22+. The ESM build also works in modern browsers (Chrome 120+, Firefox 121+, Safari 17+) via a bundler.
 
-> **`alpha` dist-tag:** `npm install @labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.13`. alpha.12 was withdrawn; pin the explicit version for reproducible builds.
+> **`alpha` dist-tag:** `npm install @labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.14`. alpha.12 was withdrawn; pin the explicit version for reproducible builds.
 
 **Tests:** 284+ passing, ≥ 98% coverage.
 
@@ -171,9 +171,9 @@ node node_modules/tsup/dist/cli-default.js
 
 ---
 
-## alpha.13 feature set
+## alpha.14 feature set
 
-The TypeScript SDK ships the common alpha.13 protocol surface (parity across all six SDKs):
+The TypeScript SDK ships the alpha.13 parity surface plus the alpha.14 release additions:
 
 - **NCP** — `NopFrame` keepalive/heartbeat; `HelloFrame.ping_interval_ms` (0 disables; dead-peer threshold = 3 × interval).
 - **NIP** — `IdentFrame.nodeRoles` (self-declared node-role tags; excluded from the Ed25519-signed payload).
@@ -192,4 +192,4 @@ The TypeScript SDK ships the common alpha.13 protocol surface (parity across all
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

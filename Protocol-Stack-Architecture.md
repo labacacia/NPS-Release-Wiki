@@ -1,7 +1,7 @@
 # Protocol Stack Architecture
 
 > **Audience:** Newcomers and protocol designers
-> **Status:** ✅ Content complete — v1.0.0-alpha.13
+> **Status:** ✅ Content complete — v1.0.0-alpha.14
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page explains *how* the five NPS layers relate to each other and *why* the boundaries are drawn where they are. For per-protocol reference, see the individual [Protocol-NCP](Protocol-NCP), [Protocol-NWP](Protocol-NWP), [Protocol-NIP](Protocol-NIP), [Protocol-NDP](Protocol-NDP), and [Protocol-NOP](Protocol-NOP) pages.
@@ -197,4 +197,4 @@ The key distinction is that HTTP and gRPC are general-purpose RPC mechanisms tha
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

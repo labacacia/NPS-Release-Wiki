@@ -1,6 +1,6 @@
 # Daemon: nps-ingress
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
+**Status:** ✅ Latest published package — v1.0.0-alpha.14
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ingress/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-ingress:1.0.0-alpha.13`
+- **Docker image:** `labacacia/nps-ingress:1.0.0-alpha.14`
 - **Default port:** `:8080` (HTTP). Production deployments terminate TLS on `:443` via a reverse proxy (nginx, Caddy, or Traefik) in front of this daemon.
 - **Layer:** L2
 
@@ -31,7 +31,7 @@ The original Phase 1 skeleton — a public HTTP listener with a `/health` endpoi
 
 As of alpha.13, `nps-ingress` ships working **HTTP-mode ingress**: it accepts NCP-over-HTTP frame requests on its public listener, applies the configured `X-Forwarded-For` / `X-Forwarded-Proto` handling, and forwards frames upstream to `npsd` at port 17433 (single-node) or to the node selected via `nps-registry` (multi-node). It also exposes the operability endpoints `/healthz`, `/readyz`, and `/metrics` (see below), and preserves the `X-NWM-Version` response header on proxied `GET /.nwm` fetches (NWP v0.14).
 
-Some advanced ingress logic — rate limiting, NeuronHub-customer authentication, CGN debit triggering, NPS-RFC-0004 reputation checks, and Anchor Node middleware wiring per NPS-CR-0001 — remains in progress. The `nps-ingress` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring is deferred until the Anchor Node middleware is stable. TLS is terminated by a reverse proxy in front of this daemon (see below). The alpha.14 candidate docs also align the native NCP TLS/mTLS contract at the SDK/spec layer; daemon endpoint wiring remains a follow-up.
+Some advanced ingress logic — rate limiting, NeuronHub-customer authentication, CGN debit triggering, NPS-RFC-0004 reputation checks, and Anchor Node middleware wiring per NPS-CR-0001 — remains in progress. The `nps-ingress` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring is deferred until the Anchor Node middleware is stable. TLS is terminated by a reverse proxy in front of this daemon (see below). The alpha.14 release docs also align the native NCP TLS/mTLS contract at the SDK/spec layer; daemon endpoint wiring remains a follow-up.
 
 ---
 
@@ -68,7 +68,7 @@ As of alpha.13 `nps-ingress` exposes standard operability endpoints alongside th
 {
   "status": "ok",
   "daemon": "nps-ingress",
-  "version": "1.0.0-alpha.13",
+  "version": "1.0.0-alpha.14",
   "layer": 2,
   "role": "internet-ingress",
   "port": 8080
@@ -92,7 +92,7 @@ On `SIGTERM`, `nps-ingress` drains gracefully over a **30-second window**: it st
 
 ```yaml
 nps-ingress:
-  image: labacacia/nps-ingress:1.0.0-alpha.13
+  image: labacacia/nps-ingress:1.0.0-alpha.14
   restart: unless-stopped
   ports:
     - "${NPS_INGRESS_PORT:-8080}:8080"
@@ -139,4 +139,4 @@ Set `NPSINGRESS_PORT` to an available port, or stop the conflicting service. Che
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*
+*Last reviewed for published packages: v1.0.0-alpha.14*

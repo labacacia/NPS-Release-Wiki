@@ -1,6 +1,6 @@
 # Protocol: NOP — Neural Orchestration Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 **Spec**: `spec/NPS-5-NOP.md` v0.7 · **Port**: 17433 (shared) / 17437 (optional dedicated)
 **Supersedes**: NCP AlignFrame (0x05) — deprecated, removed in NPS v1.0
@@ -407,4 +407,4 @@ callers can audit which side effects were reversed.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

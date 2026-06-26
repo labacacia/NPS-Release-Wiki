@@ -1,6 +1,6 @@
 # SDK — Java
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 Java client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -12,7 +12,7 @@ Java client library for the Neural Protocol Suite. Covers all five protocols: NC
 
 ```kotlin
 dependencies {
-    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.13")
+    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.14")
 }
 ```
 
@@ -22,7 +22,7 @@ dependencies {
 <dependency>
   <groupId>com.labacacia.nps</groupId>
   <artifactId>nps-java</artifactId>
-  <version>1.0.0-alpha.13</version>
+  <version>1.0.0-alpha.14</version>
 </dependency>
 ```
 
@@ -222,4 +222,4 @@ Test classes: `AnchorFrameCacheTest` (12), `FrameHeaderTest` (8), `NpsFrameCodec
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

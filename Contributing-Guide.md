@@ -1,6 +1,6 @@
 # Contributing Guide
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 Thank you for your interest in contributing to the Neural Protocol Suite. This page covers issue routing, labels, PR conventions, code style per language, documentation standards, and security disclosure.
 
@@ -157,4 +157,4 @@ Do not disclose publicly until a patch has been prepared and a coordinated discl
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

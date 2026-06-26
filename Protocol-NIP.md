@@ -1,6 +1,6 @@
 # Protocol: NIP — Neural Identity Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 **Spec**: `spec/NPS-3-NIP.md` v0.10 · **Port**: 17433 (shared) / 17435 (optional dedicated)
 
@@ -326,4 +326,4 @@ A three-tier Registration Authority (RA) model (NPS-CR-0005, stub) adds opt-in e
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

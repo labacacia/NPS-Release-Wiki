@@ -1,6 +1,6 @@
 # Daemon: nip-ca-server
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 > **Audience:** Operators running a self-hosted NIP Certificate Authority
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/nip-ca-server/` (lives outside `tools/daemons/` — it has its own distribution repo)
 - **Distribution:** `labacacia/nip-ca-server` — **PUBLIC**
-- **Docker image:** `ghcr.io/labacacia/nip-ca-server:1.0.0-alpha.13`
+- **Docker image:** `ghcr.io/labacacia/nip-ca-server:1.0.0-alpha.14`
 - **Default port:** `:17434` (plain HTTP; TLS terminated externally)
 - **Note:** Not part of the `labacacia/nps-daemons` bundle — distributed separately
 
@@ -173,4 +173,4 @@ The `example/` directory contains five reference client ports (Python, TypeScrip
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*

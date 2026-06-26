@@ -1,6 +1,6 @@
 # Reference: Error Codes
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Content complete — v1.0.0-alpha.14
 
 NPS uses a two-level error system. This page documents the **protocol error codes** — the fine-grained layer. Each code names exactly what went wrong in a specific protocol domain. The coarser layer, NPS status codes, classifies the error for transport routing; see [Reference: Status Codes](Reference-Status-Codes).
 
@@ -47,7 +47,7 @@ Clients should branch on the **NPS status code** for generic retry/backoff logic
 
 > **Added in alpha.6 – alpha.13**
 >
-> The following codes were introduced across v1.0.0-alpha.6 through v1.0.0-alpha.13:
+> The following codes were introduced across v1.0.0-alpha.6 through v1.0.0-alpha.14:
 >
 > - `NCP-NID-MISMATCH` — native-mode mTLS / resumed-session NID mismatch (NPS-RFC-0006)
 > - `NCP-KEEPALIVE-TIMEOUT` — no frame (incl. NopFrame) within 3 × `ping_interval_ms` (NCP v0.8)
@@ -370,4 +370,4 @@ Use this code when the error is "I don't know how to handle this type of operati
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed at suite version: v1.0.0-alpha.14*
