@@ -1,6 +1,6 @@
 # SDK — .NET / C#
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Latest published packages — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
 
 C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SDK is the canonical reference implementation for the suite — all spec changes are validated here first.
 
@@ -23,6 +23,8 @@ C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SD
 **Tests:** 678+ passing (.NET reference SDK, full protocol coverage).
 
 > **Native-mode transport (RFC-0006), since alpha.11:** `NcpNativeClient` / `NcpServer` / `NcpSession` provide TCP length-prefix framing for NCP channels (`HelloFrame` on stream 0). This is the .NET reference for the native transport.
+
+> **alpha.14 candidate delta:** The source tree now documents typed remote NIP CA clients, native-mode NWP serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, and native NCP TLS/mTLS hardening. NuGet install examples stay pinned to alpha.13 until alpha.14 packages are published.
 
 ---
 
@@ -270,4 +272,4 @@ dotnet test
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*

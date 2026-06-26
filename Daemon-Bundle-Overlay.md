@@ -1,6 +1,6 @@
 # Daemon: bundle-overlay
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Latest published package — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
 
 > **Audience:** Operators and release shepherds
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -17,7 +17,7 @@
 
 | File | Role |
 |------|------|
-| `docker-compose.yml` | Top-level compose file; four services (`npsd`, `nps-runner`, `nps-gateway`, `nps-registry`), each pinned to `labacacia/<name>:VERSION` |
+| `docker-compose.yml` | Top-level compose file; four services (`npsd`, `nps-runner`, `nps-ingress`, `nps-registry`), each pinned to `labacacia/<name>:VERSION` |
 | `README.md` | Public-facing README for `labacacia/nps-daemons`; describes the three-layer architecture and quick-start instructions |
 | `CHANGELOG.md` | Aggregated daemon changelog; single place for operators to track all daemon changes across releases |
 | `NOTICE` | Copyright and license attribution |
@@ -49,11 +49,11 @@ services:
     depends_on:
       - npsd
 
-  nps-gateway:
-    image: labacacia/nps-gateway:1.0.0-alpha.13
+  nps-ingress:
+    image: labacacia/nps-ingress:1.0.0-alpha.13
     restart: unless-stopped
     ports:
-      - "${NPS_GATEWAY_PORT:-8080}:8080"
+      - "${NPS_INGRESS_PORT:-8080}:8080"
     depends_on:
       - npsd
 
@@ -69,9 +69,9 @@ volumes:
 
 Key notes:
 
-- `npsd` binds host-side to `127.0.0.1` (loopback only) even though the container uses `0.0.0.0`. Public ingress goes through `nps-gateway`.
+- `npsd` binds host-side to `127.0.0.1` (loopback only) even though the container uses `0.0.0.0`. Public ingress goes through `nps-ingress`.
 - `nps-runner` has no port mappings — it has no HTTP surface.
-- Gateway and registry host ports are configurable via `NPS_GATEWAY_PORT` and `NPS_REGISTRY_PORT` at compose launch time.
+- Ingress and registry host ports are configurable via `NPS_INGRESS_PORT` and `NPS_REGISTRY_PORT` at compose launch time.
 
 ---
 
@@ -143,10 +143,10 @@ Operators who need those daemons must have NPS Cloud access. See [Daemon NPS-Clo
 - [Release Process](Release-Process) — how `sync-nps-daemons.sh` and the publish-overlay model work
 - [Daemon NPSd](Daemon-NPSd) — npsd details
 - [Daemon NPS-Runner](Daemon-NPS-Runner) — nps-runner details
-- [Daemon NPS-Gateway](Daemon-NPS-Gateway) — nps-gateway details
+- [Daemon NPS-Ingress](Daemon-NPS-Ingress) — nps-ingress details
 - [Daemon NPS-Registry](Daemon-NPS-Registry) — nps-registry details
 - [Operator Daemons Reference](Operator-Daemons-Reference)
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*

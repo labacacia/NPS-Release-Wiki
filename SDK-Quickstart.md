@@ -1,6 +1,6 @@
 # SDK Quickstart
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Latest published packages — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
@@ -36,6 +36,8 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 > **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.13`. Pin the explicit version above for reproducible builds.
 
 > **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 supersedes it with `MessagePack 3.1.7`; pin to `1.0.0-alpha.13`.
+
+> **alpha.14 candidate docs:** Source and specs are staged for typed remote NIP CA clients, native-mode NWP serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, and .NET native NCP TLS/mTLS hardening. Keep install pins on alpha.13 until alpha.14 artifacts are cut.
 
 ---
 
@@ -158,7 +160,7 @@ All NuGet/PyPI/npm/Maven/crates.io packages within the same language SDK are ver
 
 ---
 
-## What's in the alpha.13 SDK feature set
+## Published alpha.13 feature set and alpha.14 candidate delta
 
 All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the same alpha.13 protocol surface:
 
@@ -169,6 +171,13 @@ All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the same alpha.13 p
 - **NWP** — `X-NWM-Version` HTTP response header; NWM `manifest_version` (uint32 monotonic counter) and `manifest_updated_at` (ISO 8601).
 - `ReputationLogClient` (CT-style reputation log, dual Ed25519 signatures) has been available across all six SDKs since **alpha.7**.
 - The .NET SDK additionally ships NCP **native-mode transport** (`NcpNativeClient` / `NcpServer` / `NcpSession`) since **alpha.11**.
+
+The alpha.14 candidate source tree adds the next documentation boundary:
+
+- **Remote NIP CA clients** — typed client surfaces for issue, renew, revoke, CRL, and OCSP flows.
+- **Native NWP serving helpers** — SDK helpers for serving NWP nodes over native NCP sessions, rather than only HTTP middleware.
+- **Conformance helpers** — TC-N1/TC-N2 manifests and harness entry points for repeatable SDK/spec checks.
+- **.NET hardening** — live revocation hooks plus native NCP TLS/mTLS hooks and handshake bounds.
 
 ---
 
@@ -181,4 +190,4 @@ All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the same alpha.13 p
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*

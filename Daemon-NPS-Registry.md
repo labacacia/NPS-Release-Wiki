@@ -176,7 +176,7 @@ The registry may be using an in-memory store and has been restarted (clearing al
 
 - [Protocol NDP](Protocol-NDP) — NPS Discovery Protocol; the announce/resolve/graph semantics
 - [Operator AaaS Profile](Operator-AaaS-Profile) — L2-08 conformance requirement backed by this daemon
-- [Daemon NPS-Gateway](Daemon-NPS-Gateway) — Anchor Node ingress that queries this registry for routing
+- [Daemon NPS-Ingress](Daemon-NPS-Ingress) — Anchor Node ingress that queries this registry for routing
 - [Operator Daemons Reference](Operator-Daemons-Reference)
 - [Operator Quickstart Bundle](Operator-Quickstart-Bundle)
 

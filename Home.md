@@ -1,6 +1,6 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** ✅ Wiki content complete as of v1.0.0-alpha.13
+> **Status:** ✅ Wiki aligned for the v1.0.0-alpha.14 candidate; install pins remain at the latest published v1.0.0-alpha.13 packages.
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -50,7 +50,7 @@ document.
 
 - [npsd](Daemon-NPSd) — orchestration runtime
 - [nps-runner](Daemon-NPS-Runner) — task executor
-- [nps-gateway](Daemon-NPS-Gateway) — HTTP-mode ingress
+- [nps-ingress](Daemon-NPS-Ingress) — HTTP-mode ingress
 - [nps-registry](Daemon-NPS-Registry) — node / member registry
 - [nps-ledger](Daemon-NPS-Ledger) — NID reputation log + STH gossip
 - [nps-cloud-ca](Daemon-NPS-Cloud-CA) — private NPS Cloud CA
@@ -61,11 +61,15 @@ document.
 
 This wiki tracks the suite version declared in
 [`NPS-Release/version.yaml`](https://github.com/labacacia/NPS-Release/blob/main/version.yaml)
-— currently **v1.0.0-alpha.13** (released 2026-06-13). Pages should be
+— latest published packages are **v1.0.0-alpha.13** (released 2026-06-13).
+The wiki is staged for the **v1.0.0-alpha.14 candidate** documentation
+boundary: typed remote NIP CA clients, native-mode NWP serving helpers,
+conformance manifests, live revocation hooks, native NCP TLS/mTLS hardening,
+signed CRL output, and transport-neutral observability. Pages should be
 re-reviewed at each suite release; see the `## TODO` block on each page for
 the version-alignment checklist.
 
-*Wiki last updated: v1.0.0-alpha.13 (2026-06-13)*
+*Wiki last updated: v1.0.0-alpha.14 candidate docs (2026-06-26)*
 
 ---
 

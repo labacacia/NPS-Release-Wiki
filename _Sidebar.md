@@ -32,7 +32,7 @@
 - Per-daemon detail:
   - [npsd](Daemon-NPSd)
   - [nps-runner](Daemon-NPS-Runner)
-  - [nps-gateway](Daemon-NPS-Gateway)
+  - [nps-ingress](Daemon-NPS-Ingress)
   - [nps-registry](Daemon-NPS-Registry)
   - [nps-ledger](Daemon-NPS-Ledger)
   - [nps-cloud-ca](Daemon-NPS-Cloud-CA) *(private)*

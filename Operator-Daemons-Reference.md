@@ -1,7 +1,7 @@
 # Operator Daemons Reference
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Content complete — v1.0.0-alpha.13
+> **Status:** ✅ Latest published packages — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/nps-daemons` bundle; two additional daemons are private to the NPS Cloud platform.
@@ -28,7 +28,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 
 `npsd` is the host-local NPS daemon. It is the foundation of every NPS deployment:
 
-- Binds `127.0.0.1:17433` by default. Direct Internet exposure is `nps-gateway`'s job.
+- Binds `127.0.0.1:17433` by default. Direct Internet exposure is `nps-ingress`'s job.
 - Generates and persists the host's root Ed25519 keypair on first start (`root.ed25519.pkcs8`, mode `0600`). This satisfies Node-Profile L1 conformance case `TC-N1-NIP-01`.
 - Issues **sub-NIDs** for agents hosted on this machine, signed with the root key. Sub-NID records are stored in a SQLite database.
 - Maintains a **per-NID inbox queue** with long-poll, ack, priority, TTL, and depth caps.
@@ -158,41 +158,41 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 
 ---
 
-## nps-gateway — HTTP-mode Ingress
+## nps-ingress — HTTP-mode Ingress
 
 | Property | Value |
 |----------|-------|
 | **Port** | `8080` (HTTP; `443` in production via reverse proxy) |
 | **Distribution** | `labacacia/nps-daemons` (public) |
-| **Docker image** | `labacacia/nps-gateway:{suite_version}` |
+| **Docker image** | `labacacia/nps-ingress:{suite_version}` |
 
 ### Purpose
 
-`nps-gateway` is the public-facing NPS Internet ingress. It terminates NCP HTTP-mode traffic from the Internet and routes it upstream to the local `npsd`. When fully implemented, it handles TLS termination, rate limiting, NeuronHub-customer authentication, CGN debit triggering, and NPS-RFC-0004 reputation checks.
+`nps-ingress` is the public-facing NPS Internet ingress. It terminates NCP HTTP-mode traffic from the Internet and routes it upstream to the local `npsd`. When fully implemented, it handles TLS termination, rate limiting, NeuronHub-customer authentication, CGN debit triggering, and NPS-RFC-0004 reputation checks.
 
-> **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-gateway` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring remains in progress as of alpha.13.
+> **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-ingress` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring remains in progress as of alpha.13.
 
-### Current status (alpha.13)
+### Current status (latest published alpha.13; alpha.14 candidate docs)
 
-Phase 1 skeleton: public-facing HTTP listener with `/health`. Real ingress logic (TLS termination, rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in as of alpha.13. The deployment surface (process name, Docker image tag) is stable.
+Published alpha.13 keeps the public-facing HTTP listener with `/health` as the OSS baseline. Real ingress logic (rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in. The alpha.14 candidate docs align the native NCP TLS/mTLS contract at the SDK/spec layer; direct daemon endpoint wiring remains a follow-up. The deployment surface (process name, Docker image tag, port) is stable.
 
 ### Required environment variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `NPSGATEWAY_HOST` | `0.0.0.0` | Bind address. The gateway is intentionally Internet-facing, unlike npsd. |
-| `NPSGATEWAY_PORT` | `8080` | TCP port. Production deployments terminate TLS on `:443` via a reverse proxy. |
+| `NPSINGRESS_HOST` | `0.0.0.0` | Bind address. The ingress daemon is intentionally Internet-facing, unlike npsd. |
+| `NPSINGRESS_PORT` | `8080` | TCP port. Production deployments terminate TLS on `:443` via a reverse proxy. |
 
 ### TLS termination
 
-The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or Traefik for TLS. Set `NPSGATEWAY_PORT` on the host side to control the exposed port; the container always binds 8080 internally.
+The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or Traefik for TLS. Set `NPSINGRESS_PORT` on the host side to control the exposed port; the container always binds 8080 internally.
 
 ### `/health` response
 
 ```json
 {
   "status": "ok",
-  "daemon": "nps-gateway",
+  "daemon": "nps-ingress",
   "version": "1.0.0-alpha.13",
   "uptime_s": 120
 }
@@ -443,5 +443,4 @@ it is a preview surface and not yet a production component.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
-
+*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*

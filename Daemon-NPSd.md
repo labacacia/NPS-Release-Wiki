@@ -5,7 +5,7 @@
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-`npsd` is the host-local NPS protocol daemon — the L1 state host that every other NPS daemon and every local agent talks to first. It holds the host's root Ed25519 keypair, issues sub-NIDs for local agents on demand, maintains a per-NID inbox queue, and exposes the daemon's own Neural Web Manifest. Public Internet ingress is handled by [Daemon NPS-Gateway](Daemon-NPS-Gateway); `npsd` itself binds loopback only.
+`npsd` is the host-local NPS protocol daemon — the L1 state host that every other NPS daemon and every local agent talks to first. It holds the host's root Ed25519 keypair, issues sub-NIDs for local agents on demand, maintains a per-NID inbox queue, and exposes the daemon's own Neural Web Manifest. Public Internet ingress is handled by [Daemon NPS-Ingress](Daemon-NPS-Ingress); `npsd` itself binds loopback only.
 
 - **Source:** `NPS-Dev/tools/daemons/npsd/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
@@ -102,7 +102,7 @@ npsd:
   image: labacacia/npsd:1.0.0-alpha.13
   restart: unless-stopped
   ports:
-    - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-gateway
+    - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-ingress
   volumes:
     - npsd-data:/data
   environment:
@@ -161,7 +161,7 @@ The recipient NID's inbox has hit `NPSD_MAX_INBOX_DEPTH_PER_NID` (default 1024).
 ## Cross-links
 
 - [Daemon NPS-Runner](Daemon-NPS-Runner) — task scheduler that self-registers a sub-NID and polls `npsd` inbox
-- [Daemon NPS-Gateway](Daemon-NPS-Gateway) — public Internet ingress; forwards frames upstream to `npsd`
+- [Daemon NPS-Ingress](Daemon-NPS-Ingress) — public Internet ingress; forwards frames upstream to `npsd`
 - [Operator Daemons Reference](Operator-Daemons-Reference)
 - [Operator Quickstart Bundle](Operator-Quickstart-Bundle)
 

@@ -1,10 +1,10 @@
 # Operator Quickstart: Daemon Bundle
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Content complete — v1.0.0-alpha.13
+> **Status:** ✅ Latest published bundle — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-runner**, **nps-gateway**, and **nps-registry** — in a single git repository with a reference `docker-compose.yml`. This is the recommended starting point for operators who want to run a self-hosted NPS cluster. (The private daemons **nps-ledger** and **nps-cloud-ca** ship separately; see [Operator Daemons Reference](Operator-Daemons-Reference).)
+The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-runner**, **nps-ingress**, and **nps-registry** — in a single git repository with a reference `docker-compose.yml`. This is the recommended starting point for operators who want to run a self-hosted NPS cluster. (The private daemons **nps-ledger** and **nps-cloud-ca** ship separately; see [Operator Daemons Reference](Operator-Daemons-Reference).)
 
 **Two install paths:**
 
@@ -33,7 +33,7 @@ The repository root contains:
 | `Makefile` | Convenience targets — `make up` / `make down` / `make install-systemd` |
 | `npsd/` | npsd daemon source and Dockerfile |
 | `nps-runner/` | nps-runner daemon source and Dockerfile |
-| `nps-gateway/` | nps-gateway daemon source and Dockerfile |
+| `nps-ingress/` | nps-ingress daemon source and Dockerfile |
 | `nps-registry/` | nps-registry daemon source and Dockerfile |
 | `CHANGELOG.md` | Per-release notes |
 
@@ -52,11 +52,11 @@ The compose file defines one service per daemon. The key port bindings are:
 | Service | Internal port | External default | Notes |
 |---------|--------------|-----------------|-------|
 | `npsd` | `17433` | `127.0.0.1:17433` | Loopback-only by default — do not expose directly |
-| `nps-gateway` | `8080` | `${NPS_GATEWAY_PORT:-8080}` | Internet-facing HTTP ingress |
+| `nps-ingress` | `8080` | `${NPS_INGRESS_PORT:-8080}` | Internet-facing HTTP ingress |
 | `nps-registry` | `17436` | `${NPS_REGISTRY_PORT:-17436}` | NDP cross-machine discovery |
 | `nps-runner` | — | (none) | Connects outbound to npsd; no inbound port |
 
-> **Production note.** Place `nps-gateway` behind nginx, Caddy, or Traefik for TLS termination. Run `npsd` on every machine that hosts NPS workers. Run `nps-registry` once per cluster behind an internal load balancer.
+> **Production note.** Place `nps-ingress` behind nginx, Caddy, or Traefik for TLS termination. Run `npsd` on every machine that hosts NPS workers. Run `nps-registry` once per cluster behind an internal load balancer.
 
 ### Required environment variables
 
@@ -84,12 +84,12 @@ Configure these before `docker compose up`. Set them in a `.env` file at the rep
 | `NPS_RUNNER_MAX_CONCURRENT_WORKERS` | `8` | Cap on simultaneously running worker processes. |
 | `NPS_RUNNER_LOG_DIR` | `/tmp/nps-runner-logs` | Directory for per-worker `{task_id}.log` output files. |
 
-#### nps-gateway
+#### nps-ingress
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `NPSGATEWAY_HOST` | `0.0.0.0` | Bind address. The gateway is intentionally Internet-facing. |
-| `NPSGATEWAY_PORT` | `8080` | TCP port. Production deployments terminate TLS at `:443` via a reverse proxy. |
+| `NPSINGRESS_HOST` | `0.0.0.0` | Bind address. The ingress daemon is intentionally Internet-facing. |
+| `NPSINGRESS_PORT` | `8080` | TCP port. Production deployments terminate TLS at `:443` via a reverse proxy. |
 
 #### nps-registry
 
@@ -138,7 +138,7 @@ Verify the cluster is up:
 # npsd — NPS Daemon (Layer 1)
 curl -s http://localhost:17433/health | jq
 
-# nps-gateway — HTTP ingress
+# nps-ingress — HTTP ingress
 curl -s http://localhost:8080/health | jq
 
 # nps-registry — NDP discovery registry
@@ -218,7 +218,7 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
    ```yaml
    image: labacacia/npsd:1.0.0-alpha.13        # change to target version
    image: labacacia/nps-runner:1.0.0-alpha.13
-   image: labacacia/nps-gateway:1.0.0-alpha.13
+   image: labacacia/nps-ingress:1.0.0-alpha.13
    image: labacacia/nps-registry:1.0.0-alpha.13
    ```
 
@@ -238,8 +238,8 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 
 | Symptom | Likely cause | Resolution |
 |---------|-------------|-----------|
-| `bind: address already in use` on port 17433, 17436, or 8080 | Another process is already using that port | Change `NPSD_PORT` / `NPSREGISTRY_PORT` / `NPSGATEWAY_PORT`, or stop the conflicting process |
-| `nps-gateway` starts but returns `502` upstream errors | `npsd` is not yet ready or not reachable at `127.0.0.1:17433` | Check `depends_on` ordering; confirm `npsd` health endpoint responds |
+| `bind: address already in use` on port 17433, 17436, or 8080 | Another process is already using that port | Change `NPSD_PORT` / `NPSREGISTRY_PORT` / `NPSINGRESS_PORT`, or stop the conflicting process |
+| `nps-ingress` starts but returns `502` upstream errors | `npsd` is not yet ready or not reachable at `127.0.0.1:17433` | Check `depends_on` ordering; confirm `npsd` health endpoint responds |
 | NDP `Resolve` queries time out | Firewall blocking UDP or the NDP registry port | Ensure port 17436 TCP is open between cluster machines; UDP is used by NDP for multicast but the registry daemon uses TCP |
 | `npsd` exits immediately on first start | `NPSD_DATA_DIR` is not writable, or the keypair file has wrong permissions | Verify the volume mount; the root key file must be `0600` (TC-N1-NIP-01) |
 | nps-runner workers not spawning | `NPSD_URL` points at the wrong address inside the container | Use the Docker service name: `http://npsd:17433` (not `localhost`) |
@@ -259,7 +259,7 @@ Download from the [nps-daemons releases page](https://github.com/labacacia/nps-d
 DEB_VER="1.0.0~alpha.13"
 SUITE_VER="1.0.0-alpha.13"
 
-for pkg in npsd nps-runner nps-gateway nps-registry; do
+for pkg in npsd nps-runner nps-ingress nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}_${DEB_VER}_amd64.deb"
     sudo dpkg -i "${pkg}_${DEB_VER}_amd64.deb"
 done
@@ -293,14 +293,14 @@ Example `/etc/nps/npsd/env`:
 **Verify:**
 
 ```bash
-sudo systemctl status npsd nps-runner nps-gateway nps-registry
+sudo systemctl status npsd nps-runner nps-ingress nps-registry
 curl -s http://localhost:17433/health | jq
 ```
 
 **Uninstall:**
 
 ```bash
-sudo apt remove npsd nps-runner nps-gateway nps-registry
+sudo apt remove npsd nps-runner nps-ingress nps-registry
 ```
 
 Data directories under `/var/lib/nps/` are not removed on uninstall (`apt purge` removes them).
@@ -314,7 +314,7 @@ SUITE_VER="1.0.0-alpha.13"
 RPM_VER="1.0.0"
 RPM_REL="0.alpha.13"   # for stable releases: "1"
 
-for pkg in npsd nps-runner nps-gateway nps-registry; do
+for pkg in npsd nps-runner nps-ingress nps-registry; do
     curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
     sudo rpm -i "${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
 done
@@ -332,7 +332,7 @@ curl -s http://localhost:17433/health | jq
 **Uninstall:**
 
 ```bash
-sudo rpm -e npsd nps-runner nps-gateway nps-registry
+sudo rpm -e npsd nps-runner nps-ingress nps-registry
 ```
 
 ---
@@ -344,7 +344,7 @@ Each daemon ships as a per-daemon `.msi` installer. Run as Administrator.
 ```powershell
 $ver = "1.0.0-alpha.13"
 
-foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
+foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     $file = "$pkg-$ver-win-x64.msi"
     Invoke-WebRequest `
         -Uri "https://github.com/labacacia/nps-daemons/releases/download/v$ver/$file" `
@@ -353,7 +353,7 @@ foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
 }
 
 # Services start automatically; verify:
-Get-Service npsd, nps-runner, nps-gateway, nps-registry
+Get-Service npsd, nps-runner, nps-ingress, nps-registry
 ```
 
 The MSI:
@@ -378,7 +378,7 @@ Restart-Service npsd
 **Uninstall:**
 
 ```powershell
-foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
+foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     Get-Package $pkg -ErrorAction SilentlyContinue | Uninstall-Package -Force
 }
 ```
@@ -403,4 +403,4 @@ foreach ($pkg in @("npsd","nps-runner","nps-gateway","nps-registry")) {
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*

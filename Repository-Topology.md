@@ -1,6 +1,6 @@
 # Repository Topology
 
-**Status:** ✅ Content complete — v1.0.0-alpha.13
+**Status:** ✅ Latest published topology — v1.0.0-alpha.13; candidate docs staged for v1.0.0-alpha.14
 
 This page maps every NPS-related repository, its role, and how it relates to the central source monorepo.
 
@@ -24,7 +24,7 @@ labacacia/NPS-Dev  (source monorepo — all authoring happens here)
 ├── tools/daemons/                        ┌─ labacacia/nps-daemons (bundle, public)
 │   ├── npsd/          ──────────────────►├── npsd/
 │   ├── nps-runner/    ──────────────────►├── nps-runner/
-│   ├── nps-gateway/   ──────────────────►├── nps-gateway/
+│   ├── nps-ingress/   ──────────────────►├── nps-ingress/
 │   ├── nps-registry/  ──────────────────►└── nps-registry/
 │   ├── nps-cloud-ca/  ──────────────────► innolotus/nps-cloud-ca (private)
 │   └── nps-ledger/    ──────────────────► innolotus/nps-ledger (private)
@@ -55,7 +55,7 @@ All arrows are one-way syncs: NPS-Dev → distribution repo. Distribution repos 
 | `NPS-sdk-java` | labacacia | Java SDK distribution | Public | NO — synced from NPS-Dev `impl/java/` |
 | `NPS-sdk-rust` | labacacia | Rust SDK distribution | Public | NO — synced from NPS-Dev `impl/rust/` |
 | `NPS-sdk-go` | labacacia | Go SDK distribution | Public | NO — synced from NPS-Dev `impl/go/` |
-| `nps-daemons` | labacacia | OSS daemon bundle (npsd + nps-runner + nps-gateway + nps-registry) | Public | NO — synced from NPS-Dev `tools/daemons/` (4 OSS daemons + bundle-overlay) |
+| `nps-daemons` | labacacia | OSS daemon bundle (npsd + nps-runner + nps-ingress + nps-registry) | Public | NO — synced from NPS-Dev `tools/daemons/` (4 OSS daemons + bundle-overlay) |
 | `nip-ca-server` | labacacia | NIP CA Server standalone distribution | Public | NO — synced from NPS-Dev `tools/nip-ca-server/` |
 | `NPS-mcp-ingress` | labacacia | MCP Ingress adapter distribution (`LabAcacia.McpIngress`) | Public | NO — synced from NPS-Dev `compat/mcp-ingress/` |
 | `NPS-a2a-ingress` | labacacia | A2A Ingress adapter distribution (`LabAcacia.A2aIngress`) | Public | NO — synced from NPS-Dev `compat/a2a-ingress/` |
@@ -91,7 +91,7 @@ Scripts live in `tools/release/` in NPS-Dev. Each script:
 
 | Script | Source in NPS-Dev | Target repo |
 |--------|------------------|------------|
-| `sync-nps-daemons.sh` | `tools/daemons/{npsd,nps-runner,nps-gateway,nps-registry}/` + `bundle-overlay/` | `labacacia/nps-daemons` → Gitee mirror |
+| `sync-nps-daemons.sh` | `tools/daemons/{npsd,nps-runner,nps-ingress,nps-registry}/` + `bundle-overlay/` | `labacacia/nps-daemons` → Gitee mirror |
 | `sync-nip-ca-server.sh` | `tools/nip-ca-server/` | `labacacia/nip-ca-server` → Gitee mirror |
 | `sync-nps-cloud-ca.sh` | `tools/daemons/nps-cloud-ca/` | `innolotus/nps-cloud-ca` (no Gitee) |
 | `sync-nps-ledger.sh` | `tools/daemons/nps-ledger/` | `innolotus/nps-ledger` (no Gitee) |
@@ -123,4 +123,4 @@ All public labacacia repos are mirrored to Gitee (`gitee.com/labacacia/`) via `t
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.13*
+*Last reviewed for published packages: v1.0.0-alpha.13; candidate delta staged: v1.0.0-alpha.14*
