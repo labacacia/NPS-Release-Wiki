@@ -1,6 +1,6 @@
 # SDK Common Patterns
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** Developers building Agents or Nodes with any NPS SDK.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -18,6 +18,7 @@ This page is a cookbook of cross-cutting patterns. Every section applies to all 
 5. [Token budget (CGN)](#token-budget-cgn)
 6. [Version pinning](#version-pinning)
 7. [Encoding tier](#encoding-tier)
+8. [Serving local actions to external MCP / A2A clients (inbound Bridge)](#serving-local-actions-to-external-mcp--a2a-clients-inbound-bridge)
 
 ---
 
@@ -328,22 +329,22 @@ If the actual response exceeds `X-NWP-Budget`, the node will either trim the res
 
 ### Always pin to the suite version
 
-NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.14`). Pin to this suite version, not to per-package/per-SDK versions.
+NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.15`). Pin to this suite version, not to per-package/per-SDK versions.
 
 **Correct:**
 ```
 # requirements.txt (Python)
-nps-lib==1.0.0-alpha.14
+nps-lib==1.0.0-alpha.15
 ```
 
 ```xml
 <!-- .csproj (.NET) -->
-<PackageReference Include="NPS.Core" Version="1.0.0-alpha.14" />
+<PackageReference Include="NPS.Core" Version="1.0.0-alpha.15" />
 ```
 
 **Incorrect:** pinning each NPS package to a different version (e.g., `NPS.Core` at alpha.5 while `NPS.NWP` is at alpha.4) creates cross-package incompatibilities that are hard to diagnose.
 
-> **No alpha sub-versions since alpha.6.** Releases now advance `alpha.N → alpha.N+1` (e.g. the current `1.0.0-alpha.14`); there is no `alpha.5.x`-style hotfix sequence going forward. The shims below cover field renames that landed during the alpha.5.x line and are needed only when interoperating with old (pre-alpha.6) peers.
+> **No alpha sub-versions since alpha.6.** Releases now advance `alpha.N → alpha.N+1` (e.g. the current `1.0.0-alpha.15`); there is no `alpha.5.x`-style hotfix sequence going forward. The shims below cover field renames that landed during the alpha.5.x line and are needed only when interoperating with old (pre-alpha.6) peers.
 
 ### Legacy field-name shims (pre-alpha.6 peers)
 
@@ -371,12 +372,13 @@ These shims are transitional. Remove them after confirming all peers are on alph
 
 ## Encoding tier
 
-NPS supports two encoding tiers:
+NPS supports three encoding tiers:
 
 | Tier | Identifier | Wire format | Use case |
 |------|-----------|-------------|----------|
 | Tier-1 | `json` | Plain JSON | Development, debugging, interop testing |
 | Tier-2 | `msgpack` | MessagePack binary | Production — ~60% smaller payloads |
+| Tier-3 | `binary_vector.v1` | MessagePack metadata + raw `float32` segments | Vector-heavy frames (`QueryFrame.vector_search.vector`); negotiated, opt-in (NCP v0.9) |
 
 ### Always use MsgPack in production
 
@@ -407,6 +409,49 @@ X-NWP-Encoding: json
 
 JSON is also the safe fallback for exploratory calls to third-party nodes whose encoding support you have not yet verified.
 
+### Tier-3 BinaryVector for vector search (NCP v0.9)
+
+Tier-3 BinaryVector (`binary_vector.v1`) is an opt-in encoding for vector-heavy frames — its only standard binding is `QueryFrame.vector_search.vector`. It carries dense embeddings as raw little-endian `float32` segments after a MessagePack metadata block, which is far more compact than encoding each float as a structured Tier-1/Tier-2 value.
+
+It is **negotiated, never assumed**. Only emit Tier-3 when both peers advertised `binary_vector.v1` in their capabilities; a receiver that did not negotiate it rejects the frame with `NCP-ENCODING-UNSUPPORTED`.
+
+```
+# Advertise binary_vector.v1 in caps, then only switch the vector-search
+# QueryFrame to Tier-3 when the peer also advertised it.
+if "binary_vector.v1" in peer_caps and "binary_vector.v1" in my_caps:
+    wire = codec.encode(query_frame, tier=BINARY_VECTOR)   # 0b10
+else:
+    wire = codec.encode(query_frame)                       # Tier-2 MsgPack
+```
+
+Treat malformed Tier-3 payloads as **client** errors, not server faults: the `NCP-BINARY-VECTOR-MALFORMED` / `-DIM-MISMATCH` / `-INDEX-INVALID` / `-DTYPE-UNSUPPORTED` / `-TRUNCATED` codes all map to `NPS-CLIENT-BAD-FRAME` (fix the request — do not retry). The reserved tier `0b11` returns `NCP-FRAME-FLAGS-INVALID`.
+
+---
+
+## Serving local actions to external MCP / A2A clients (inbound Bridge)
+
+The inbound NWP Bridge server lets external MCP / A2A clients invoke your **local** NPS actions (the inverse of the outbound Bridge Node, which translates NPS frames out to non-NPS targets). It is **secure-by-default** — wire every gate before any external request reaches a local action:
+
+- require a valid `X-NWP-Agent` NID plus a configured verifier hook (reject unauthenticated callers);
+- expose only an explicit **action allowlist**;
+- bound the request body (default 1 MB → HTTP 413 on overflow);
+- enforce a dispatch timeout (default 30 s → HTTP 504);
+- return **sanitized** client errors — never leak internal exception detail to the external caller.
+
+```
+# Pseudo-code — inbound bridge request handling
+on inbound_request(req):
+    nid = verify_x_nwp_agent(req.headers["X-NWP-Agent"])   # else 401
+    if req.action not in ALLOWED_ACTIONS:                   # allowlist
+        return sanitized_error("NPS-CLIENT-FORBIDDEN")
+    if req.body_len > MAX_REQUEST_BODY_BYTES:               # default 1 MB
+        return http(413)
+    with timeout(DISPATCH_TIMEOUT_MS):                      # default 30 s → 504
+        return dispatch_local_action(req.action, req.params)
+```
+
+The exact registration API is language-specific; the .NET reference exposes `AddBridgeServer` / `UseBridgeServer` with `McpServerBridge` / `A2aServerBridge` adapters (see [SDK DotNet](SDK-DotNet)).
+
 ---
 
 ## See also
@@ -415,4 +460,4 @@ JSON is also the safe fallback for exploratory calls to third-party nodes whose 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

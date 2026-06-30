@@ -1,6 +1,6 @@
 # SDK — .NET / C#
 
-**Status:** ✅ Latest published packages — v1.0.0-alpha.14
+**Status:** ✅ Latest published packages — v1.0.0-alpha.15
 
 C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SDK is the canonical reference implementation for the suite — all spec changes are validated here first.
 
@@ -10,13 +10,13 @@ C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SD
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| `LabAcacia.NPS.Core` | 1.0.0-alpha.14 | Shared frame types (`AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame`, `NopFrame` keepalive/heartbeat), JSON/MsgPack codecs, `AnchorFrameCache`, `FrameRegistry`; NCP native-mode transport (`NcpNativeClient`/`NcpServer`/`NcpSession`, added in alpha.11) |
-| `LabAcacia.NPS.NWP` | 1.0.0-alpha.14 | Neural Web Protocol — NWM manifest, `QueryFrame`/`ActionFrame`/`SubscribeFrame`/`DiffFrame`, Memory/Action/Complex node middleware |
-| `LabAcacia.NPS.NWP.Anchor` | 1.0.0-alpha.14 | NWP Anchor Node: stateless AaaS entry point translating `ActionFrame`s to NOP `TaskFrame`s; `AnchorNodeMiddleware`, `AnchorActionSpec`, `AnchorNodeClient` for `topology.snapshot` / `topology.stream` |
-| `LabAcacia.NPS.NWP.Bridge` | 1.0.0-alpha.14 | NWP Bridge Node: stateless translator from NPS frames to non-NPS protocols (HTTP / gRPC / MCP / A2A target adapters) |
-| `LabAcacia.NPS.NIP` | 1.0.0-alpha.14 | Neural Identity Protocol — CA, Ed25519 key generation, `IdentFrame` issuance/revocation, OCSP, CRL; X.509 + ACME `agent-01` challenge (RFC-0002) |
-| `LabAcacia.NPS.NDP` | 1.0.0-alpha.14 | Neural Discovery Protocol — announce/resolve frames (`AnnounceFrame.spawn_spec_ref` structured schema object, `heartbeat_interval_ms`), in-memory registry, Ed25519 validation; DNS TXT fallback (`ResolveViaDns`, `IDnsTxtLookup`, `SystemDnsTxtLookup`) |
-| `LabAcacia.NPS.NOP` | 1.0.0-alpha.14 | Neural Orchestration Protocol — `TaskFrame` (incl. `result_ttl_seconds`)/`DelegateFrame`/`SyncFrame`/`AlignStreamFrame`, DAG validator, orchestration engine |
+| `LabAcacia.NPS.Core` | 1.0.0-alpha.15 | Shared frame types (`AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame`, `NopFrame` keepalive/heartbeat), JSON/MsgPack/BinaryVector codecs, `AnchorFrameCache`, `FrameRegistry`; NCP native-mode transport (`NcpNativeClient`/`NcpServer`/`NcpSession`, added in alpha.11); NCP Tier-3 BinaryVector codec (`Tier3BinaryVectorCodec`, alpha.14) |
+| `LabAcacia.NPS.NWP` | 1.0.0-alpha.15 | Neural Web Protocol — NWM manifest, `QueryFrame`/`ActionFrame`/`SubscribeFrame`/`DiffFrame`, Memory/Action/Complex node middleware; native-mode serving (`NwpNativeNodeServer`); inbound Bridge server adapters (`AddBridgeServer`/`UseBridgeServer`, `McpServerBridge`/`A2aServerBridge`) |
+| `LabAcacia.NPS.NWP.Anchor` | 1.0.0-alpha.15 | NWP Anchor Node: stateless AaaS entry point translating `ActionFrame`s to NOP `TaskFrame`s; `AnchorNodeMiddleware`, `AnchorActionSpec`, `AnchorNodeClient` for `topology.snapshot` / `topology.stream` |
+| `LabAcacia.NPS.NWP.Bridge` | 1.0.0-alpha.15 | NWP Bridge Node: stateless translator from NPS frames to non-NPS protocols (HTTP / gRPC / MCP / A2A target adapters) |
+| `LabAcacia.NPS.NIP` | 1.0.0-alpha.15 | Neural Identity Protocol — CA, Ed25519 key generation, `IdentFrame` issuance/revocation, OCSP, CRL; X.509 + ACME `agent-01` challenge (RFC-0002); typed remote CA client (`NipCaClient`) |
+| `LabAcacia.NPS.NDP` | 1.0.0-alpha.15 | Neural Discovery Protocol — announce/resolve frames (`AnnounceFrame.spawn_spec_ref` structured schema object, `heartbeat_interval_ms`), in-memory registry, Ed25519 validation; DNS TXT fallback (`ResolveViaDns`, `IDnsTxtLookup`, `SystemDnsTxtLookup`) |
+| `LabAcacia.NPS.NOP` | 1.0.0-alpha.15 | Neural Orchestration Protocol — `TaskFrame` (incl. `result_ttl_seconds`)/`DelegateFrame`/`SyncFrame`/`AlignStreamFrame`, DAG validator, orchestration engine |
 
 **Requirements:** .NET 10 (LTS). All packages enable `<Nullable>enable</Nullable>`. MsgPack serialization uses `MessagePack 3.1.7` (alpha.13; the alpha.12 release was withdrawn for shipping the vulnerable `MessagePack 3.0.300` / NU1903).
 
@@ -24,7 +24,7 @@ C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SD
 
 > **Native-mode transport (RFC-0006), since alpha.11:** `NcpNativeClient` / `NcpServer` / `NcpSession` provide TCP length-prefix framing for NCP channels (`HelloFrame` on stream 0). This is the .NET reference for the native transport.
 
-> **alpha.14 release delta:** The source tree now documents typed remote NIP CA clients, native-mode NWP serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, and native NCP TLS/mTLS hardening. NuGet install examples are pinned to alpha.14.
+> **alpha.15 release delta:** The reference SDK adds NCP Tier-3 BinaryVector (`binary_vector.v1`) compact float-vector encoding, inbound NWP Bridge server adapters (`AddBridgeServer`/`UseBridgeServer`), native-mode NWP serving (`NwpNativeNodeServer`), and a typed remote NIP CA client (`NipCaClient`). The previously-documented typed CA clients, native-mode serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, and native NCP TLS/mTLS hardening (alpha.14) are also included. **Breaking:** the NIP TrustFrame/RevokeFrame signed payload was realigned to the current NPS-3 field set, so signed frames produced by the alpha.14-era SDK shape no longer verify. NuGet install examples are pinned to alpha.15. See the [alpha.15 feature set](#alpha15-feature-set) below.
 
 ---
 
@@ -264,6 +264,84 @@ dotnet test
 
 ---
 
+## alpha.15 feature set
+
+The reference SDK ships the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions. The API names below are the .NET reference surface.
+
+### NCP Tier-3 BinaryVector (`binary_vector.v1`)
+
+NCP **v0.9** activates the third encoding tier (`Flags.T1T0 = 0b10`), a compact AI-native encoding for vector-heavy frames. Metadata stays MessagePack; dense vector values are carried as raw little-endian `float32` segments. The standard binding is NWP `QueryFrame.vector_search.vector`.
+
+- **Negotiated only.** Senders MUST NOT emit Tier-3 unless both peers advertised `binary_vector.v1` during the handshake. A receiver that did not negotiate Tier-3 rejects the frame with `NCP-ENCODING-UNSUPPORTED`. The reserved tier `Flags.T1T0 = 0b11` is rejected with `NCP-FRAME-FLAGS-INVALID`.
+- **Payload layout.** A 16-byte prefix — `NPBV` magic (4 bytes), version `0x01`, flags byte (`0x00`), `vector_count` (uint16 BE), `metadata_len` (uint32 BE), 4 reserved zero bytes — followed by `metadata_len` bytes of MessagePack metadata (Tier-2 field names; vector fields replaced by a `{"$nps_binary_vector": <index>, "dtype": "float32", "dim": <n>}` marker), then per-vector segments of `dim` (uint32 BE) + `dim` little-endian `float32` values.
+- **Malformed payloads return documented client errors**, never a server-internal: `NCP-BINARY-VECTOR-MALFORMED` (bad magic / structure), `-DIM-MISMATCH`, `-INDEX-INVALID`, `-DTYPE-UNSUPPORTED`, `-TRUNCATED` — all mapping to `NPS-CLIENT-BAD-FRAME`.
+
+```csharp
+// EncodingTier.BinaryVector maps to Flags.T1T0 = 0b10.
+// Round-trips a QueryFrame.vector_search.vector through Tier3BinaryVectorCodec.
+var wire = codec.Encode(queryFrame, EncodingTier.BinaryVector);
+var back = (QueryFrame)codec.Decode(wire);
+```
+
+The native-mode handshake (`NcpNativeClient` / `NcpServer`) negotiates `binary_vector.v1` automatically when both peers advertise it.
+
+### Inbound NWP Bridge server adapters
+
+The inbound Bridge server lets **external** MCP / A2A clients call **local NPS actions** — the inverse of the outbound `BridgeNode` dispatchers (which translate NPS frames out to HTTP / gRPC / MCP / A2A targets and also landed in alpha.14). Adapters: `McpServerBridge` and `A2aServerBridge`, registered through the ASP.NET Core `AddBridgeServer` / `UseBridgeServer` extensions.
+
+It is **secure-by-default** — every gate must pass before a request reaches a local action:
+
+- requires a valid `X-NWP-Agent` NID plus a configured verifier hook;
+- an explicit action **allowlist** (only listed actions are reachable);
+- bounded request bodies (`MaxRequestBodyBytes`, default 1 MB; oversize → HTTP 413);
+- a dispatch timeout (`DispatchTimeoutMs`, default 30 s; exceeded → HTTP 504);
+- sanitized client error responses (internal detail is not leaked to the caller).
+
+```csharp
+builder.Services.AddBridgeServer(opts =>
+{
+    opts.MaxRequestBodyBytes = 1_048_576;   // 1 MB → 413 when exceeded
+    opts.DispatchTimeoutMs   = 30_000;      // 30 s → 504 when exceeded
+    opts.AllowedActions      = new[] { "orders.create", "summarise" };
+    opts.AgentVerifier       = myXNwpAgentVerifier;   // validates the X-NWP-Agent NID
+});
+
+app.UseBridgeServer();   // mounts McpServerBridge / A2aServerBridge endpoints
+```
+
+### Native-mode NWP serving (`NwpNativeNodeServer`)
+
+`NwpNativeNodeServer` lets Memory and Action Nodes serve `QueryFrame` / `ActionFrame` directly over an `NcpSession` / native NCP stream, instead of a hand-rolled frame loop or the HTTP middleware. This is the native-transport counterpart to `UseMemoryNode` / `UseActionNode`.
+
+```csharp
+// Serve a registered node provider directly over a native NCP session.
+var server = new NwpNativeNodeServer(memoryNodeProvider, options);
+await server.ServeAsync(ncpSession, cancellationToken);
+```
+
+### Typed remote NIP CA client (`NipCaClient`)
+
+`NipCaClient` is a typed client for a remote NIP CA: CA discovery (`/.well-known/nps-ca`), CRL retrieval (`/v1/crl`, now including `issued_at` plus a detached CA signature), and Ed25519 register / renew / revoke / verify flows, including RFC-0002 X.509 registration. The CA store gains `INipCaStore.ListAsync()` with an `InMemoryNipCaStore` implementation; `/.well-known/nps-ca` no longer advertises an unmapped `/ocsp`.
+
+```csharp
+var ca = new NipCaClient("https://ca.example.com");
+var discovery = await ca.DiscoverAsync();          // /.well-known/nps-ca
+var issued    = await ca.RegisterAsync(identity);  // Ed25519 enrolment
+var crl       = await ca.GetCrlAsync();            // includes issued_at + detached CA signature
+```
+
+### NIP TrustFrame / RevokeFrame signed-payload realignment (breaking)
+
+The Ed25519-signed payload of `TrustFrame` and `RevokeFrame` now covers the current NPS-3 field set — including `issued_at`, `serial`, `signer_nid`, `target_nid`, where applicable — over the canonical JSON with the `signature` field removed (same canonicalisation rule as IdentFrame, §5.1/§5.2/§5.3), and uses the current revocation naming (`NIP-CERT-REVOKED`). **Breaking:** signed frames produced by the alpha.14-era SDK shape no longer verify after upgrading; re-issue trust and revocation frames with an alpha.15 signer.
+
+### Daemon observability & conformance
+
+- Transport-neutral `HealthProbeRenderer` for `/healthz` · `/readyz` probes.
+- `LabAcacia.NPS.Conformance` package with the Node L1/L2 case catalogs (TC-N1/TC-N2 entry points).
+- The NuGet family is 11 SDK packages plus 3 ingress packages (`McpIngress` / `A2aIngress` / `GrpcIngress`), all now published at alpha.15 (the ingress packages, deferred in alpha.13, are caught up).
+
+---
+
 ## See also
 
 - [SDK Quickstart](SDK-Quickstart) — language-agnostic first steps and install table
@@ -272,4 +350,4 @@ dotnet test
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.14*
+*Last reviewed for published packages: v1.0.0-alpha.15*

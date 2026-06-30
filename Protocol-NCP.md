@@ -1,8 +1,8 @@
 # Protocol: NCP — Neural Communication Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
-**Spec**: `spec/NPS-1-NCP.md` v0.8 · **Port**: 17433 (shared, suite-wide)
+**Spec**: `spec/NPS-1-NCP.md` v0.9 · **Port**: 17433 (shared, suite-wide)
 
 NCP is the wire-format and transport foundation of the entire NPS suite. Every higher-layer protocol — NWP, NIP, NDP, NOP — is carried as NCP frames. Think of it as HTTP/2 frames plus TCP: NCP defines *how bytes are shaped on the wire* and *how connections are established*, while the upper protocols define what those bytes mean. All NPS traffic arrives on port 17433; the Frame Type byte in each frame's header routes it to the correct protocol handler.
 
@@ -93,7 +93,7 @@ Bit 7   Bit 6   Bit 5   Bit 4   Bit 3   Bit 2   Bit 1   Bit 0
 
 | Bits | Name | Description |
 |------|------|-------------|
-| 0–1 | T0, T1 | Encoding tier: `00` = Tier-1 JSON, `01` = Tier-2 MsgPack, `10`/`11` = Reserved |
+| 0–1 | T0, T1 | Encoding tier: `00` = Tier-1 JSON, `01` = Tier-2 MsgPack, `10` = Tier-3 BinaryVector v1, `11` = Reserved |
 | 2 | FINAL | Final-chunk flag for StreamFrame; fixed to 1 on all other frame types |
 | 3 | ENC | Payload is E2E-encrypted at the application layer (see E2E Encryption below) |
 | 4–6 | RSV | Reserved; senders MUST set to 0, receivers MUST ignore |
@@ -234,10 +234,50 @@ Port 17433 carries all NPS protocols. The Frame Type byte provides routing:
 |------|--------|-------------------|----------|
 | Tier-1 | JSON | `00` | Development, debugging, cross-tool compatibility |
 | Tier-2 | MsgPack | `01` | Production (~60% size reduction over JSON) |
-| — | Reserved | `10` | Future high-performance encoding (not yet allocated) |
+| Tier-3 | BinaryVector v1 | `10` | Vector-heavy frames; MessagePack metadata + raw little-endian float32 vector segments |
 | — | Reserved | `11` | Reserved |
 
-Tier-2 MsgPack is the production default and is preferred whenever both sides negotiate it. Tier-1 JSON is mandatory for handshake frames (`HelloFrame`) and is preferred during development. The former Tier-3 MatrixTensor concept was removed; the `10` bit pattern is reserved until a formal RFC allocates it.
+Tier-2 MsgPack is the production default and is preferred whenever both sides negotiate it. Tier-1 JSON is mandatory for handshake frames (`HelloFrame`) and is preferred during development.
+
+Tier-3 BinaryVector v1 is **optional and negotiated** (activated in NCP v0.9). Senders MUST NOT emit `Flags.T1T0 = 10` unless the session has negotiated the `binary_vector.v1` capability (advertised by both peers in `HelloFrame.supported_encodings` / the negotiation `CapsFrame`); receivers that did not negotiate it MUST reject the frame with `NCP-ENCODING-UNSUPPORTED`. Enabling `binary_vector.v1` does **not** make Tier-3 the session default — it is a per-frame specialization for vector-heavy payloads (the standard binding is NWP `QueryFrame.vector_search.vector`). The `11` bit pattern remains reserved and MUST be rejected with `NCP-FRAME-FLAGS-INVALID`.
+
+### Tier-3 BinaryVector v1 Payload (NCP v0.9)
+
+> Added in NCP v0.9. Negotiation token: `binary_vector.v1`. Currently bound to NWP `QueryFrame` vector-search payloads only.
+
+Tier-3 is a frame-payload encoding, not a replacement for NWP semantics: the Frame Type byte still determines the logical frame, and the Tier-3 payload carries that frame's metadata plus dense vector segments. The payload begins with a fixed **16-byte prefix**, followed by MessagePack metadata, followed by the appended vector segments:
+
+```
+Offset  Size  Field           Encoding
+  0      4    Magic           ASCII "NPBV"
+  4      1    Version         0x01
+  5      1    Flags           0x00 in v1 (receivers MUST reject non-zero)
+  6      2    vector_count    uint16, big-endian
+  8      4    metadata_len    uint32, big-endian
+ 12      4    Reserved        MUST be zero
+ 16   metadata_len  Metadata  MessagePack map (same field names as Tier-2)
+ ...  variable  Vector segments  repeated: dim (uint32, big-endian) + dim × float32 (little-endian)
+```
+
+The metadata map preserves the logical frame object. A vector field that has been moved into a binary segment is replaced by a marker object referencing the segment by zero-based index:
+
+```json
+{ "$nps_binary_vector": 0, "dtype": "float32", "dim": 1536 }
+```
+
+The marker index MUST reference one of the appended vector segments; `dtype` MUST be `float32` (IEEE-754 binary32, little-endian). Float16, quantized int8, MatrixTensor, and multi-vector bindings are reserved for future CRs.
+
+**Validation / error handling.** Malformed Tier-3 payloads return documented **client** errors (`NPS-CLIENT-BAD-FRAME`), not server-internal errors:
+
+| Error Code | When |
+|------------|------|
+| `NCP-BINARY-VECTOR-MALFORMED` | Prefix/magic/version invalid or payload otherwise unparseable |
+| `NCP-BINARY-VECTOR-DIM-MISMATCH` | Marker `dim` does not match the referenced vector segment |
+| `NCP-BINARY-VECTOR-INDEX-INVALID` | Marker references a missing/out-of-range vector segment |
+| `NCP-BINARY-VECTOR-DTYPE-UNSUPPORTED` | Marker uses an unsupported `dtype` |
+| `NCP-BINARY-VECTOR-TRUNCATED` | A vector segment is shorter than its declared `dim` |
+
+The reserved tier bit pattern `0b11` is rejected with `NCP-FRAME-FLAGS-INVALID`.
 
 ---
 
@@ -316,7 +356,12 @@ Long-lived native-mode connections can be silently killed by NAT appliances or f
 | `NCP-ANCHOR-ID-MISMATCH` | `NPS-CLIENT-CONFLICT` | Same `anchor_id` received with a different schema (anchor-poisoning defense) |
 | `NCP-FRAME-UNKNOWN-TYPE` | `NPS-CLIENT-BAD-FRAME` | Unknown frame-type byte |
 | `NCP-FRAME-PAYLOAD-TOO-LARGE` | `NPS-LIMIT-PAYLOAD` | Payload exceeds the negotiated `max_frame_payload` |
-| `NCP-FRAME-FLAGS-INVALID` | `NPS-CLIENT-BAD-FRAME` | Reserved flag bits are non-zero |
+| `NCP-FRAME-FLAGS-INVALID` | `NPS-CLIENT-BAD-FRAME` | Reserved flag bits are non-zero (includes reserved encoding tier `0b11`) |
+| `NCP-BINARY-VECTOR-MALFORMED` | `NPS-CLIENT-BAD-FRAME` | Tier-3 BinaryVector payload is malformed (NCP v0.9) |
+| `NCP-BINARY-VECTOR-DIM-MISMATCH` | `NPS-CLIENT-BAD-FRAME` | BinaryVector marker `dim` does not match the vector segment (NCP v0.9) |
+| `NCP-BINARY-VECTOR-INDEX-INVALID` | `NPS-CLIENT-BAD-FRAME` | BinaryVector marker references a missing vector segment (NCP v0.9) |
+| `NCP-BINARY-VECTOR-DTYPE-UNSUPPORTED` | `NPS-CLIENT-BAD-FRAME` | BinaryVector marker uses an unsupported `dtype` (NCP v0.9) |
+| `NCP-BINARY-VECTOR-TRUNCATED` | `NPS-CLIENT-BAD-FRAME` | BinaryVector vector segment is truncated (NCP v0.9) |
 | `NCP-STREAM-SEQ-GAP` | `NPS-STREAM-SEQ-GAP` | Non-contiguous `StreamFrame` sequence number |
 | `NCP-STREAM-NOT-FOUND` | `NPS-STREAM-NOT-FOUND` | `stream_id` does not refer to an existing stream |
 | `NCP-STREAM-LIMIT-EXCEEDED` | `NPS-STREAM-LIMIT` | Maximum concurrent streams per connection exceeded |
@@ -331,4 +376,4 @@ Long-lived native-mode connections can be silently killed by NAT appliances or f
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

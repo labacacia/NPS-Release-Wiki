@@ -1,6 +1,6 @@
 # Protocol: NDP — Neural Discovery Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 **Spec**: `spec/NPS-4-NDP.md` v0.9 · **Port**: 17433 (shared) / 17436 (optional dedicated)
 
@@ -138,9 +138,19 @@ Direction note: Bridge Nodes translate NPS frames *outbound* to external protoco
 
 ### Signed Announces: NdpAnnounceValidator
 
-Every `AnnounceFrame` MUST carry a `signature` field — an Ed25519 signature by the publisher's NIP private key over the unsigned frame body (with `signature` field excluded), canonicalized per RFC 8785 JCS. This prevents announcement forgery: an attacker cannot claim to be a NID they do not control.
+Every `AnnounceFrame` MUST carry a `signature` field — an Ed25519 signature by the publisher's NIP private key over the canonical body, canonicalized per RFC 8785 JCS. This prevents announcement forgery: an attacker cannot claim to be a NID they do not control.
 
-Receivers MUST verify the signature before caching or acting on an `AnnounceFrame`. Verification failure returns `NDP-ANNOUNCE-SIGNATURE-INVALID`. The `NdpAnnounceValidator` pattern (implemented in the .NET SDK as `NPS.NDP.Validation.NdpAnnounceValidator`) encapsulates signature verification plus NID-key binding check.
+Receivers MUST verify the signature before caching or acting on an `AnnounceFrame`. Verification MUST precede deduplication, conflict detection, and storage. Verification failure returns `NDP-ANNOUNCE-SIGNATURE-INVALID`. The `NdpAnnounceValidator` pattern (implemented in the .NET SDK as `NPS.NDP.Validation.NdpAnnounceValidator`) encapsulates signature verification plus NID-key binding check.
+
+#### Signed canonical form — now normative & cross-SDK consistent (NDP v0.9 §7.4 "Signed scope")
+
+The exact bytes covered by `signature` are now spelled out normatively and aligned identically across all six SDKs (.NET, Python, TypeScript, Java, Rust, Go):
+
+- The signed body covers **all emitted AnnounceFrame wire fields EXCEPT** `signature`, `health`, `last_seen`, and the `frame` discriminant. (`health` and `last_seen` are mutable liveness fields and are intentionally outside the signature so a node can update them without re-signing.)
+- Absent / `null` optional fields are **omitted** from the canonical body — they MUST NOT be serialized as JSON `null`.
+- `heartbeat_interval_ms` **is signed**. When absent on the wire, verifiers canonicalize it to the default `60000` before verifying; an explicit `0` (heartbeat disabled) is signed literally as `0` and MUST NOT be coerced to the default.
+
+> **⚠ Breaking (alpha.15):** before this realignment each SDK canonicalized the announce body slightly differently (e.g. emitting `null` optionals, or diverging on the `heartbeat_interval_ms` default). **Old per-SDK-divergent signed announcements may fail cross-SDK verification** against an alpha.15 verifier — re-sign affected announcements with an alpha.15 SDK. The frame **version number is unchanged (NDP v0.9)**; only the canonical signed scope was made normative.
 
 ---
 
@@ -166,8 +176,8 @@ In NDP v0.8 the GraphFrame was rewritten to a **topology-snapshot** format with 
 
 **NdpGraphEdge:** `from_nid` (string, required), `to_nid` (string, required), `latency_ms` (uint32, optional), `protocol` (string, optional — `"tcp"` / `"quic"` / `"http"`).
 
-**Validation:**
-- `nodes.length` > 256 or `edges.length` > 1024 → `NDP-GRAPH-TOO-LARGE`.
+**Validation** (graph guard — now enforced by all six SDKs, alpha.15):
+- `nodes.length` > 256 or `edges.length` > 1024 → `NDP-GRAPH-TOO-LARGE` (`NPS-LIMIT-PAYLOAD`).
 - Every `from_nid` / `to_nid` MUST appear in `nodes`, and no self-edge (`from_nid == to_nid`) → otherwise `NDP-GRAPH-INVALID`.
 
 The legacy `NDP-GRAPH-SEQ-GAP` error remains defined for the older contiguous-sequence semantics.
@@ -220,7 +230,7 @@ Every NDP Registry deployment MUST declare exactly one of three security profile
 
 ## Federation Forwarding (NDP §9, v0.8)
 
-Only a `public-federated` registry forwards AnnounceFrames across federation links. When such a registry receives an AnnounceFrame from a peer registry it MUST:
+Only a `public-federated` registry forwards AnnounceFrames across federation links. The 3-hop federation loop guard below is now enforced by all six SDKs (alpha.15). When such a registry receives an AnnounceFrame from a peer registry it MUST:
 
 1. Forward the frame to its own subscribers, appending its forwarding NID to the `ndp-forwarded-by` request header (comma-separated list of NIDs).
 2. Drop the frame and return `NDP-FEDERATION-LOOP` if its own NID already appears in `ndp-forwarded-by` (loop detection).
@@ -253,7 +263,7 @@ The `nps-ledger` daemon mirrors this loop-detection scheme on `POST /v1/log/fede
 | `NDP-ANNOUNCE-CONFLICT` | `NPS-CLIENT-CONFLICT` | Two AnnounceFrames share the same `nid` and `graph_seq` but differ in content (registry poisoning attempt) (NDP v0.7) |
 | `NDP-GRAPH-SEQ-ROLLBACK` | `NPS-CLIENT-BAD-FRAME` | AnnounceFrame `graph_seq` ≤ the last accepted value for this NID (rollback attempt) (NDP v0.7) |
 | `NDP-GRAPH-SEQ-GAP` | `NPS-STREAM-SEQ-GAP` | GraphFrame sequence numbers are not contiguous |
-| `NDP-GRAPH-TOO-LARGE` | `NPS-CLIENT-BAD-FRAME` | GraphFrame `nodes` > 256 or `edges` > 1024 (NDP v0.8) |
+| `NDP-GRAPH-TOO-LARGE` | `NPS-LIMIT-PAYLOAD` | GraphFrame `nodes` > 256 or `edges` > 1024 (NDP v0.8) |
 | `NDP-GRAPH-INVALID` | `NPS-CLIENT-BAD-FRAME` | GraphFrame edge references a NID not in the nodes list, or a self-edge was detected (NDP v0.8) |
 | `NDP-ISSUER-NOT-ALLOWED` | `NPS-AUTH-FORBIDDEN` | AnnounceFrame issuer (signing CA) is not in the active registry profile's issuer allowlist (NDP v0.7) |
 | `NDP-CA-ATTEST-REQUIRED` | `NPS-AUTH-UNAUTHENTICATED` | Active registry profile requires a CA-attested NID and the certificate chain does not anchor in the configured trust roots (NDP v0.7) |
@@ -262,4 +272,4 @@ The `nps-ledger` daemon mirrors this loop-detection scheme on `POST /v1/log/fede
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

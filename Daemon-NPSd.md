@@ -1,6 +1,6 @@
 # Daemon: npsd
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/npsd/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/npsd:1.0.0-alpha.14`
+- **Docker image:** `labacacia/npsd:1.0.0-alpha.15`
 - **Default port:** `127.0.0.1:17433` (loopback only — never expose directly to the Internet)
 - **Layer:** L1
 
@@ -21,7 +21,7 @@
 2. **Sub-NID issuance** — Mints child NIDs derived from the host root NID. Carrier IdentFrames are signed with the root key. Records are stored in `${NPSD_DATA_DIR}/sub-nids.sqlite`.
 3. **Per-NID inbox queue** — Short-term in-memory queue per sub-NID with long-poll, ack, configurable depth caps, message priority, and TTL. Resident agents poll their own inbox or long-poll for push-style delivery.
 4. **`GET /.nwm`** — Daemon-self Neural Web Manifest declaring all routes. Responses carry the `X-NWM-Version` header (the manifest's `manifest_version` uint32 counter); clients MAY use `If-None-Match: <manifest_version>` for conditional `304 Not Modified` requests (NWP v0.14).
-5. **Operability endpoints** — `GET /healthz` (liveness), `GET /readyz` (readiness), and `GET /metrics` (Prometheus exposition) for Docker `HEALTHCHECK` / systemd probes and scraping. The legacy `GET /health` JSON probe remains available.
+5. **Operability endpoints** — `GET /healthz` (liveness), `GET /readyz` (readiness), and `GET /metrics` (Prometheus exposition) for Docker `HEALTHCHECK` / systemd probes and scraping. The `/healthz`·`/readyz` probes are rendered by the transport-neutral `HealthProbeRenderer` (alpha.14) shared across the daemon set. The legacy `GET /health` JSON probe remains available.
 
 ---
 
@@ -63,7 +63,7 @@
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.14",
+  "version": "1.0.0-alpha.15",
   "layer": 1,
   "role": "protocol-access-host",
   "port": 17433,
@@ -99,7 +99,7 @@ On `SIGTERM`, `npsd` performs a graceful shutdown with a **30-second drain windo
 
 ```yaml
 npsd:
-  image: labacacia/npsd:1.0.0-alpha.14
+  image: labacacia/npsd:1.0.0-alpha.15
   restart: unless-stopped
   ports:
     - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-ingress
@@ -167,4 +167,4 @@ The recipient NID's inbox has hit `NPSD_MAX_INBOX_DEPTH_PER_NID` (default 1024).
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

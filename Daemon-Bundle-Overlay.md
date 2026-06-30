@@ -1,6 +1,6 @@
 # Daemon: bundle-overlay
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.14
+**Status:** ✅ Latest published package — v1.0.0-alpha.15
 
 > **Audience:** Operators and release shepherds
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -24,7 +24,7 @@
 
 ---
 
-## docker-compose.yml (at v1.0.0-alpha.14)
+## docker-compose.yml (at v1.0.0-alpha.15)
 
 ```yaml
 version: "3.9"
@@ -32,7 +32,7 @@ version: "3.9"
 services:
 
   npsd:
-    image: labacacia/npsd:1.0.0-alpha.14
+    image: labacacia/npsd:1.0.0-alpha.15
     restart: unless-stopped
     ports:
       - "127.0.0.1:17433:17433"
@@ -44,13 +44,13 @@ services:
       NPSD_DATA_DIR: /data
 
   nps-runner:
-    image: labacacia/nps-runner:1.0.0-alpha.14
+    image: labacacia/nps-runner:1.0.0-alpha.15
     restart: unless-stopped
     depends_on:
       - npsd
 
   nps-ingress:
-    image: labacacia/nps-ingress:1.0.0-alpha.14
+    image: labacacia/nps-ingress:1.0.0-alpha.15
     restart: unless-stopped
     ports:
       - "${NPS_INGRESS_PORT:-8080}:8080"
@@ -58,7 +58,7 @@ services:
       - npsd
 
   nps-registry:
-    image: labacacia/nps-registry:1.0.0-alpha.14
+    image: labacacia/nps-registry:1.0.0-alpha.15
     restart: unless-stopped
     ports:
       - "${NPS_REGISTRY_PORT:-17436}:17436"
@@ -79,7 +79,7 @@ Key notes:
 
 Every image tag in `docker-compose.yml` must equal the suite version oracle. CI Assertion C enforces this:
 
-- CI reads the suite version from the oracle (e.g. `1.0.0-alpha.14`).
+- CI reads the suite version from the oracle (e.g. `1.0.0-alpha.15`).
 - It scans every `image:` line in `docker-compose.yml` for tags.
 - It fails if any tag does not match the oracle.
 
@@ -122,7 +122,7 @@ The per-daemon `CHANGELOG.md` files remain the source of truth for individual da
 
 ## Release history note: alpha.12 withdrawn
 
-The current bundle pins the **alpha.14** daemon set. **alpha.12 was withdrawn** before general use: its NuGet packages shipped the vulnerable `MessagePack 3.0.300` (NU1903). **alpha.13 superseded it**, rebuilding the daemon set against `MessagePack 3.1.7`; operators must skip alpha.12 entirely and pin `1.0.0-alpha.14`.
+The current bundle pins the **alpha.15** daemon set, built against `MessagePack 3.1.7`. **alpha.12 was withdrawn** before general use: its NuGet packages shipped the vulnerable `MessagePack 3.0.300` (NU1903). **alpha.13 superseded it**, rebuilding the daemon set against `MessagePack 3.1.7` (carried forward through alpha.14 and alpha.15); operators must skip alpha.12 entirely and pin `1.0.0-alpha.15`.
 
 ---
 
@@ -149,4 +149,4 @@ Operators who need those daemons must have NPS Cloud access. See [Daemon NPS-Clo
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.14*
+*Last reviewed for published packages: v1.0.0-alpha.15*

@@ -1,6 +1,6 @@
 # SDK — Python
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 Python client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -9,13 +9,13 @@ Python client library for the Neural Protocol Suite. Covers all five protocols: 
 ## Installation
 
 ```bash
-pip install nps-lib==1.0.0a14
+pip install nps-lib==1.0.0a15
 ```
 
 For development extras (pytest, coverage, linting):
 
 ```bash
-pip install "nps-lib[dev]==1.0.0a14"
+pip install "nps-lib[dev]==1.0.0a15"
 ```
 
 > **Package name:** The PyPI distribution is `nps-lib`. The name `nps-sdk` is taken by an unrelated package (Ingenico). The Python import namespace is always `nps_sdk`.
@@ -24,7 +24,7 @@ pip install "nps-lib[dev]==1.0.0a14"
 
 **Tests:** 221+ passing, ≥ 90% coverage target.
 
-> **Suite version:** This SDK tracks suite `v1.0.0-alpha.14`. alpha.12 was withdrawn; pin `nps-lib==1.0.0a14`.
+> **Suite version:** This SDK tracks suite `v1.0.0-alpha.15`. alpha.12 was withdrawn; pin `nps-lib==1.0.0a15`.
 
 ---
 
@@ -212,9 +212,9 @@ pytest -k test_nip     # NIP tests only
 
 ---
 
-## alpha.14 feature set
+## alpha.15 feature set
 
-The Python SDK ships the alpha.13 parity surface plus the alpha.14 release additions:
+The Python SDK ships the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions:
 
 - **NCP** — `NopFrame` keepalive/heartbeat; `HelloFrame.ping_interval_ms` (0 disables; dead-peer threshold = 3 × interval).
 - **NIP** — `IdentFrame.node_roles` (self-declared node-role tags; excluded from the Ed25519-signed payload, same pattern as `cert_format`/`cert_chain`).
@@ -222,6 +222,16 @@ The Python SDK ships the alpha.13 parity surface plus the alpha.14 release addit
 - **NOP** — `TaskFrame.result_ttl_seconds` (default 3600 s, omitted from wire at default).
 - **NWP** — `X-NWM-Version` response header; NWM `manifest_version` / `manifest_updated_at`.
 - **`ReputationLogClient`** — CT-style reputation log with dual Ed25519 signatures (`SignedTreeHead`, `InclusionProof`, RFC 9162 Merkle fold). Available since **alpha.7**.
+
+The alpha.15 release adds:
+
+- **NCP Tier-3 BinaryVector** (`binary_vector.v1`) — `EncodingTier.BINARY_VECTOR`, a compact float-vector encoding tier for `QueryFrame.vector_search.vector`. Negotiated via caps and used only when both peers advertise `binary_vector.v1`; `NPBV`-prefixed payload with MessagePack metadata markers and little-endian `float32` segments. Malformed payloads raise documented client errors (`NCP-BINARY-VECTOR-*` → `NPS-CLIENT-BAD-FRAME`); the reserved tier `0b11` → `NCP-FRAME-FLAGS-INVALID`.
+- **Inbound NWP Bridge server** — serve local NPS actions to external MCP / A2A clients (inverse of the outbound Bridge Node). Secure-by-default: a valid `X-NWP-Agent` NID plus a verifier hook, an action allowlist, bounded request bodies (default 1 MB → 413), a dispatch timeout (default 30 s → 504), and sanitized client errors.
+- **Native-mode NWP serving** — serve `QueryFrame` / `ActionFrame` directly over a native NCP session rather than only the HTTP overlay.
+- **Typed remote NIP CA client** — CA discovery, CRL retrieval, and Ed25519 register / renew / revoke / verify, including RFC-0002 X.509 registration.
+- **NIP TrustFrame/RevokeFrame signed-payload realignment** — the Ed25519-signed payload now includes the current NPS-3 fields (`issued_at`, `serial`, `signer_nid`, `target_nid`) and uses current revocation naming (`NIP-CERT-REVOKED`). **Breaking:** signed frames produced by the old alpha.14-era SDK shape no longer verify after upgrading.
+
+> The `EncodingTier.BINARY_VECTOR` and `binary_vector.v1` names are confirmed for the Python SDK; the inbound Bridge server, native-mode serving, and CA-client surfaces follow the .NET reference capability ([SDK DotNet](SDK-DotNet)) — consult the Python module reference for exact symbol names.
 
 ---
 
@@ -233,4 +243,4 @@ The Python SDK ships the alpha.13 parity surface plus the alpha.14 release addit
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

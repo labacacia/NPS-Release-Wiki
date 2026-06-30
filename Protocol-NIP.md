@@ -1,6 +1,6 @@
 # Protocol: NIP — Neural Identity Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 **Spec**: `spec/NPS-3-NIP.md` v0.10 · **Port**: 17433 (shared) / 17435 (optional dedicated)
 
@@ -82,13 +82,17 @@ Cross-CA trust-chain propagation and capability grant (commercial feature, NPS C
 
 **Fields:** `grantor_nid` (NID of the granting CA; MUST be in the verifier's `trusted_issuers`), `grantee_ca` (NID of the receiving CA), `trust_scope` (capability subset of the §5.1 enum), `nodes` (`nwp://` URL patterns; `*` matches one path segment, `**` matches multiple), `issued_at`, `expires_at`, `serial` (16-char zero-padded hex, for RevokeFrame tracking), `signer_nid` (MUST be `grantor_nid` or an operator under it), and `signature` (`ed25519:` or `ecdsa-p256:`).
 
-The signature is computed over the canonical JSON with `signature` removed (keys sorted, no whitespace) — same rule as IdentFrame. TrustFrame-specific errors: `NIP-TRUST-FRAME-INVALID`, `NIP-TRUST-FRAME-EXPIRED`, `NIP-TRUST-FRAME-GRANTOR-REVOKED`, `NIP-TRUST-FRAME-SCOPE-EXCEEDS-GRANTOR`, `NIP-TRUST-FRAME-NODES-PATTERN-INVALID` (see Error Codes).
+The signature is computed over the canonical JSON with `signature` removed (keys sorted, no whitespace) — same rule as IdentFrame. The Ed25519-signed payload covers **all** TrustFrame fields except `signature` — including `issued_at`, `serial`, and `signer_nid` (added to the signed body for revocation/audit traceability in NIP v0.8). TrustFrame-specific errors: `NIP-TRUST-FRAME-INVALID`, `NIP-TRUST-FRAME-EXPIRED`, `NIP-TRUST-FRAME-GRANTOR-REVOKED`, `NIP-TRUST-FRAME-SCOPE-EXCEEDS-GRANTOR`, `NIP-TRUST-FRAME-NODES-PATTERN-INVALID` (see Error Codes).
+
+> **⚠ Breaking (alpha.15 — signed-payload realignment):** the TrustFrame/RevokeFrame Ed25519-signed payloads were realigned to the current NPS-3 v0.10 field set (TrustFrame signs `issued_at` / `serial` / `signer_nid`; RevokeFrame signs `target_nid` / `serial` / `reason` / `revoked_at` / `parent_nid` / `signer_nid`), and revocation status is surfaced as `NIP-CERT-REVOKED`. Signed frames produced by the **old alpha.14-era SDK shape no longer verify** after upgrading — re-issue affected TrustFrames/RevokeFrames from an alpha.15 CA. The frame **version number is unchanged (NIP v0.10)**; only the canonical signed body was corrected for cross-SDK consistency.
 
 ### RevokeFrame (0x22) — spec §5.3
 
 Revokes an NID, all certificates under an NID, or a specific certificate identified by serial. Emitted by an issuing CA (or an authorised operator under it) and pushed to subscribed Nodes via the NIP push channel; receivers poison their local cert / OCSP cache and reject subsequent requests under the revoked target. A RevokeFrame is **fire-and-forget** at the protocol layer (no success response); receivers emit an `ErrorFrame` only when the frame is malformed or unauthorised. Takes effect immediately upon receipt.
 
-**Fields:** `target_nid` (agent / node / group / org NID), `serial` (optional — scopes the revocation to one cert; if omitted ALL certs for `target_nid` are revoked), `reason`, `revoked_at`, `parent_nid` (**required when `reason = "parent_revoked"`**, NPS-CR-0003; the group NID whose cascade triggered this; omitted otherwise), `signer_nid`, and `signature` (`ed25519:` or `ecdsa-p256:`).
+**Fields:** `target_nid` (agent / node / group / org NID), `serial` (optional — scopes the revocation to one cert; if omitted ALL certs for `target_nid` are revoked), `reason`, `revoked_at`, `parent_nid` (**required when `reason = "parent_revoked"`**, NPS-CR-0003; the group NID whose cascade triggered this), `signer_nid`, and `signature` (`ed25519:` or `ecdsa-p256:`). The Ed25519-signed payload covers all of these fields with `signature` removed (RFC 8785 JCS; same rule as IdentFrame/TrustFrame).
+
+**`parent_nid` ↔ `parent_revoked` guard (enforced by all SDKs, alpha.15):** `parent_nid` is **required when `reason = "parent_revoked"`** and **MUST be omitted for any other reason**. A frame that sets `parent_nid` without `reason = "parent_revoked"`, or that uses `reason = "parent_revoked"` without `parent_nid`, is rejected with `NIP-REVOKE-FRAME-INVALID`.
 
 Valid `reason` values: `key_compromise`, `ca_compromise`, `affiliation_changed`, `superseded`, `cessation_of_operation`, and `parent_revoked` (NPS-CR-0003 — cascade emitted by the CA on a session NID whose group NID was revoked; `parent_nid` MUST be set). Receivers encountering an unknown `reason` MUST treat it as `key_compromise` (most restrictive) and MAY report `NIP-REVOKE-FRAME-REASON-UNKNOWN` to the publishing CA; they MUST NOT silently demote it. RevokeFrame-specific errors: `NIP-REVOKE-FRAME-INVALID`, `NIP-REVOKE-FRAME-UNAUTHORIZED-ISSUER`, `NIP-REVOKE-FRAME-SERIAL-MISMATCH`, `NIP-REVOKE-FRAME-REASON-UNKNOWN` (see Error Codes).
 
@@ -284,6 +288,13 @@ The reference NIP CA Server (`tools/nip-ca-server/`) exposes:
 
 A three-tier Registration Authority (RA) model (NPS-CR-0005, stub) adds opt-in enrollment endpoints under `/v1/enrollment/...` (bootstrap tokens, pending-registration queue) selected via `NipCaOptions.EnrollmentTier`; the default tier remains `operator_only`.
 
+### Typed remote CA client + revocation artifacts (alpha.14 / alpha.15)
+
+- **`NipCaClient`** — a typed remote NIP CA client (added in alpha.14) handling CA discovery, CRL retrieval, Ed25519 register / renew / revoke / verify, and RFC-0002 X.509 registration against the OSS CA above.
+- **CRL revocation artifacts** — `GET /v1/crl` now includes an `issued_at` timestamp plus a **detached CA signature** over the list, so consumers can verify CRL authenticity and freshness independently.
+- **`/.well-known/nps-ca` cleanup** — the discovery document no longer advertises an unmapped `/ocsp` endpoint (online OCSP is reached via `NWM.ocsp_url`, see OCSP Stapling above).
+- **Store API** — `INipCaStore.ListAsync()` plus an `InMemoryNipCaStore` reference implementation back the CRL and audit surfaces.
+
 ---
 
 ## Error Codes
@@ -326,4 +337,4 @@ A three-tier Registration Authority (RA) model (NPS-CR-0005, stub) adds opt-in e
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

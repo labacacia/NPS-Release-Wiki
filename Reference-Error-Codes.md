@@ -1,6 +1,6 @@
 # Reference: Error Codes
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 NPS uses a two-level error system. This page documents the **protocol error codes** — the fine-grained layer. Each code names exactly what went wrong in a specific protocol domain. The coarser layer, NPS status codes, classifies the error for transport routing; see [Reference: Status Codes](Reference-Status-Codes).
 
@@ -47,10 +47,12 @@ Clients should branch on the **NPS status code** for generic retry/backoff logic
 
 > **Added in alpha.6 – alpha.13**
 >
-> The following codes were introduced across v1.0.0-alpha.6 through v1.0.0-alpha.14:
+> The following codes were introduced across v1.0.0-alpha.6 through v1.0.0-alpha.15:
 >
 > - `NCP-NID-MISMATCH` — native-mode mTLS / resumed-session NID mismatch (NPS-RFC-0006)
 > - `NCP-KEEPALIVE-TIMEOUT` — no frame (incl. NopFrame) within 3 × `ping_interval_ms` (NCP v0.8)
+> - `NCP-FRAME-FLAGS-INVALID` — reserved bits in the flags field are non-zero, including the reserved encoding tier `0b11` (NCP v0.9)
+> - `NCP-BINARY-VECTOR-MALFORMED`, `NCP-BINARY-VECTOR-DIM-MISMATCH`, `NCP-BINARY-VECTOR-INDEX-INVALID`, `NCP-BINARY-VECTOR-DTYPE-UNSUPPORTED`, `NCP-BINARY-VECTOR-TRUNCATED` — Tier-3 BinaryVector (`binary_vector.v1`) payload validation; all map to `NPS-CLIENT-BAD-FRAME` (NCP v0.9)
 > - `NWP-REPUTATION-THROTTLED`, `NWP-REPUTATION-REJECTED`, `NWP-REPUTATION-BANNED` — reputation-policy enforcement (NPS-RFC-0005); supersede the now-deprecated `NWP-AUTH-REPUTATION-BLOCKED`
 > - `NWP-CGN-LIMIT-EXCEEDED` — response would exceed the effective Cognon budget (token-budget.md §7.4)
 > - `NIP-CERT-NODE-ROLES-MISMATCH` — `IdentFrame.node_roles` vs `id-nps-node-roles` extension, Phase 3 (NIP v0.10)
@@ -82,7 +84,12 @@ Neural Communication Protocol — wire format and framing layer.
 | `NCP-ANCHOR-STALE` | `NPS-CLIENT-CONFLICT` | 409 | `anchor_ref` exists but the schema has been updated; the response carries the latest AnchorFrame via `CapsFrame.inline_anchor` |
 | `NCP-FRAME-UNKNOWN-TYPE` | `NPS-CLIENT-BAD-FRAME` | 400 | Unknown frame type code |
 | `NCP-FRAME-PAYLOAD-TOO-LARGE` | `NPS-LIMIT-PAYLOAD` | 413 | Payload exceeds the negotiated `max_frame_payload` |
-| `NCP-FRAME-FLAGS-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | Reserved bits in the flags field are non-zero |
+| `NCP-FRAME-FLAGS-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | Reserved bits in the flags field are non-zero (e.g. the reserved encoding tier `0b11`) |
+| `NCP-BINARY-VECTOR-MALFORMED` | `NPS-CLIENT-BAD-FRAME` | 400 | Tier-3 BinaryVector (`binary_vector.v1`) payload is malformed (NCP v0.9) |
+| `NCP-BINARY-VECTOR-DIM-MISMATCH` | `NPS-CLIENT-BAD-FRAME` | 400 | BinaryVector marker dimension does not match the vector segment (NCP v0.9) |
+| `NCP-BINARY-VECTOR-INDEX-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | BinaryVector marker references a missing vector segment (NCP v0.9) |
+| `NCP-BINARY-VECTOR-DTYPE-UNSUPPORTED` | `NPS-CLIENT-BAD-FRAME` | 400 | BinaryVector marker uses an unsupported dtype (NCP v0.9) |
+| `NCP-BINARY-VECTOR-TRUNCATED` | `NPS-CLIENT-BAD-FRAME` | 400 | BinaryVector vector segment is truncated (NCP v0.9) |
 | `NCP-STREAM-SEQ-GAP` | `NPS-STREAM-SEQ-GAP` | 422 | StreamFrame sequence numbers are not contiguous |
 | `NCP-STREAM-NOT-FOUND` | `NPS-STREAM-NOT-FOUND` | 404 | Stream referenced by `stream_id` does not exist |
 | `NCP-STREAM-LIMIT-EXCEEDED` | `NPS-STREAM-LIMIT` | 429 | Maximum concurrent streams per connection exceeded |
@@ -269,7 +276,7 @@ Neural Discovery Protocol — address resolution, announcement, and graph synchr
 | `NDP-GRAPH-SEQ-ROLLBACK` | `NPS-CLIENT-BAD-FRAME` | 400 | AnnounceFrame `graph_seq` is less than or equal to the highest value previously accepted for that NID (rollback attempt; see NPS-4 §7.5) |
 | `NDP-GRAPH-SEQ-GAP` | `NPS-STREAM-SEQ-GAP` | 422 | GraphFrame sequence numbers are not contiguous |
 | `NDP-GRAPH-INVALID` | `NPS-CLIENT-BAD-FRAME` | 400 | GraphFrame edge references a NID not in the nodes list, or a self-edge is detected (NDP v0.8 §5) |
-| `NDP-GRAPH-TOO-LARGE` | `NPS-CLIENT-BAD-FRAME` | 400 | GraphFrame `nodes` > 256 or `edges` > 1024 (NDP v0.8 §5) |
+| `NDP-GRAPH-TOO-LARGE` | `NPS-LIMIT-PAYLOAD` | 413 | GraphFrame `nodes` > 256 or `edges` > 1024 (NDP v0.8 §5) |
 | `NDP-FEDERATION-LOOP` | `NPS-CLIENT-CONFLICT` | 409 | AnnounceFrame forwarding loop: the registry's own NID already appears in `ndp-forwarded-by`, or the max 3-hop limit was exceeded (NPS-4 §9) |
 | `NDP-ISSUER-NOT-ALLOWED` | `NPS-AUTH-FORBIDDEN` | 403 | AnnounceFrame issuer (signing CA) is not in the active registry profile's issuer allowlist (see NPS-4 §7.3) |
 | `NDP-CA-ATTEST-REQUIRED` | `NPS-AUTH-UNAUTHENTICATED` | 401 | Active registry profile requires a CA-attested NID and the AnnounceFrame's certificate chain does not anchor in the configured trust roots (see NPS-4 §7.3) |
@@ -370,4 +377,4 @@ Use this code when the error is "I don't know how to handle this type of operati
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

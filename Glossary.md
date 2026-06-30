@@ -1,7 +1,7 @@
 # Glossary
 
 > **Audience:** Anyone (reference)
-> **Status:** ✅ Content complete — v1.0.0-alpha.14
+> **Status:** ✅ Content complete — v1.0.0-alpha.15
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 >
 > Each entry: one-sentence definition followed by the primary spec reference in parentheses.
@@ -29,7 +29,11 @@
 
 ## B
 
+**BinaryVector (`binary_vector.v1`)** — The optional NCP Tier-3 encoding tier (Flags `T1T0 = 10`), activated in NCP v0.9, for compact dense-vector (embedding) payloads — primarily the NWP `QueryFrame.vector_search.vector` binding; a payload carries a 16-byte `NPBV` prefix (magic + version + `vector_count` + `metadata_len`), a MessagePack metadata map, and appended per-vector `dim` (uint32 BE) + little-endian float32 segments. It is negotiated via `supported_encodings` / `enabled_encodings` and is not a new frame type; malformed payloads return `NCP-BINARY-VECTOR-*` client errors and the reserved tier `0b11` returns `NCP-FRAME-FLAGS-INVALID`. ([NPS-1 §8.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md), [NPS-CR-0008](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0008-tier3-binary-vector.md))
+
 **Bridge Node** — An NWP node type that translates outbound NPS frames into non-NPS external protocols (HTTP/REST, gRPC, MCP, A2A) and maps responses back into NWP frames; stateless per request and does not participate in cluster topology. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [NPS-CR-0001](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0001-anchor-bridge-split.md))
+
+**Bridge server (inbound)** — The *inverse* of the outbound Bridge Node: an SDK adapter (`McpServerBridge` / `A2aServerBridge`, wired via ASP.NET `AddBridgeServer` / `UseBridgeServer`) that lets external MCP or A2A clients invoke **local NPS actions**. Secure-by-default — it requires a valid `X-NWP-Agent` NID plus a configured verifier hook, enforces an action allowlist, bounds the request body (`MaxRequestBodyBytes`, default 1 MB → 413), bounds dispatch (`DispatchTimeoutMs`, default 30 s → 504), and sanitizes client-facing errors. ([NPS-2 §2.1](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md))
 
 ---
 
@@ -81,7 +85,7 @@
 
 ## N
 
-**NCP (Neural Communication Protocol)** — The framing and base-layer protocol of NPS; defines the frame format, two encoding tiers (Tier-1 JSON, Tier-2 MsgPack), and five core frame types; all higher-level protocols are carried as NCP frames. ([NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
+**NCP (Neural Communication Protocol)** — The framing and base-layer protocol of NPS; defines the frame format, three encoding tiers (Tier-1 JSON, Tier-2 MsgPack, and the optional Tier-3 BinaryVector `binary_vector.v1` activated in NCP v0.9), and the core frame types; all higher-level protocols are carried as NCP frames. ([NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
 
 **NDP (Neural Discovery Protocol)** — The NPS discovery layer analogous to DNS; agents and nodes use it to resolve `nwp://` addresses to physical (host, port, protocol) tuples, broadcast capabilities via signed `AnnounceFrame`, and subscribe to topology graph changes. ([NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md))
 
@@ -92,6 +96,8 @@
 **NOP (Neural Orchestration Protocol)** — The NPS orchestration layer analogous to SMTP + message queues + workflow engines; provides wire-level DAG task dispatch (`TaskFrame`), agent delegation (`DelegateFrame`), K-of-N sync barriers (`SyncFrame`), and streaming progress (`AlignStream`). ([NPS-5 NOP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md))
 
 **NopFrame** — The NCP keepalive/heartbeat frame (0x07, added NCP v0.8); a zero-payload frame (the single byte `0x07`) that either peer MAY send after the handshake to keep an idle connection alive; cadence is driven by `HelloFrame.ping_interval_ms`, with a dead-peer threshold of 3 × interval (`NCP-KEEPALIVE-TIMEOUT` → `NPS-SERVER-TIMEOUT`). ([NPS-1 §4.8](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md))
+
+**NwpNativeNodeServer** — An SDK server component that lets Memory and Action Nodes serve `QueryFrame` / `ActionFrame` requests directly over a native `NcpSession` / NCP stream (RFC-0006 length-prefix framing), rather than through a hand-rolled per-frame read/write loop or the HTTP overlay. ([NPS-2 NWP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [spec/transport-profile.md](https://github.com/labacacia/NPS-Release/blob/main/spec/transport-profile.md))
 
 **NPT (Neural Processing Token)** — **Deprecated.** Legacy alias for CGN (Cognon); the associated wire field `estimated_npt` was renamed to `cgn_est` in v1.0-alpha.5.2 — do not use in new code or new spec text. ([spec/token-budget.md](https://github.com/labacacia/NPS-Release/blob/main/spec/token-budget.md))
 
@@ -117,11 +123,13 @@
 
 ## S
 
+**Signed canonical form (AnnounceFrame)** — The normative, cross-SDK-consistent byte scope that the NDP `AnnounceFrame.signature` covers (NDP v0.9 §7.4 / §"Signed scope"): all emitted wire fields *except* `signature`, `health`, `last_seen`, and the `frame` discriminant. Absent or `null` optional fields MUST be omitted (not serialized as JSON `null`); `heartbeat_interval_ms` is signed and is canonicalized to the default `60000` only when absent, while an explicit `0` (disabled) is signed literally. Signature verification MUST precede deduplication, conflict detection, and storage. Aligned identically across all six SDKs, so old per-SDK-divergent signed announcements may fail cross-SDK verification. ([NPS-4 §7.4](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md))
+
 **STH (Signed Tree Head)** — A signed commitment to the current state of a Reputation Log's Merkle tree (current tree size + root hash + timestamp), published by a log operator and gossiped between peer logs at a default 30-second interval so that any fork or tampering is detectable via STH divergence. ([NPS-RFC-0004 §4.4–4.5](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md))
 
 **SubscribeFrame** — The NWP change-subscription frame (0x12); its formal wire shape was standardized in CR-0006 (NWP v0.13, §13) with `subscription_id` (UUID v4), a QueryFrame-compatible `filter`, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` for lossless resume, and an optional `type` field that selects reserved namespaces such as `topology.stream`; topology subscriptions require both `topology:read` and `topology:subscribe` capabilities (NWP §12.4). ([NPS-2 §13](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md), [NPS-CR-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0006-subscribe-frame.md))
 
-**Suite Version** — The top-level version identifier for an NPS release as a whole (e.g., `v1.0.0-alpha.14`); distinct from individual sub-protocol versions (NCP v0.8, NWP v0.14, NIP v0.10, NDP v0.9, NOP v0.7) which are tracked per spec document. ([NPS-0 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
+**Suite Version** — The top-level version identifier for an NPS release as a whole (e.g., `v1.0.0-alpha.15`); distinct from individual sub-protocol versions (NCP v0.9, NWP v0.14, NIP v0.10, NDP v0.9, NOP v0.7) which are tracked per spec document. ([NPS-0 §9](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md))
 
 ---
 
@@ -143,4 +151,4 @@ The table below records field and term renames that affect wire compatibility. D
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

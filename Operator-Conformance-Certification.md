@@ -1,7 +1,7 @@
 # Operator: Node Conformance & Certification
 
 > **Audience:** Operators + node implementers
-> **Status:** ✅ Content complete — v1.0.0-alpha.14
+> **Status:** ✅ Content complete — v1.0.0-alpha.15
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 NPS has two orthogonal compliance profiles. This page explains how they relate and how to run the conformance test suite and publish a self-attestation.
@@ -119,9 +119,21 @@ against a freshly stood-up cluster or in CI before claiming a conformance level.
 
 ---
 
+## Conformance harness package: `LabAcacia.NPS.Conformance`
+
+The `LabAcacia.NPS.Conformance` package ships the reusable conformance **harness** behind the
+test suites. It carries the **Node L1 and L2 case catalogs** as data — the `TC-N1-*` and
+`TC-N2-*` case definitions described above — plus `TC-N1`/`TC-N2` helper drivers that stand up
+a paired peer, run each case against the Implementation Under Test, and emit the results
+manifest shape shown below. Implementers embed the harness in their own test project rather
+than re-encoding the case catalog by hand, which keeps third-party suites in lock-step with the
+published catalogs as cases are added.
+
+---
+
 ## Self-attestation process
 
-1. **Build and run the test suite** against your implementation. The reference suite for .NET 10 + xUnit is at `impl/dotnet/tests/NPS.Daemon.Conformance.Tests/` (planned; tracked alongside NPS Daemon MVP). Python and TypeScript suites are planned for Phase 2.
+1. **Build and run the test suite** against your implementation. The reference suite for .NET 10 + xUnit is at `impl/dotnet/tests/NPS.Daemon.Conformance.Tests/` (planned; tracked alongside NPS Daemon MVP) and builds on the `LabAcacia.NPS.Conformance` harness (Node L1/L2 case catalogs + `TC-N1`/`TC-N2` helpers). Python and TypeScript suites are planned for Phase 2.
 
 2. **Produce a results manifest** (JSON) summarizing per-case outcomes:
 
@@ -217,4 +229,4 @@ will be published as the corresponding follow-up CRs land (see NPS-Roadmap).
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

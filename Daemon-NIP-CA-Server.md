@@ -1,6 +1,6 @@
 # Daemon: nip-ca-server
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** Operators running a self-hosted NIP Certificate Authority
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/nip-ca-server/` (lives outside `tools/daemons/` — it has its own distribution repo)
 - **Distribution:** `labacacia/nip-ca-server` — **PUBLIC**
-- **Docker image:** `ghcr.io/labacacia/nip-ca-server:1.0.0-alpha.14`
+- **Docker image:** `ghcr.io/labacacia/nip-ca-server:1.0.0-alpha.15`
 - **Default port:** `:17434` (plain HTTP; TLS terminated externally)
 - **Note:** Not part of the `labacacia/nps-daemons` bundle — distributed separately
 
@@ -65,8 +65,8 @@ curl http://localhost:17434/health
 | `POST` | `/v1/orchestrators/groups/{group}/sessions/issue` | CR-0003: issue a `session-`-prefixed NID under a group, recording `lineage` |
 | `GET` | `/v1/orchestrators/groups/{group}/sessions` | CR-0003: list active session NIDs for a group |
 | `GET` | `/v1/ca/cert` | CA public key |
-| `GET` | `/v1/crl` | Certificate Revocation List |
-| `GET` | `/.well-known/nps-ca` | CA discovery document |
+| `GET` | `/v1/crl` | Certificate Revocation List (carries `issued_at` + a detached CA signature, alpha.14) |
+| `GET` | `/.well-known/nps-ca` | CA discovery document (no longer advertises an unmapped `/ocsp`, alpha.14) |
 | `GET` | `/health` | Liveness probe; returns `200` when ready (legacy envelope) |
 | `GET` | `/healthz` | Kubernetes-style liveness probe (added alpha.6+) |
 | `GET` | `/readyz` | Kubernetes-style readiness probe (added alpha.6+) |
@@ -91,6 +91,22 @@ IANA **Private Enterprise Number 65715** was assigned to the NPS Committee on **
 The server also supports `IdentFrame.ocsp_staple` (base64url DER OCSP) for stapled revocation responses.
 
 > **Migration:** certificates issued under the old provisional `…99999` arc MUST be revoked and re-issued under PEN 65715.
+
+## CA client & revocation artifacts (alpha.14)
+
+alpha.14 added a typed remote client and tightened the revocation artifacts:
+
+- **`NipCaClient`** — a typed remote client for this CA: CA discovery, CRL retrieval, Ed25519
+  register / renew / revoke / verify, and RFC-0002 X.509 registration. SDK callers no longer
+  hand-roll the HTTP surface.
+- **`/v1/crl`** now includes an `issued_at` timestamp **and a detached CA signature** over the
+  list, so relying parties can verify the CRL independently of the transport.
+- **`/.well-known/nps-ca`** no longer advertises an unmapped `/ocsp` endpoint — the discovery
+  document only lists routes the server actually serves.
+- **`INipCaStore.ListAsync()`** was added to the store interface (with an `InMemoryNipCaStore`
+  implementation) so backends can enumerate issued certificates for CRL assembly.
+
+---
 
 ## ACME path (NPS-RFC-0002) — EXPERIMENTAL
 
@@ -135,7 +151,7 @@ The container exposes plain HTTP on port 17434. Run it behind nginx, Caddy, or T
 
 ## `/health` response
 
-Returns `200` with a standard NPS health envelope when the service is ready. Returns `503` during startup or if the CA key cannot be loaded. `/healthz` and `/readyz` provide Kubernetes-style liveness/readiness probes.
+Returns `200` with a standard NPS health envelope when the service is ready. Returns `503` during startup or if the CA key cannot be loaded. `/healthz` and `/readyz` provide Kubernetes-style liveness/readiness probes, backed by the transport-neutral `HealthProbeRenderer` (alpha.14) shared across the daemon set.
 
 ## Graceful shutdown
 
@@ -173,4 +189,4 @@ The `example/` directory contains five reference client ports (Python, TypeScrip
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

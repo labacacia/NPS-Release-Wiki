@@ -1,8 +1,20 @@
 # SDK — Java
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 Java client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
+
+---
+
+## Capability set (alpha.13 parity + alpha.14 / alpha.15 additions)
+
+The Java SDK tracks the suite feature train. Beyond the alpha.13 client baseline, it carries the following capability-level additions (exact type names may differ by language — see the source):
+
+- **NCP Tier-3 BinaryVector (`binary_vector.v1`)** (NCP v0.9, alpha.14) — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame`. Negotiated via caps and only used when both peers advertise `binary_vector.v1`. Malformed payloads surface as documented client errors (`NCP-BINARY-VECTOR-*` → `NPS-CLIENT-BAD-FRAME`); the reserved tier bits return `NCP-FRAME-FLAGS-INVALID`.
+- **Inbound NWP Bridge server adapters** (alpha.14) — lets external MCP / A2A clients call local NPS actions (the inverse of the outbound Bridge Node). Secure-by-default: valid `X-NWP-Agent` NID + a configured verifier, bounded request bodies (→ 413), dispatch timeout (→ 504), sanitized client errors, and an action allowlist. See [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node).
+- **Native-mode NWP serving** (alpha.14) — Memory / Action Nodes serve `QueryFrame` / `ActionFrame` directly over a native NCP session rather than a hand-rolled frame loop.
+- **NIP signed-payload realignment** (alpha.15, **breaking**) — TrustFrame / RevokeFrame now sign the current NPS-3 field set (`issued_at`, `serial`, `signer_nid`, `target_nid`) and use current revocation naming (`NIP-CERT-REVOKED`). Signed frames produced by the old alpha.14-era shape no longer verify. See [SDK Identity and Authentication](SDK-Identity-and-Authentication).
+- **NDP AnnounceFrame signed canonical form** (alpha.15, **breaking**) — the signed body is now normative and cross-SDK consistent (sign all wire fields except `signature` / `health` / `last_seen` / `frame`; omit null optionals; `heartbeat_interval_ms` canonicalised to the default `60000` only when absent, explicit `0` signed literally).
 
 ---
 
@@ -12,7 +24,7 @@ Java client library for the Neural Protocol Suite. Covers all five protocols: NC
 
 ```kotlin
 dependencies {
-    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.14")
+    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.15")
 }
 ```
 
@@ -22,7 +34,7 @@ dependencies {
 <dependency>
   <groupId>com.labacacia.nps</groupId>
   <artifactId>nps-java</artifactId>
-  <version>1.0.0-alpha.14</version>
+  <version>1.0.0-alpha.15</version>
 </dependency>
 ```
 
@@ -222,4 +234,4 @@ Test classes: `AnchorFrameCacheTest` (12), `FrameHeaderTest` (8), `NpsFrameCodec
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

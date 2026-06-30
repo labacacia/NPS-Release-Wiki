@@ -1,6 +1,6 @@
 # Daemon: nps-runner
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-runner/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-runner:1.0.0-alpha.14`
+- **Docker image:** `labacacia/nps-runner:1.0.0-alpha.15`
 - **Exposed port:** none for protocol traffic — `nps-runner` communicates entirely through the `npsd` inbox. As of alpha.13 it exposes operability endpoints (`/healthz`, `/readyz`, `/metrics`) on a local management port for probes and scraping.
 - **Layer:** L1
 
@@ -142,7 +142,7 @@ Body:
 
 ```yaml
 nps-runner:
-  image: labacacia/nps-runner:1.0.0-alpha.14
+  image: labacacia/nps-runner:1.0.0-alpha.15
   restart: unless-stopped
   depends_on:
     - npsd
@@ -159,6 +159,8 @@ As of alpha.13 `nps-runner` exposes operability endpoints on a local management 
 - `GET /healthz` — liveness (process is up). Returns `200 OK`.
 - `GET /readyz` — readiness (sub-NID registered with `npsd`, inbox poll loop active). Returns `200 OK` when ready, `503` otherwise.
 - `GET /metrics` — Prometheus exposition (active worker count, lease counts, spawn/claim/timeout totals).
+
+The `/healthz`·`/readyz` probes are rendered by the transport-neutral `HealthProbeRenderer` (alpha.14) shared across the daemon set.
 
 Liveness is also observable via log output — look for the `nps-runner ready` startup line and the periodic poll/spawn log lines.
 
@@ -211,4 +213,4 @@ This is expected and harmless. The `409 Conflict` from `POST /v1/agents` means t
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

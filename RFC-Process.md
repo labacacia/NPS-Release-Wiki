@@ -1,6 +1,6 @@
 # RFC Process
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 An RFC (Request for Comments) is the formal mechanism for proposing and deciding non-trivial changes to the NPS suite. The source documents live in `spec/rfcs/` inside the NPS-Dev monorepo.
 
@@ -228,4 +228,4 @@ This RFC builds on RFC-0004's reputation log by defining how reputation signals 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

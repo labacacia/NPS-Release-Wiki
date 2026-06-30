@@ -1,6 +1,6 @@
 # Protocol: NWP — Neural Web Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 **Spec**: `spec/NPS-2-NWP.md` v0.14 · **Port**: 17433 (shared) / 17434 (optional dedicated)
 
@@ -280,4 +280,4 @@ When a `QueryFrame` or `SubscribeFrame` carries a `type` field that the node doe
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

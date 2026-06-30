@@ -1,6 +1,6 @@
 # Reference: Status Codes
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 NPS status codes are the **coarse classification layer** of the two-level error system. Where protocol error codes (e.g. `NCP-ANCHOR-NOT-FOUND`) tell you exactly what went wrong, status codes group errors into broad transport-visible categories used for retry logic, HTTP mapping in overlay mode, and SDK-level error classification.
 
@@ -151,4 +151,4 @@ The `status` field carries the NPS status code (coarse). The `error` field carri
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

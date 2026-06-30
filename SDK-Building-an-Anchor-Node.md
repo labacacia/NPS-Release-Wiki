@@ -1,6 +1,6 @@
 # SDK Tutorial: Building an Anchor Node
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** Developers standing up a cluster entry point that routes NPS traffic and optionally exposes topology query endpoints.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -100,6 +100,8 @@ Add `min_assurance_level` at the top level if you want to require a minimum iden
 ```
 
 Use `node_roles`, never the legacy `node_kind` field. `node_kind` was an accepted parse-only alias **through alpha.5 only**; from alpha.6 onward clients MUST send `node_roles` (including in `topology.filter.node_roles`) and `node_kind` is no longer accepted.
+
+**Signed AnnounceFrame canonical form (NDP v0.9, normative as of alpha.15):** When your Anchor signs its AnnounceFrame, the signed canonical form is now normative and identical across all six SDKs. The signed body covers **all emitted AnnounceFrame wire fields except** `signature`, `health`, `last_seen`, and the `frame` discriminant. Absent or null optionals are **omitted** (not serialized as `null`). `heartbeat_interval_ms` is signed and canonicalized to the default `60000` **only when absent**; an explicit `0` (heartbeat disabled) is signed literally. This is a **breaking** change: announcements signed by older per-SDK-divergent canonicalisers may fail cross-SDK verification after upgrading.
 
 ---
 
@@ -349,4 +351,4 @@ Passing implementations MAY copy the `NPS-NODE-L1-CERTIFIED.md` template to thei
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

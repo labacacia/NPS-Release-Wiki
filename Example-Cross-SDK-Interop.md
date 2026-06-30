@@ -1,6 +1,6 @@
 # Example: Cross-SDK Interop
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 **Repo:** `labacacia/NPS-examples`, directory: `cross-sdk-interop/` (source in NPS-Dev `demos/cross-sdk-interop/`)
 
@@ -118,17 +118,22 @@ The fix was to add Java and Go to the parity matrix before tagging alpha.5. Now 
 
 ---
 
-## Six-SDK Feature Parity (alpha.14)
+## Six-SDK Feature Parity (alpha.15)
 
-As of v1.0.0-alpha.14, all six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship the same protocol feature set, and the cross-SDK matrix exercises each of these for byte- and behavior-level parity:
+As of v1.0.0-alpha.15, all six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship the same protocol feature set, and the cross-SDK matrix exercises each of these for byte- and behavior-level parity:
 
 - **NCP `NopFrame` (0x07)** — zero-payload keepalive/heartbeat (NCP v0.8); either peer MAY send it after the handshake. Paired with `HelloFrame.ping_interval_ms` (uint32, 0 = disabled).
+- **NCP Tier-3 `binary_vector.v1`** — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame` (NCP v0.9). Negotiated via caps; used only when both peers advertise `binary_vector.v1`. Layout is a 16-byte prefix (`NPBV` magic, version, vector_count, metadata_len) + MessagePack metadata + per-vector `dim` (uint32 BE) + float32-LE segments. Malformed payloads return documented client errors (`NCP-BINARY-VECTOR-MALFORMED` / `-DIM-MISMATCH` / `-INDEX-INVALID` / `-DTYPE-UNSUPPORTED` / `-TRUNCATED` → `NPS-CLIENT-BAD-FRAME`); the reserved tier `0b11` → `NCP-FRAME-FLAGS-INVALID`.
 - **NIP `node_roles`** — `IdentFrame.node_roles` self-declared node-role tags (NIP v0.10), the current name for the topology/discovery role field. The legacy `node_kind` alias was accepted through alpha.5 only.
+- **NIP TrustFrame/RevokeFrame signed-payload realignment** — the Ed25519-signed payload now covers the current NPS-3 fields (`issued_at`, `serial`, `signer_nid`, `target_nid`) and current revocation naming (`NIP-CERT-REVOKED`) (NIP v0.10). Signed frames produced by the old alpha.14-era SDK shape no longer verify after upgrading (breaking).
 - **NDP `spawn_spec_ref` schema object** — the `AnnounceFrame.spawn_spec_ref` type changed from a URI string to a structured SpawnSpec schema object (NDP v0.9), alongside `heartbeat_interval_ms`.
+- **NDP AnnounceFrame signed canonical form** — the signed body is now normative and cross-SDK consistent (NDP v0.9 §3.1): it covers all emitted AnnounceFrame wire fields except `signature`, `health`, `last_seen`, and the `frame` discriminant; absent/null optionals are omitted (not serialized as `null`); `heartbeat_interval_ms` is signed and canonicalized to the default `60000` only when absent, while an explicit `0` (disabled) is signed literally. Old per-SDK-divergent signed announcements may fail cross-SDK verification (breaking).
+- **Inbound NWP Bridge server adapters** — `McpServerBridge` / `A2aServerBridge` (and the ASP.NET `AddBridgeServer` / `UseBridgeServer` helpers) let external MCP / A2A clients call local NPS actions — the inverse of the outbound Bridge Node. Secure-by-default: requires a valid `X-NWP-Agent` NID plus a configured verifier hook, bounded request bodies (`MaxRequestBodyBytes`, default 1 MB → 413), a dispatch timeout (`DispatchTimeoutMs`, default 30 s → 504), sanitized client errors, and an action allowlist.
+- **Native-mode NWP serving** — `NwpNativeNodeServer`: Memory / Action Nodes serve `QueryFrame` / `ActionFrame` directly over an `NcpSession` / native NCP stream, with no hand-rolled frame loop.
 - **NOP `result_ttl_seconds`** — `TaskFrame.result_ttl_seconds` (uint32, default 3 600 s, omitted from the wire at default) (NOP v0.7).
 - **NWP `X-NWM-Version`** — the `X-NWM-Version` response-header constant plus `manifest_version` / `manifest_updated_at` on `GET /.nwm` (NWP v0.14).
 
-A good cross-SDK invariant is one where all six SDKs must produce identical wire bytes or identical decoded values for any of the fields above — for example, that omitting `result_ttl_seconds` at its default produces byte-identical TaskFrames across all six encoders.
+A good cross-SDK invariant is one where all six SDKs must produce identical wire bytes or identical decoded values for any of the fields above — for example, that omitting `result_ttl_seconds` at its default produces byte-identical TaskFrames across all six encoders, or that a default-`heartbeat_interval_ms` AnnounceFrame yields a byte-identical signed canonical form across all six signers.
 
 ---
 
@@ -180,4 +185,4 @@ Runtimes that are not on the CI runner's PATH are skipped gracefully — the tes
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

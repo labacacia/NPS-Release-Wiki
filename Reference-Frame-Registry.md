@@ -1,6 +1,6 @@
 # Reference: Frame Registry
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 Every NPS frame type is identified by a single byte. Frames from all five protocols share one unified byte space, routed by type code. The machine-readable source of truth is `spec/frame-registry.yaml` in the repository — that file is CI-validated on every commit.
 
@@ -42,6 +42,34 @@ Neural Communication Protocol — wire format, framing, streaming, and handshake
 **Reserved in NCP range:** `0x08–0x0F`.
 
 > **Special reservation — `0x4E`**: The byte `0x4E` (ASCII `N`) is reserved by NPS-RFC-0001 as the first byte of the native-mode connection preamble `b"NPS/1.0\n"`. Servers MUST NOT interpret `0x4E` as a frame type when it is read as the very first byte after the transport handshake.
+
+### Encoding Tiers
+
+The frame *type byte* identifies the logical frame; the *encoding tier* is a separate, orthogonal choice carried in the `T0`/`T1` bits of the NCP frame Flags field (NPS-1-NCP §8). Every frame type can be serialized at any negotiated tier — the tier does not change which frame it is.
+
+| Tier | Flag (`T1 T0`) | Format | Use case |
+|------|---------------|--------|----------|
+| Tier-1 | `00` | JSON | Development, debugging, compatibility mode |
+| Tier-2 | `01` | MsgPack (binary) | Production default; ~60% size reduction |
+| Tier-3 | `10` | **BinaryVector v1** (`binary_vector.v1`) | Vector-heavy frames; MessagePack metadata plus raw little-endian float32 vector segments (NCP v0.9) |
+| — | `11` | Reserved | MUST be rejected with `NCP-FRAME-FLAGS-INVALID` |
+
+**Tier-3 BinaryVector v1 (`binary_vector.v1`, NCP v0.9).** Activated in NCP v0.9, Tier-3 is an optional, negotiated frame-*payload* encoding for compact dense-vector (embedding) payloads — primarily the NWP `QueryFrame.vector_search.vector` binding. It is **not** a new frame type and does **not** consume a registry byte. Senders MUST NOT emit `Flags.T1T0 = 10` unless both peers advertised `binary_vector.v1` in their `supported_encodings` / `enabled_encodings`; a receiver that did not negotiate Tier-3 MUST reject the frame with `NCP-ENCODING-UNSUPPORTED`.
+
+The Tier-3 payload is a 16-byte fixed prefix followed by MessagePack metadata and one or more appended vector segments:
+
+| Offset | Size | Field | Encoding |
+|--------|------|-------|----------|
+| 0 | 4 | Magic | ASCII `NPBV` |
+| 4 | 1 | Version | `0x01` |
+| 5 | 1 | Flags | `0x00` in v1; receivers MUST reject non-zero |
+| 6 | 2 | `vector_count` | uint16, big-endian |
+| 8 | 4 | `metadata_len` | uint32, big-endian |
+| 12 | 4 | Reserved | MUST be zero |
+| 16 | `metadata_len` | Metadata | MessagePack map (same field names as Tier-2) |
+| … | variable | Vector segments | repeated `dim:uint32_be` + `dim` little-endian float32 values |
+
+Vector fields moved into binary segments are replaced in the metadata map by a zero-based marker object, e.g. `{"$nps_binary_vector": 0, "dtype": "float32", "dim": 1536}`. `dtype` MUST be `float32` (IEEE-754 binary32, little-endian). Malformed Tier-3 payloads surface documented client errors rather than server-internal faults: `NCP-BINARY-VECTOR-MALFORMED`, `-DIM-MISMATCH`, `-INDEX-INVALID`, `-DTYPE-UNSUPPORTED`, and `-TRUNCATED`, all mapping to `NPS-CLIENT-BAD-FRAME`. MatrixTensor, float16, quantized int8, and multi-vector bindings are reserved for future CRs.
 
 ---
 
@@ -149,4 +177,4 @@ Do not implement or ship a new frame type before the RFC is accepted. The `frame
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

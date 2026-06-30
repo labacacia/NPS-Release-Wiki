@@ -1,6 +1,6 @@
 # Daemon: nps-cloud-ca
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** NPS Cloud subscribers and operators
 > **Distribution note:** `innolotus/nps-cloud-ca` is a **private** repository. This page documents only the protocol-visible interface. Internal product and billing details are in the private repo.
@@ -10,7 +10,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-cloud-ca/`
 - **Distribution:** `innolotus/nps-cloud-ca` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `innolotus/nps-cloud-ca:1.0.0-alpha.14` (private registry)
+- **Docker image:** `innolotus/nps-cloud-ca:1.0.0-alpha.15` (private registry)
 - **Default port:** `:17435` (NIP optional-dedicated per NPS-3 §1)
 - **Layer:** L3
 - **Timeline:** Ships publicly with NPS Cloud GA, planned 2027 Q1+
@@ -32,11 +32,18 @@
 
 ---
 
-## Implementation status (alpha.14)
+## Implementation status (alpha.15)
 
 The current release is a **Phase 1 deferral skeleton**. The URL surface is present but all issuance endpoints return `NIP-CA-NOT-READY` (HTTP 503) with a pointer to the OSS CA so callers fail informatively. The process name, port, and Docker image tag are stable from alpha.3 to lock in the deployment surface.
 
 The daemon's own X.509 and ACME pipeline remains planned for a future release alongside NPS-RFC-0002.
+
+> **CA client/CRL alignment (alpha.14).** The shared NIP CA surface gained a typed remote
+> client (`NipCaClient`: CA discovery, CRL retrieval, Ed25519 register/renew/revoke/verify,
+> RFC-0002 X.509 registration) and revocation-artifact changes that this daemon's protocol
+> surface tracks: `/v1/crl` now carries an `issued_at` timestamp plus a detached CA signature,
+> and the `/.well-known/nps-ca` discovery document no longer advertises an unmapped `/ocsp`
+> entry. See [Daemon NIP-CA-Server](Daemon-NIP-CA-Server) for the reference OSS implementation.
 
 ---
 
@@ -74,7 +81,7 @@ These endpoints define the public protocol surface. Internal product behaviour (
 {
   "status": "ok",
   "daemon": "nps-cloud-ca",
-  "version": "1.0.0-alpha.14",
+  "version": "1.0.0-alpha.15",
   "layer": 3,
   "role": "NPS Cloud NID Certificate Authority",
   "port": 17435
@@ -107,4 +114,4 @@ Full configuration (tenant database, billing integration, CA key management) is 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

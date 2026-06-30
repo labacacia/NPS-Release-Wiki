@@ -1,6 +1,6 @@
 # SDK Tutorial: Building a Bridge Node
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** Developers implementing NPS↔non-NPS protocol translation (MCP, A2A, gRPC, HTTP).
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -17,8 +17,9 @@ A **Bridge Node** translates NPS frames into requests on non-NPS protocols and t
 4. [Step 2 — Declare in the NDP AnnounceFrame](#step-2--declare-in-the-ndp-announceframe)
 5. [Step 3 — Handle inbound ActionFrame with bridge_target](#step-3--handle-inbound-actionframe-with-bridge_target)
 6. [Step 4 — Translate errors into the NPS namespace](#step-4--translate-errors-into-the-nps-namespace)
-7. [Rejecting legacy gateway wire values](#rejecting-legacy-gateway-wire-values)
-8. [Reference implementations](#reference-implementations)
+7. [Inbound NWP Bridge server adapters (external → local NPS actions)](#inbound-nwp-bridge-server-adapters-external--local-nps-actions)
+8. [Rejecting legacy gateway wire values](#rejecting-legacy-gateway-wire-values)
+9. [Reference implementations](#reference-implementations)
 
 ---
 
@@ -239,6 +240,39 @@ Include `bridge_protocol` and a sanitized reference to the external target in `d
 
 ---
 
+## Inbound NWP Bridge server adapters (external → local NPS actions)
+
+Everything above describes the **outbound** Bridge Node: NPS frames in, an external-protocol call out. As of **alpha.14** the SDK family also ships **inbound NWP Bridge server adapters** that run the *other* direction at the action layer — they let an external **MCP** or **A2A** client invoke **local NPS actions**, with the adapter handling the protocol translation and NPS dispatch in-process.
+
+```
+external MCP / A2A client ──[Bridge server adapter]──→ local NPS actions
+```
+
+This is distinct from both:
+
+- the **outbound `BridgeNode`** dispatchers (NPS → external, Steps 1–4 above), and
+- the **`compat/*-ingress`** adapters (external → NPS, full node front-end). The Bridge server adapters are a lighter-weight, action-level surface you mount into an existing service to expose selected local actions to MCP / A2A callers.
+
+### Adapters and wiring
+
+The reference implementation exposes the adapters as `McpServerBridge` / `A2aServerBridge`, mounted into an ASP.NET Core host via `AddBridgeServer` / `UseBridgeServer`. (Other SDKs expose the equivalent capability; check the source for exact names per language.)
+
+### Secure-by-default
+
+The inbound Bridge server is hardened by default — a misconfigured deployment fails closed rather than open:
+
+| Control | Behavior |
+|---------|----------|
+| **Caller identity** | Requires a valid `X-NWP-Agent` NID header plus a **configured verifier hook**. With no verifier configured the adapter refuses to dispatch. |
+| **Action allowlist** | Only actions you explicitly allowlist are reachable; everything else is rejected. External callers cannot reach un-listed local actions. |
+| **Bounded request bodies** | Request bodies above `MaxRequestBodyBytes` (default 1 MB) are rejected with HTTP **413**. |
+| **Dispatch timeout** | A local dispatch exceeding `DispatchTimeoutMs` (default 30 s) is aborted and returns HTTP **504**. |
+| **Sanitized errors** | Internal failures are translated to sanitized client errors — no internal endpoint, stack, or secret detail leaks to the external caller. |
+
+When mapping the external error back to the caller, follow the same sanitisation principle as the outbound path (Step 4): surface a stable NPS-namespaced error and a sanitized reference, never raw internal detail.
+
+---
+
 ## Rejecting legacy gateway wire values
 
 Your implementation MUST reject the retired `"gateway"` role in both places it can appear:
@@ -266,7 +300,7 @@ Three open-source reference implementations are available:
 
 These ingress packages carry the inverse direction from a Bridge Node, but their protocol-translation logic (MCP tool schema mapping, A2A task state machine, gRPC proto-to-NPS frame mapping) is the most complete reference for each protocol's quirks. Study the translation layer and adapt it for the outbound path.
 
-A dedicated outbound (NPS → external) MCP bridge remains a roadmap item. As of alpha.14, the inbound ingress packages above are versioned with the suite release train and provide the reference translation layers for outbound bridge work.
+A dedicated outbound (NPS → external) MCP bridge remains a roadmap item. As of alpha.15, the inbound ingress packages above ship on the suite release train (the `McpIngress` / `A2aIngress` / `GrpcIngress` packages deferred in alpha.13 are now caught up) and provide the reference translation layers for outbound bridge work.
 
 ---
 
@@ -277,4 +311,4 @@ A dedicated outbound (NPS → external) MCP bridge remains a roadmap item. As of
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

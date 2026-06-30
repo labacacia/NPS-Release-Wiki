@@ -1,6 +1,6 @@
 # Reference: Cognon (CGN) Budget
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 ## What Is a Cognon?
 
@@ -219,4 +219,4 @@ Enforcing `X-NWP-Budget` on push streams would require the node to buffer future
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

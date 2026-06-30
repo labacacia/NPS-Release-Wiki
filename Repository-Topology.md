@@ -1,6 +1,6 @@
 # Repository Topology
 
-**Status:** ✅ Latest published topology — v1.0.0-alpha.14
+**Status:** ✅ Latest published topology — v1.0.0-alpha.15
 
 This page maps every NPS-related repository, its role, and how it relates to the central source monorepo.
 
@@ -65,6 +65,8 @@ All arrows are one-way syncs: NPS-Dev → distribution repo. Distribution repos 
 | `nps-ledger` | innolotus | K-of-N audit + reputation log daemon | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-ledger/` |
 | `nps-orchestrator` | orilynn-studio | Consumer / example orchestrator service | Public | Independent — not synced from NPS-Dev; tracked by `version.yaml` for version parity only |
 
+> **Ingress packages on the suite train.** The three ingress adapter packages (`LabAcacia.McpIngress`, `LabAcacia.A2aIngress`, `LabAcacia.GrpcIngress`) — deferred in the alpha.13 re-cut — are now caught up and publish on the suite train: all three ship at **v1.0.0-alpha.15**, alongside the 11 SDK packages.
+
 ---
 
 ## Stub Repos (Tracked, Not Yet Released)
@@ -123,4 +125,4 @@ All public labacacia repos are mirrored to Gitee (`gitee.com/labacacia/`) via `t
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.14*
+*Last reviewed for published packages: v1.0.0-alpha.15*

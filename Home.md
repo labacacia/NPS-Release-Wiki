@@ -1,6 +1,6 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** ✅ Wiki aligned for the v1.0.0-alpha.14 release.
+> **Status:** ✅ Wiki aligned for the v1.0.0-alpha.15 release.
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -61,15 +61,15 @@ document.
 
 This wiki tracks the suite version declared in
 [`NPS-Release/version.yaml`](https://github.com/labacacia/NPS-Release/blob/main/version.yaml)
-— latest published packages are **v1.0.0-alpha.14** (released 2026-06-26).
-The wiki covers the **v1.0.0-alpha.14 release** documentation
+— latest published packages are **v1.0.0-alpha.15** (released 2026-06-28).
+The wiki covers the **v1.0.0-alpha.15 release** documentation
 boundary: typed remote NIP CA clients, native-mode NWP serving helpers,
 conformance manifests, live revocation hooks, native NCP TLS/mTLS hardening,
 signed CRL output, and transport-neutral observability. Pages should be
 re-reviewed at each suite release; see the `## TODO` block on each page for
 the version-alignment checklist.
 
-*Wiki last updated: v1.0.0-alpha.14 release docs (2026-06-26)*
+*Wiki last updated: v1.0.0-alpha.15 release docs (2026-06-28)*
 
 ---
 

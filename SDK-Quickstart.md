@@ -1,6 +1,6 @@
 # SDK Quickstart
 
-**Status:** ✅ Latest published packages — v1.0.0-alpha.14
+**Status:** ✅ Latest published packages — v1.0.0-alpha.15
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
@@ -22,22 +22,22 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 
 | Language | Install command | Current pin |
 |----------|-----------------|-------------|
-| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.14` | `1.0.0-alpha.14` |
-| Python | `pip install nps-lib==1.0.0a14` | `1.0.0a14` |
-| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.14` | `1.0.0-alpha.14` |
-| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.14")` | `1.0.0-alpha.14` |
-| Rust | `nps-sdk = "=1.0.0-alpha.14"` | `=1.0.0-alpha.14` (exact pin) |
-| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.14` | `v1.0.0-alpha.14` |
+| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.15` | `1.0.0-alpha.15` |
+| Python | `pip install nps-lib==1.0.0a15` | `1.0.0a15` |
+| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.15` | `1.0.0-alpha.15` |
+| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.15")` | `1.0.0-alpha.15` |
+| Rust | `nps-sdk = "=1.0.0-alpha.15"` | `=1.0.0-alpha.15` (exact pin) |
+| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.15` | `v1.0.0-alpha.15` |
 
 > **Python package name:** The PyPI distribution name is `nps-lib` (not `nps-sdk` — that name is taken by an unrelated package). The Python import namespace is `nps_sdk`.
 
 > **Rust pinning:** Use the `=` prefix for alpha releases to prevent Cargo from silently upgrading to a later alpha.
 
-> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.14`. Pin the explicit version above for reproducible builds.
+> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.15`. Pin the explicit version above for reproducible builds.
 
-> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.14 is the current pin.
+> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.15 is the current pin.
 
-> **alpha.14 release docs:** Source and specs now cover typed remote NIP CA clients, native-mode NWP serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, and .NET native NCP TLS/mTLS hardening.
+> **alpha.15 release docs:** Source and specs now cover NCP Tier-3 BinaryVector (`binary_vector.v1`) compact float-vector encoding, inbound NWP Bridge server adapters (external MCP / A2A clients calling local NPS actions), native-mode NWP serving, and a typed remote NIP CA client — plus the earlier alpha.14 additions (typed CA clients, native-mode serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, .NET native NCP TLS/mTLS hardening). alpha.15 also realigns the NIP TrustFrame/RevokeFrame signed payload (**breaking:** old signed frames no longer verify).
 
 ---
 
@@ -152,7 +152,7 @@ Tier-1 JSON is convenient for debugging but produces roughly 2.5× more bytes th
 
 ### Ignoring the `AssuranceLevel` empty-string case
 
-`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.14`.
+`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.15`.
 
 ### Mixing suite versions
 
@@ -160,9 +160,9 @@ All NuGet/PyPI/npm/Maven/crates.io packages within the same language SDK are ver
 
 ---
 
-## Published alpha.14 feature set
+## Published alpha.15 feature set
 
-All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the alpha.13 parity surface plus the alpha.14 release additions:
+All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions:
 
 - **NCP** — `NopFrame` (0x07) zero-payload keepalive/heartbeat; `HelloFrame.ping_interval_ms` (uint32, 0 = disabled; dead-peer threshold = 3 × interval).
 - **NIP** — `IdentFrame.node_roles` (self-declared node-role tags, excluded from the Ed25519-signed payload).
@@ -179,6 +179,14 @@ The alpha.14 release adds:
 - **Conformance helpers** — TC-N1/TC-N2 manifests and harness entry points for repeatable SDK/spec checks.
 - **.NET hardening** — live revocation hooks plus native NCP TLS/mTLS hooks and handshake bounds.
 
+The alpha.15 release adds (capability described here; the exact API names are .NET — see [SDK DotNet](SDK-DotNet); other SDKs expose the same capability under their own naming):
+
+- **NCP Tier-3 BinaryVector** (`binary_vector.v1`) — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame.vector_search.vector`. Negotiated via caps and used only when both peers advertise `binary_vector.v1`; `NPBV`-prefixed payload with MessagePack metadata markers and little-endian `float32` vector segments. Malformed payloads return documented client errors (`NCP-BINARY-VECTOR-*` → `NPS-CLIENT-BAD-FRAME`); the reserved tier `0b11` returns `NCP-FRAME-FLAGS-INVALID`.
+- **Inbound NWP Bridge server adapters** — let external MCP / A2A clients call local NPS actions (the inverse of the outbound Bridge Node). Secure-by-default: a valid `X-NWP-Agent` NID plus a verifier hook, an action allowlist, bounded request bodies (default 1 MB → 413), a dispatch timeout (default 30 s → 504), and sanitized client errors.
+- **Native-mode NWP serving** — Memory / Action Nodes serve `QueryFrame` / `ActionFrame` directly over a native NCP session.
+- **Typed remote NIP CA client** — CA discovery, CRL retrieval, and Ed25519 register / renew / revoke / verify, including RFC-0002 X.509 registration.
+- **NIP TrustFrame/RevokeFrame signed-payload realignment** — the Ed25519-signed payload now includes the current NPS-3 fields (`issued_at`, `serial`, `signer_nid`, `target_nid`) and uses current revocation naming (`NIP-CERT-REVOKED`). **Breaking:** signed frames produced by the old alpha.14-era SDK shape no longer verify after upgrading.
+
 ---
 
 ## What to read next
@@ -190,4 +198,4 @@ The alpha.14 release adds:
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.14*
+*Last reviewed for published packages: v1.0.0-alpha.15*

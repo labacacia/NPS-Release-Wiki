@@ -1,7 +1,7 @@
 # Protocol Stack Architecture
 
 > **Audience:** Newcomers and protocol designers
-> **Status:** ✅ Content complete — v1.0.0-alpha.14
+> **Status:** ✅ Content complete — v1.0.0-alpha.15
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page explains *how* the five NPS layers relate to each other and *why* the boundaries are drawn where they are. For per-protocol reference, see the individual [Protocol-NCP](Protocol-NCP), [Protocol-NWP](Protocol-NWP), [Protocol-NIP](Protocol-NIP), [Protocol-NDP](Protocol-NDP), and [Protocol-NOP](Protocol-NOP) pages.
@@ -34,7 +34,7 @@ This page explains *how* the five NPS layers relate to each other and *why* the 
 │  L1   NCP — Neural Communication Protocol                (0x01–0x0F)   │
 │       AnchorFrame · DiffFrame · StreamFrame · CapsFrame · HelloFrame    │
 │       · NopFrame (keepalive)                                            │
-│       Framing · encoding tiers (JSON / MsgPack) · schema deduplication  │
+│  Framing · encoding tiers (JSON / MsgPack / BinaryVector) · schema dedup│
 │       No dependencies                                                   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  Transport                                                               │
@@ -155,13 +155,14 @@ Port 17433 is the single default port for the entire suite. Frame-type-based rou
 
 ### Encoding Tiers
 
-Every frame type supports two encoding tiers selected via the flags byte:
+Every frame type supports the following encoding tiers, selected via the flags byte:
 
 | Tier | Encoding | Flag | Notes |
 |------|----------|------|-------|
 | Tier-1 | JSON | `0x00` | Development, debugging, overlay interop |
 | Tier-2 | MsgPack (binary) | `0x01` | Production default; ~60% size reduction vs JSON |
-| — | Reserved | `0x02–0x03` | Reserved; no format assigned |
+| Tier-3 | BinaryVector v1 | `0x02` | Optional, negotiated (`binary_vector.v1`); vector-heavy frames — MessagePack metadata + little-endian float32 segments. Activated in NCP v0.9; bound to NWP `QueryFrame` vector search. See [Protocol-NCP](Protocol-NCP#encoding-tiers) |
+| — | Reserved | `0x03` | Reserved; no format assigned |
 
 ### Security Baseline
 
@@ -197,4 +198,4 @@ The key distinction is that HTTP and gRPC are general-purpose RPC mechanisms tha
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*

@@ -1,6 +1,6 @@
 # SDK How-To: Identity and Authentication
 
-**Status:** ✅ Content complete — v1.0.0-alpha.14
+**Status:** ✅ Content complete — v1.0.0-alpha.15
 
 > **Audience:** Developers integrating NPS identity into an Agent or Node implementation.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -18,9 +18,10 @@ Every participant in the NPS network — Agent, Node, or Operator — holds a **
 5. [Assurance levels](#assurance-levels)
 6. [The empty-string bug fix (alpha.5)](#the-empty-string-bug-fix-alpha5)
 7. [Receiver-side verification](#receiver-side-verification)
-8. [Gating actions with min_assurance_level](#gating-actions-with-min_assurance_level)
-9. [Consulting the reputation log](#consulting-the-reputation-log)
-10. [Forward compatibility: unknown assurance levels](#forward-compatibility-unknown-assurance-levels)
+8. [TrustFrame / RevokeFrame signed-payload realignment (alpha.15)](#trustframe--revokeframe-signed-payload-realignment-alpha15)
+9. [Gating actions with min_assurance_level](#gating-actions-with-min_assurance_level)
+10. [Consulting the reputation log](#consulting-the-reputation-log)
+11. [Forward compatibility: unknown assurance levels](#forward-compatibility-unknown-assurance-levels)
 
 ---
 
@@ -66,6 +67,10 @@ POST /v1/agents/register           ← requires an Operator Certificate
 The CA returns a signed IdentFrame ready to use. Certificate validity is 30 days; auto-renewal opens 7 days before expiry via `POST /v1/agents/{nid}/renew`.
 
 Discovery endpoint: `GET /.well-known/nps-ca` returns the CA's public key, supported algorithms, and endpoint URLs.
+
+**Typed remote CA client (`NipCaClient`):** The SDK family ships a typed remote NIP CA client that wraps the OSS CA API — CA discovery (`/.well-known/nps-ca`), CRL retrieval, Ed25519 register / renew / revoke / verify, and RFC-0002 X.509 registration. Use it instead of hand-rolling HTTP calls against the CA. (Exact type name may differ by language — see the source.)
+
+**Revocation artifacts:** The CA's `GET /v1/crl` response carries an `issued_at` timestamp plus a **detached CA signature** so relying parties can verify the CRL's authenticity and freshness. (The `/.well-known/nps-ca` discovery document no longer advertises an unmapped `/ocsp` endpoint.)
 
 ### Path 2: NPS Cloud CA (managed)
 
@@ -280,6 +285,21 @@ Where `assurance_rank("anonymous") = 0`, `assurance_rank("attested") = 1`, `assu
 
 ---
 
+## TrustFrame / RevokeFrame signed-payload realignment (alpha.15)
+
+`TrustFrame (0x21)` and `RevokeFrame (0x22)` are signed over the **canonical JSON of the frame with the `signature` field removed** (keys sorted alphabetically, no whitespace) — the same RFC 8785 (JCS) canonicalisation rule as the IdentFrame (NPS-3 §5.2 / §5.3).
+
+**Realignment (breaking):** As of **alpha.15** the SDKs' signed payload was realigned to the current NPS-3 field set. The signed body now covers the current per-frame fields — for the TrustFrame that includes `issued_at`, `serial`, and `signer_nid` (added at NIP v0.8 for revocation/audit traceability); for the RevokeFrame it includes `target_nid`, `serial`, `reason`, `revoked_at`, `signer_nid` (and `parent_nid` on a cascade). Revocation now reports using current naming — `NIP-CERT-REVOKED` for a revoked certificate. This is a **breaking** wire change: signed frames produced by the old alpha.14-era SDK shape no longer verify after upgrading. Re-sign any persisted TrustFrames / RevokeFrames with the alpha.15 SDK.
+
+**RevokeFrame `parent_nid` ↔ `parent_revoked` guard:** The `parent_nid` field is governed by a strict conditional rule (NPS-3 §5.3):
+
+- `parent_nid` is **REQUIRED** when `reason = "parent_revoked"` — it identifies the group NID whose cascade triggered this revocation (NPS-CR-0003).
+- `parent_nid` **MUST be omitted** for any other reason.
+
+The SDKs enforce this both ways: a `parent_revoked` revocation missing `parent_nid`, or a non-`parent_revoked` revocation that carries `parent_nid`, is rejected as malformed (`NIP-REVOKE-FRAME-INVALID`, `NPS-CLIENT-BAD-FRAME`). `parent_revoked` is the reason a CA sets on a session-NID RevokeFrame it emits as part of cascade revocation when the session's group NID was revoked, distinguishing ancestry-driven invalidation from a session revoked on its own merits.
+
+---
+
 ## Gating actions with min_assurance_level
 
 Set `min_assurance_level` at two levels:
@@ -392,4 +412,4 @@ if level not in KNOWN_LEVELS:
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.14*
+*Last reviewed at suite version: v1.0.0-alpha.15*
