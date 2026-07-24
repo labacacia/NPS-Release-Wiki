@@ -1,6 +1,6 @@
 # SDK — Python
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 Python client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -9,13 +9,13 @@ Python client library for the Neural Protocol Suite. Covers all five protocols: 
 ## Installation
 
 ```bash
-pip install nps-lib==1.0.0a15
+pip install nps-lib==1.0.0a16
 ```
 
 For development extras (pytest, coverage, linting):
 
 ```bash
-pip install "nps-lib[dev]==1.0.0a15"
+pip install "nps-lib[dev]==1.0.0a16"
 ```
 
 > **Package name:** The PyPI distribution is `nps-lib`. The name `nps-sdk` is taken by an unrelated package (Ingenico). The Python import namespace is always `nps_sdk`.
@@ -243,4 +243,4 @@ The alpha.15 release adds:
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

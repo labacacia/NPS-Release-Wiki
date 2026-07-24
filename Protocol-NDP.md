@@ -1,6 +1,6 @@
 # Protocol: NDP — Neural Discovery Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 **Spec**: `spec/NPS-4-NDP.md` v0.9 · **Port**: 17433 (shared) / 17436 (optional dedicated)
 
@@ -272,4 +272,4 @@ The `nps-ledger` daemon mirrors this loop-detection scheme on `POST /v1/log/fede
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

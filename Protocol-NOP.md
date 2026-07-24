@@ -1,6 +1,6 @@
 # Protocol: NOP — Neural Orchestration Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 **Spec**: `spec/NPS-5-NOP.md` v0.7 · **Port**: 17433 (shared) / 17437 (optional dedicated)
 **Supersedes**: NCP AlignFrame (0x05) — deprecated, removed in NPS v1.0
@@ -228,7 +228,7 @@ Cognon (CGN) budget flows through the DAG dispatch chain. When the Orchestrator 
 
 `AlignStream.window_size` provides token-level backpressure in CGN units. The `window_size` value represents the maximum CGN cost the receiver can currently absorb. Before sending each `data` frame, the sender estimates the CGN cost and checks the current window balance. If the estimated cost exceeds the window, the sender pauses until the receiver restores the window by emitting a reverse `AlignStream(data=null, window_size=N)`.
 
-For pre-flight, the Orchestrator provides `estimated_npt` (estimated Cognons) to help Workers self-assess availability.
+For pre-flight, the Orchestrator provides `cgn_est` (estimated Cognons) to help Workers self-assess availability. (The spec §4.2 example long carried the pre-alpha.5.2 name `estimated_npt` — an errata leftover of the NPT→CGN rename; `cgn_est` is the suite-wide field name.)
 
 See [Reference: Cognon Budget](Reference-Cognon-Budget) for CGN computation details.
 
@@ -407,4 +407,4 @@ callers can audit which side effects were reversed.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

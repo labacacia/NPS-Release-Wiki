@@ -1,6 +1,6 @@
 # SDK Quickstart
 
-**Status:** ✅ Latest published packages — v1.0.0-alpha.15
+**Status:** ✅ Latest published packages — v1.0.0-alpha.16
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
@@ -22,18 +22,18 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 
 | Language | Install command | Current pin |
 |----------|-----------------|-------------|
-| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.15` | `1.0.0-alpha.15` |
-| Python | `pip install nps-lib==1.0.0a15` | `1.0.0a15` |
-| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.15` | `1.0.0-alpha.15` |
-| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.15")` | `1.0.0-alpha.15` |
-| Rust | `nps-sdk = "=1.0.0-alpha.15"` | `=1.0.0-alpha.15` (exact pin) |
-| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.15` | `v1.0.0-alpha.15` |
+| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.16` | `1.0.0-alpha.16` |
+| Python | `pip install nps-lib==1.0.0a16` | `1.0.0a16` |
+| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.16` | `1.0.0-alpha.16` |
+| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.16")` | `1.0.0-alpha.16` |
+| Rust | `nps-sdk = "=1.0.0-alpha.16"` | `=1.0.0-alpha.16` (exact pin) |
+| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.16` | `v1.0.0-alpha.16` |
 
 > **Python package name:** The PyPI distribution name is `nps-lib` (not `nps-sdk` — that name is taken by an unrelated package). The Python import namespace is `nps_sdk`.
 
 > **Rust pinning:** Use the `=` prefix for alpha releases to prevent Cargo from silently upgrading to a later alpha.
 
-> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.15`. Pin the explicit version above for reproducible builds.
+> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.16`. Pin the explicit version above for reproducible builds.
 
 > **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.15 is the current pin.
 
@@ -152,7 +152,7 @@ Tier-1 JSON is convenient for debugging but produces roughly 2.5× more bytes th
 
 ### Ignoring the `AssuranceLevel` empty-string case
 
-`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.15`.
+`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.16`.
 
 ### Mixing suite versions
 
@@ -198,4 +198,8 @@ The alpha.15 release adds (capability described here; the exact API names are .N
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.15*
+*Last reviewed for published packages: v1.0.0-alpha.16*
+
+---
+
+*Last reviewed at suite version: v1.0.0-alpha.16*

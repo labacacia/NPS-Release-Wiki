@@ -1,8 +1,8 @@
 # Protocol: NIP — Neural Identity Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
-**Spec**: `spec/NPS-3-NIP.md` v0.10 · **Port**: 17433 (shared) / 17435 (optional dedicated)
+**Spec**: `spec/NPS-3-NIP.md` v0.11 · **Port**: 17433 (shared) / 17435 (optional dedicated)
 
 NIP is the identity and trust backbone of NPS. It issues verifiable Neural Identities (NIDs) to every AI Agent, NWP Node, and human Operator, carries capability declarations and scope-bound permissions, supports trust-chain propagation across organizations, and provides real-time revocation. The analogy is TLS/PKI: where TLS secures the transport channel, NIP secures the *identity of the communicating parties* regardless of transport.
 
@@ -111,6 +111,11 @@ Capabilities are declared in `IdentFrame.capabilities` as a string array. Nodes 
 | `nop:delegate` | May delegate subtasks to other Agents |
 | `nop:orchestrate` | May act as an Orchestrator and emit `TaskFrame`s |
 | `topology:read` | May read Anchor Node topology data via `topology.snapshot` / `topology.stream` (NPS-2 §12). Added in NIP v0.6 (alpha.5). Anchor Nodes MUST require this capability at Phase 1–2 per NPS-2 §12.4. Self-declared and key-signed; CA-attested role binding deferred to Phase 3. |
+
+**Standard `llm:*` capability strings (NIP v0.11, alpha.16):** `llm:complete`,
+`llm:stream`, `llm:tool_call`, `llm:embed`, `llm:rerank` — registered for NWP
+LLM/Thinking Profile discovery and authorization; a TrustFrame `trust_scope`
+may cover these capabilities like any other.
 
 Capability declarations are signed by the issuing CA inside `IdentFrame.signature`. An Agent cannot add capabilities to its own certificate — only the CA can grant them at issuance time.
 
@@ -337,4 +342,4 @@ A three-tier Registration Authority (RA) model (NPS-CR-0005, stub) adds opt-in e
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

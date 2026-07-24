@@ -1,6 +1,6 @@
 # Release Process
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 This page documents how an NPS suite release is prepared and published. The process is designed around a single-oracle version model: one file is authoritative, and all other files must match it.
 
@@ -37,7 +37,7 @@ This rule was codified after the alpha.5.2 incident, where some distribution rep
 
 **Alpha has no sub-versions.** Since alpha.6 the suite policy is to advance `1.0.0-alpha.N` → `1.0.0-alpha.N+1` for *every* release, including hotfixes and re-cuts. The old `1.0.0-alpha.N.M` hotfix format (e.g. `1.0.0-alpha.5.1`) was retired after the alpha.5.2 drift incident — there is no `alpha.5.x` going forward. A patch on top of an alpha simply becomes the next whole alpha.
 
-The current latest released suite version is **v1.0.0-alpha.15** (released 2026-06-28). All releases bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
+The current latest released suite version is **v1.0.0-alpha.16** (released 2026-07-23). All releases bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
 
 ---
 
@@ -109,6 +109,8 @@ Under the no-sub-version policy, a hotfix advances to the **next whole alpha** (
 
 ### Worked example: alpha.13 re-cut
 
+alpha.16 is the most recent example of the same policy from the other direction: a release train that had been prepared as an alpha.15 refresh found the `1.0.0-alpha.15` version already occupied on the public registries, so it advanced to **alpha.16** rather than reusing or sub-versioning the taken number.
+
 alpha.13 is a real example of a re-cut release. **alpha.12 was withdrawn** because it shipped a vulnerable `MessagePack 3.0.300` dependency (NU1903) together with a native-mode handshake bug. Rather than publishing an `alpha.12.1` sub-version (which the policy forbids), the suite advanced to **alpha.13** with `MessagePack 3.1.7`, superseding the withdrawn alpha.12 entirely. `version.yaml` remained the single oracle throughout — `suite_version` was bumped straight to `1.0.0-alpha.13`.
 
 ---
@@ -130,4 +132,4 @@ Fix: Assertion B in `check-source-of-truth.py` now blocks the release if any SDK
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

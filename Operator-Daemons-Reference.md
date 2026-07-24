@@ -1,7 +1,7 @@
 # Operator Daemons Reference
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Latest published packages — v1.0.0-alpha.15
+> **Status:** ✅ Latest published packages — v1.0.0-alpha.16
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/nps-daemons` bundle; two additional daemons are private to the NPS Cloud platform.
@@ -56,7 +56,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.15",
+  "version": "1.0.0-alpha.16",
   "layer": "L1",
   "role": "node",
   "port": 17433,
@@ -175,9 +175,9 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 
 > **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-ingress` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring remains in progress as of alpha.13.
 
-### Current status (latest published alpha.15)
+### Current status (latest published alpha.16)
 
-Published alpha.15 keeps the public-facing HTTP listener with `/health` as the OSS baseline. Real ingress logic (rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in. The docs align the native NCP TLS/mTLS contract at the SDK/spec layer; direct daemon endpoint wiring remains a follow-up. The deployment surface (process name, Docker image tag, port) is stable.
+Published alpha.16 keeps the public-facing HTTP listener with `/health` as the OSS baseline. Real ingress logic (rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in. The docs align the native NCP TLS/mTLS contract at the SDK/spec layer; direct daemon endpoint wiring remains a follow-up. The deployment surface (process name, Docker image tag, port) is stable.
 
 The MCP, A2A, and gRPC **ingress compatibility packages** (`LabAcacia.McpIngress` / `LabAcacia.A2aIngress` / `LabAcacia.GrpcIngress`) — previously deferred — now ship on the suite train at alpha.15. See [nps-ingress](Daemon-NPS-Ingress) for the per-package detail.
 
@@ -198,7 +198,7 @@ The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or 
 {
   "status": "ok",
   "daemon": "nps-ingress",
-  "version": "1.0.0-alpha.15",
+  "version": "1.0.0-alpha.16",
   "uptime_s": 120
 }
 ```
@@ -246,7 +246,7 @@ By default, `nps-registry` runs with an ephemeral in-memory store. Set `NPSREGIS
 {
   "status": "ok",
   "daemon": "nps-registry",
-  "version": "1.0.0-alpha.15",
+  "version": "1.0.0-alpha.16",
   "storage": "sqlite",
   "seq": 17,
   "uptime_s": 3600
@@ -300,7 +300,7 @@ Run one `nps-registry` instance per cluster, fronted by an internal load balance
 {
   "status": "ok",
   "daemon": "nps-ledger",
-  "version": "1.0.0-alpha.15",
+  "version": "1.0.0-alpha.16",
   "phase": 3,
   "storage": "sqlite",
   "log_id": "urn:nps:log:operator-a1b2c3d4e5f6g7h8",
@@ -448,4 +448,4 @@ it is a preview surface and not yet a production component.
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

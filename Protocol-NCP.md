@@ -1,6 +1,6 @@
 # Protocol: NCP — Neural Communication Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 **Spec**: `spec/NPS-1-NCP.md` v0.9 · **Port**: 17433 (shared, suite-wide)
 
@@ -376,4 +376,4 @@ Long-lived native-mode connections can be silently killed by NAT appliances or f
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

@@ -1,6 +1,6 @@
 # SDK — Rust
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 Rust client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -24,7 +24,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nps-sdk = "=1.0.0-alpha.15"
+nps-sdk = "=1.0.0-alpha.16"
 tokio   = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
@@ -221,4 +221,4 @@ Test breakdown: `nps-core` 27, `nps-ndp` 25, `nps-nip` 16, `nps-nop` 20. Total: 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

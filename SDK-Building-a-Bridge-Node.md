@@ -1,6 +1,6 @@
 # SDK Tutorial: Building a Bridge Node
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 > **Audience:** Developers implementing NPS↔non-NPS protocol translation (MCP, A2A, gRPC, HTTP).
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -311,4 +311,4 @@ A dedicated outbound (NPS → external) MCP bridge remains a roadmap item. As of
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

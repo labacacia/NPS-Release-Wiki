@@ -1,8 +1,8 @@
 # Protocol: NWP — Neural Web Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
-**Spec**: `spec/NPS-2-NWP.md` v0.14 · **Port**: 17433 (shared) / 17434 (optional dedicated)
+**Spec**: `spec/NPS-2-NWP.md` v0.17 · **Port**: 17433 (shared) / 17434 (optional dedicated)
 
 NWP is the HTTP-equivalent for Agent-to-Node interaction in NPS. Where HTTP defines how browsers and servers exchange web pages, NWP defines how AI Agents query data, invoke actions, and subscribe to changes on Neural Nodes — with responses that are directly machine-understandable, requiring no semantic parsing layer. NWP runs on top of [Protocol NCP](Protocol-NCP) the same way HTTP semantics run on top of TCP.
 
@@ -80,6 +80,33 @@ Each entry in the `actions` map is an `ActionSpec` describing a callable operati
 | `min_assurance_level` | **Per-action override**: `"anonymous"` / `"attested"` / `"verified"`. Takes precedence over the top-level NWM value for requests targeting this action. (NPS-RFC-0003) |
 
 ---
+
+## LLM / Thinking Profile (`profiles.llm`, alpha.16)
+
+NWP v0.16–v0.17 make model serving a first-class NWM concept. A model-serving
+Action or Complex Node advertises a standard **`profiles.llm`** block in its NWM
+(§4.2a): model descriptors, context-window and streaming/tool support, privacy
+hints, and the reasoning-disclosure policy. "Thinking Node" is a product-facing
+alias, **not** a new `node_type` — declare `action` (model actions only) or
+`complex` (also owns memory / tools / routing).
+
+- Coarse discovery and authorization use the NIP `llm:*` capability strings
+  (`llm:complete`, `llm:stream`, `llm:tool_call`, `llm:embed`, `llm:rerank`;
+  NIP v0.11) carried in `IdentFrame.capabilities` / NDP announce.
+- The **`llm.complete`** ActionFrame contract (§7.5) pins the typed
+  request/response DTO shape, `stop_reason` enum, tool-call field names,
+  sync / async / streaming response semantics, and the ErrorFrame-vs-payload
+  error boundary, with snake_case keys across JSON and MessagePack.
+
+## HTTP Binding Rejection Codes (§9.5, alpha.16)
+
+NWP v0.17 registers canonical error codes for HTTP-overlay transport
+rejections that previously surfaced as ad-hoc HTTP errors:
+`NWP-HTTP-ORIGIN-FORBIDDEN`, `NWP-HTTP-CONTENT-TYPE-UNSUPPORTED`,
+`NWP-HTTP-ACCEPT-UNSATISFIABLE`, `NWP-HTTP-REQUEST-ID-MISMATCH`,
+`NWP-HTTP-FRAME-BODY-MALFORMED`, plus `NWP-CAPABILITY-ADVERTISED-UNIMPLEMENTED`
+for advertised-but-unimplemented capability rollout windows. See
+[Reference: Error Codes](Reference-Error-Codes).
 
 ## QueryFrame (0x10)
 
@@ -280,4 +307,4 @@ When a `QueryFrame` or `SubscribeFrame` carries a `type` field that the node doe
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

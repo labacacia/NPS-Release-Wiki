@@ -1,7 +1,7 @@
 # Operator: AaaS Profile (L1 / L2 / L3)
 
 > **Audience:** Operators (especially AaaS providers — Agent-as-a-Service vendors)
-> **Status:** ✅ Content complete — v1.0.0-alpha.15
+> **Status:** ✅ Content complete — v1.0.0-alpha.16
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The **NPS-AaaS Profile** (Agent-as-a-Service Compliance Specification) defines what a *service* must expose to be considered a conformant NPS AaaS provider. It answers: "Does my service present the right NPS endpoints to AI agents?" The companion **Node Profile** answers a separate question: "Is my host a conformant participant in the NPS network?" The two are orthogonal — see [Operator Conformance Certification](Operator-Conformance-Certification) for the relationship.
@@ -198,7 +198,7 @@ Full certification guidance is in [Operator Conformance Certification](Operator-
 | NPS-RFC-0004 | — | Phase 3 (STH gossip) | Phase 3 |
 
 > These are the spec versions the **AaaS Profile v0.7** depends on (its `Depends-On`
-> line). The suite as a whole is at v1.0.0-alpha.15; individual protocol specs have
+> line). The suite as a whole is at v1.0.0-alpha.16; individual protocol specs have
 > advanced further (e.g. NCP v0.8, NWP v0.14, NIP v0.10, NDP v0.9, NOP v0.7) — the AaaS
 > requirements are pinned to the versions above.
 
@@ -212,5 +212,5 @@ Full certification guidance is in [Operator Conformance Certification](Operator-
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*
 

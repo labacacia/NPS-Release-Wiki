@@ -1,6 +1,6 @@
 # Daemon: nps-ingress
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.15
+**Status:** ✅ Latest published package — v1.0.0-alpha.16
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ingress/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-ingress:1.0.0-alpha.15`
+- **Docker image:** `labacacia/nps-ingress:1.0.0-alpha.16`
 - **Default port:** `:8080` (HTTP). Production deployments terminate TLS on `:443` via a reverse proxy (nginx, Caddy, or Traefik) in front of this daemon.
 - **Layer:** L2
 
@@ -84,7 +84,7 @@ As of alpha.13 `nps-ingress` exposes standard operability endpoints alongside th
 {
   "status": "ok",
   "daemon": "nps-ingress",
-  "version": "1.0.0-alpha.15",
+  "version": "1.0.0-alpha.16",
   "layer": 2,
   "role": "internet-ingress",
   "port": 8080
@@ -108,7 +108,7 @@ On `SIGTERM`, `nps-ingress` drains gracefully over a **30-second window**: it st
 
 ```yaml
 nps-ingress:
-  image: labacacia/nps-ingress:1.0.0-alpha.15
+  image: labacacia/nps-ingress:1.0.0-alpha.16
   restart: unless-stopped
   ports:
     - "${NPS_INGRESS_PORT:-8080}:8080"
@@ -155,4 +155,4 @@ Set `NPSINGRESS_PORT` to an available port, or stop the conflicting service. Che
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

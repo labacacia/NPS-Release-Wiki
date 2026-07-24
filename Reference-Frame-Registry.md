@@ -1,6 +1,6 @@
 # Reference: Frame Registry
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 Every NPS frame type is identified by a single byte. Frames from all five protocols share one unified byte space, routed by type code. The machine-readable source of truth is `spec/frame-registry.yaml` in the repository — that file is CI-validated on every commit.
 
@@ -177,4 +177,4 @@ Do not implement or ship a new frame type before the RFC is accepted. The `frame
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

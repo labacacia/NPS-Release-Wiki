@@ -1,6 +1,6 @@
 # Daemon: npsd
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/npsd/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/npsd:1.0.0-alpha.15`
+- **Docker image:** `labacacia/npsd:1.0.0-alpha.16`
 - **Default port:** `127.0.0.1:17433` (loopback only — never expose directly to the Internet)
 - **Layer:** L1
 
@@ -63,7 +63,7 @@
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.15",
+  "version": "1.0.0-alpha.16",
   "layer": 1,
   "role": "protocol-access-host",
   "port": 17433,
@@ -99,7 +99,7 @@ On `SIGTERM`, `npsd` performs a graceful shutdown with a **30-second drain windo
 
 ```yaml
 npsd:
-  image: labacacia/npsd:1.0.0-alpha.15
+  image: labacacia/npsd:1.0.0-alpha.16
   restart: unless-stopped
   ports:
     - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-ingress
@@ -167,4 +167,4 @@ The recipient NID's inbox has hit `NPSD_MAX_INBOX_DEPTH_PER_NID` (default 1024).
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

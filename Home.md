@@ -1,6 +1,6 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** ✅ Wiki aligned for the v1.0.0-alpha.15 release.
+> **Status:** ✅ Wiki aligned for the v1.0.0-alpha.16 release.
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -61,15 +61,20 @@ document.
 
 This wiki tracks the suite version declared in
 [`NPS-Release/version.yaml`](https://github.com/labacacia/NPS-Release/blob/main/version.yaml)
-— latest published packages are **v1.0.0-alpha.15** (released 2026-06-28).
-The wiki covers the **v1.0.0-alpha.15 release** documentation
-boundary: typed remote NIP CA clients, native-mode NWP serving helpers,
-conformance manifests, live revocation hooks, native NCP TLS/mTLS hardening,
-signed CRL output, and transport-neutral observability. Pages should be
+— latest published packages are **v1.0.0-alpha.16** (released 2026-07-23).
+The wiki covers the **v1.0.0-alpha.16 release** documentation
+boundary: the NWP LLM/Thinking Profile (`profiles.llm` + the `llm.complete`
+contract, with NIP `llm:*` capability strings), canonical NWP HTTP-binding
+rejection codes, NIP RA-store persistence in the CA storage backends, plus
+everything from alpha.15 (typed remote NIP CA clients, native-mode NWP serving
+helpers, conformance manifests, live revocation hooks, native NCP TLS/mTLS
+hardening, signed CRL output, transport-neutral observability). alpha.16 was
+re-issued under a new number because alpha.15 packages already existed on the
+public registries. Pages should be
 re-reviewed at each suite release; see the `## TODO` block on each page for
 the version-alignment checklist.
 
-*Wiki last updated: v1.0.0-alpha.15 release docs (2026-06-28)*
+*Wiki last updated: v1.0.0-alpha.16 release docs (2026-07-24)*
 
 ---
 

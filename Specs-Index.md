@@ -1,6 +1,6 @@
 # Specs Index
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 This page is an index of all NPS protocol specifications, shared reference documents, RFCs, and CRs. It is a navigation aid only.
 
@@ -16,8 +16,8 @@ The canonical spec files are in the `spec/` directory of [`labacacia/NPS-Release
 |------|---------|--------|------|----------------|
 | [NPS-0 Overview](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md) | v0.4 | Proposed | 2026-04-19 | Suite architecture overview, design principles, frame namespace, encoding tiers, node types, security overview, versioning policy, relationship to existing protocols |
 | [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md) | v0.9 | Proposed | 2026-06-27 | Wire format, frame structure, encoding tiers (JSON Tier-1 / MsgPack Tier-2 / BinaryVector Tier-3 `binary_vector.v1`, v0.9), transport modes (HTTP / native), preamble (RFC-0001), `max_concurrent_streams` negotiation + QUIC stream mapping + rekeying (v0.7), `NopFrame` (0x07) keepalive + `ping_interval_ms` (v0.8), native-mode transport (RFC-0006), semantic compression via AnchorFrame |
-| [NPS-2 NWP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md) | v0.14 | Proposed | 2026-05-28 | Agent query/action protocol, node types (Memory / Action / Complex / Anchor / Bridge), Neural Web Manifest (NWM), graph traversal (§11), topology queries (CR-0002), `SubscribeFrame` formal spec (§13, CR-0006), NWM `manifest_version` / `manifest_updated_at` / `X-NWM-Version` (v0.14), `X-NWP-Depth` / `X-NWP-Trace` headers |
-| [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md) | v0.10 | Proposed | 2026-05-21 | Neural Identity Protocol — NID format (`urn:nps:...`), CA hierarchy (Root / Org / Agent / Node / Operator), Ed25519 + ECDSA P-256 signatures, assurance levels (RFC-0003), `cert_chain` / `cert_format`, IANA PEN 65715 OID wire-in (CR-0004), group/session NIDs (CR-0003), `ocsp_staple` (v0.9), `node_roles` (v0.10), reputation log client (RFC-0004), revocation |
+| [NPS-2 NWP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md) | v0.17 | Proposed | 2026-07-05 | Agent query/action protocol, node types (Memory / Action / Complex / Anchor / Bridge), Neural Web Manifest (NWM), graph traversal (§11), topology queries (CR-0002), `SubscribeFrame` formal spec (§13, CR-0006), NWM `manifest_version` / `manifest_updated_at` / `X-NWM-Version` (v0.14), Bridge Node conformance + `bridge_target` vectors (§16, v0.14), `X-NWP-Depth` / `X-NWP-Trace` headers, LLM/Thinking Profile `profiles.llm` (§4.2a, v0.16) + `llm.complete` contract (§7.5, v0.15), HTTP binding rejection codes (§9.5, v0.17) |
+| [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md) | v0.11 | Proposed | 2026-07-04 | Neural Identity Protocol — NID format (`urn:nps:...`), CA hierarchy (Root / Org / Agent / Node / Operator), Ed25519 + ECDSA P-256 signatures, assurance levels (RFC-0003), `cert_chain` / `cert_format`, IANA PEN 65715 OID wire-in (CR-0004), group/session NIDs (CR-0003), `ocsp_staple` (v0.9), `node_roles` (v0.10), short-lived/renewable edge-mTLS cert profile (§6.1, v0.10), standard `llm:*` capability strings (v0.11), reputation log client (RFC-0004), revocation |
 | [NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md) | v0.9 | Proposed | 2026-05-21 | Neural Discovery Protocol — AnnounceFrame, ResolveFrame, GraphFrame §5 topology-snapshot format (v0.8), §9 federation forwarding + `SecurityProfile` (v0.8), resolution modes (local multicast / DNS TXT / NPS Cloud Registry), `activation_mode` (ephemeral / resident / hybrid), structured `spawn_spec_ref` + `heartbeat_interval_ms` (v0.9), `node_roles` / `cluster_anchor` / `bridge_protocols` fields |
 | [NPS-5 NOP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md) | v0.7 | Proposed | 2026-05-21 | Neural Orchestration Protocol — multi-agent task dispatch, DAG task flows (TaskFrame 0x40), AlignStream (0x43, supersedes deprecated AlignFrame 0x05) with ack/NAK + aggregate strategies (v0.6), K-of-N sync barriers, webhook HMAC signing, saga compensation (v0.6), `result_ttl_seconds` (v0.7), CR-0007 L3 runtime integration, delegation chain (max depth 3), OpenTelemetry distributed tracing |
 
@@ -106,4 +106,4 @@ See [CR Process](CR-Process) for the full description and authoring guide.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*

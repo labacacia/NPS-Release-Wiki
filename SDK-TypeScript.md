@@ -1,6 +1,6 @@
 # SDK — TypeScript
 
-**Status:** ✅ Content complete — v1.0.0-alpha.15
+**Status:** ✅ Content complete — v1.0.0-alpha.16
 
 TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP. Dual ESM + CJS build; works in Node.js 22+ and in the browser via the ESM bundle.
 
@@ -9,7 +9,7 @@ TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocol
 ## Installation
 
 ```bash
-npm install @labacacia/nps-sdk@1.0.0-alpha.15
+npm install @labacacia/nps-sdk@1.0.0-alpha.16
 ```
 
 **Requirements:** Node.js 22+. The ESM build also works in modern browsers (Chrome 120+, Firefox 121+, Safari 17+) via a bundler.
@@ -202,4 +202,4 @@ The alpha.15 release adds:
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.15*
+*Last reviewed at suite version: v1.0.0-alpha.16*
