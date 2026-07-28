@@ -117,4 +117,4 @@ NPS does not replace MCP — it adds a network layer *beneath* it. MCP answers "
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

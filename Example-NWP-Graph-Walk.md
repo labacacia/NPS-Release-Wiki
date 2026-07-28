@@ -220,4 +220,4 @@ The captured output above was recorded on 2026-04-21. Output snapshots must be r
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

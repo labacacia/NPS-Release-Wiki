@@ -354,4 +354,4 @@ The Ed25519-signed payload of `TrustFrame` and `RevokeFrame` now covers the curr
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

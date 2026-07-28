@@ -307,4 +307,4 @@ When a `QueryFrame` or `SubscribeFrame` carries a `type` field that the node doe
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

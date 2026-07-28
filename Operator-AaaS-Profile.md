@@ -212,5 +212,5 @@ Full certification guidance is in [Operator Conformance Certification](Operator-
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*
 

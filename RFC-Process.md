@@ -228,4 +228,4 @@ This RFC builds on RFC-0004's reputation log by defining how reputation signals 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

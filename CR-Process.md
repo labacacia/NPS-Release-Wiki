@@ -179,4 +179,4 @@ The removal commitment is binding. If removal slips, a new CR entry must be file
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

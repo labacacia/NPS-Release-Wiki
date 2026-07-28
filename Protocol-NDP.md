@@ -272,4 +272,4 @@ The `nps-ledger` daemon mirrors this loop-detection scheme on `POST /v1/log/fede
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

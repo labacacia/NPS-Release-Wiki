@@ -311,4 +311,4 @@ A dedicated outbound (NPS → external) MCP bridge remains a roadmap item. As of
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*

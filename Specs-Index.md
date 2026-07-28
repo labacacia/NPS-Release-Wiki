@@ -106,4 +106,4 @@ See [CR Process](CR-Process) for the full description and authoring guide.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.17*
