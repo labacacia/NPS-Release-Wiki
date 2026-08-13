@@ -1,6 +1,10 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** ✅ Wiki aligned for the v1.0.0-alpha.16 release.
+> **Status:** ✅ Wiki reviewed for the unreleased v1.0.0-alpha.18 candidate.
+>
+> Latest published SDK suite: **v1.0.0-alpha.17** (2026-08-02). The public
+> daemon bundle and `nip-ca-server` remain independently published at
+> **v1.0.0-alpha.16**; their alpha.18 source candidates are not registry releases.
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -31,7 +35,7 @@ document.
 
 ## Per-protocol pages
 
-- [NCP](Protocol-NCP) — Neural Connection Protocol (transport, native + HTTP modes)
+- [NCP](Protocol-NCP) — Neural Communication Protocol (framing, encoding, native + HTTP modes)
 - [NWP](Protocol-NWP) — Neural Web Protocol (HTTP-equivalent surface; topology queries)
 - [NIP](Protocol-NIP) — Neural Identity Protocol (NID certs, assurance levels, reputation log)
 - [NDP](Protocol-NDP) — Neural Discovery Protocol (DNS TXT, AnnounceFrame, GraphFrame)
@@ -48,7 +52,7 @@ document.
 
 ## Per-daemon pages
 
-- [npsd](Daemon-NPSd) — orchestration runtime
+- [npsd](Daemon-NPSd) — host-local identity, inbox, and protocol daemon
 - [nps-runner](Daemon-NPS-Runner) — task executor
 - [nps-ingress](Daemon-NPS-Ingress) — HTTP-mode ingress
 - [nps-registry](Daemon-NPS-Registry) — node / member registry
@@ -61,20 +65,18 @@ document.
 
 This wiki tracks the suite version declared in
 [`NPS-Release/version.yaml`](https://github.com/labacacia/NPS-Release/blob/main/version.yaml)
-— latest published packages are **v1.0.0-alpha.16** (released 2026-07-23).
-The wiki covers the **v1.0.0-alpha.16 release** documentation
-boundary: the NWP LLM/Thinking Profile (`profiles.llm` + the `llm.complete`
-contract, with NIP `llm:*` capability strings), canonical NWP HTTP-binding
-rejection codes, NIP RA-store persistence in the CA storage backends, plus
-everything from alpha.15 (typed remote NIP CA clients, native-mode NWP serving
-helpers, conformance manifests, live revocation hooks, native NCP TLS/mTLS
-hardening, signed CRL output, transport-neutral observability). alpha.16 was
-re-issued under a new number because alpha.15 packages already existed on the
-public registries. Pages should be
-re-reviewed at each suite release; see the `## TODO` block on each page for
-the version-alignment checklist.
+— latest published SDK packages are **v1.0.0-alpha.17**. This Wiki is reviewed
+against the **unreleased v1.0.0-alpha.18 candidate**: NCP 0.11, NWP 0.21,
+NIP 0.14, NDP 0.12, and NOP 0.9. It covers the alpha.17 portable six-SDK
+server/runtime baseline, multi-Anchor HA, bidirectional Bridge semantics, and
+the candidate CR-0011 stateful LLM context contract. Candidate examples must
+not be read as evidence that alpha.18 packages or images have been published.
 
-*Wiki last updated: v1.0.0-alpha.16 release docs (2026-07-24)*
+Pages are re-reviewed at each suite release. Normative protocol details always
+come from `NPS-Release/spec`; package availability comes from the relevant
+registry or GitHub release, not from a candidate source version.
+
+*Wiki last updated: v1.0.0-alpha.18 candidate review (2026-08-13)*
 
 ---
 

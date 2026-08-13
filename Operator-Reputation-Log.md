@@ -1,7 +1,7 @@
 # Operator: NID Reputation Log
 
 > **Audience:** Operators (running an nps-ledger instance) + AaaS operators (consuming a log)
-> **Status:** ✅ Content complete — v1.0.0-alpha.16
+> **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The NPS reputation log is Certificate Transparency for AI agents — an append-only, signed, Merkle-tree-backed log of NID behavioral incidents. Any party (AaaS gateway, CA, auditor) can publish signed observations about a NID, and any node can query the log before admitting an agent. Multiple independent log operators are expected; nodes choose which logs to trust.
@@ -271,4 +271,4 @@ Peer operators must reciprocally add your endpoint to their `NPSLEDGER_PEERS` li
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

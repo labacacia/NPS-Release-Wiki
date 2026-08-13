@@ -1,8 +1,8 @@
 # Protocol: NWP — Neural Web Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
-**Spec**: `spec/NPS-2-NWP.md` v0.17 · **Port**: 17433 (shared) / 17434 (optional dedicated)
+**Spec**: `spec/NPS-2-NWP.md` v0.21 · **Port**: 17433 (shared) / 17434 (optional dedicated)
 
 NWP is the HTTP-equivalent for Agent-to-Node interaction in NPS. Where HTTP defines how browsers and servers exchange web pages, NWP defines how AI Agents query data, invoke actions, and subscribe to changes on Neural Nodes — with responses that are directly machine-understandable, requiring no semantic parsing layer. NWP runs on top of [Protocol NCP](Protocol-NCP) the same way HTTP semantics run on top of TCP.
 
@@ -18,15 +18,15 @@ Related: [Protocol NCP](Protocol-NCP) | [Protocol NIP](Protocol-NIP) | [Protocol
 | **Action Node** | Executes operations, returns results or side effects | Functions, external APIs, message queues |
 | **Complex Node** | Mixed data and operations, with sub-node references | All of the above plus sub-node graph |
 | **Anchor Node** | Cluster control plane and external entry point — routes inbound frames to member nodes via NOP; optionally maintains member topology | AaaS platforms, multi-agent service gateways |
-| **Bridge Node** | Translates between NPS frames and non-NPS protocols (HTTP/HTTPS, gRPC, MCP, A2A) | Legacy REST APIs, gRPC services, Model Context Protocol servers |
+| **Bridge Node** | Translates in either declared direction between NPS frames and non-NPS protocols (HTTP/HTTPS, gRPC, MCP, A2A) | Legacy REST APIs, gRPC services, Model Context Protocol servers |
 
 **Anchor Node** and **Bridge Node** were introduced by NPS-CR-0001, replacing the retired `Gateway Node` type. Anchor Node inherits the cluster-entry and NOP-routing role; Bridge Node is a new type responsible for NPS-to-external-protocol translation. The legacy wire value `"gateway"` is rejected with `NWP-MANIFEST-NODE-TYPE-REMOVED`.
 
 A node MAY carry multiple roles simultaneously (e.g., `["anchor", "memory"]`). The full role set is declared in the NDP `AnnounceFrame.node_roles` field (discovery layer). The NWM `node_type` field (single string) declares which role this particular `/.nwm` endpoint is serving; it MUST be one of the values in `node_roles`.
 
-### Bridge Node — `bridge_target` schema (standardized NWP v0.13)
+### Bridge Node — outbound and inbound profiles
 
-A Bridge Node accepts inbound NWP frames carrying a `bridge_target` object that identifies the external protocol and endpoint. The standard fields (spec §2.1) are:
+For outbound translation, a Bridge Node accepts NWP frames carrying a `bridge_target` object that identifies the external protocol and endpoint. The standard fields (spec §2.1) are:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -35,6 +35,8 @@ A Bridge Node accepts inbound NWP frames carrying a `bridge_target` object that 
 | `headers` | object (string→string) | Optional | Extra HTTP headers passed to the upstream |
 
 Unknown `bridge_target` fields MUST be ignored (opaque pass-through, forward compatibility). A Bridge Node validates `protocol` against its advertised set (NDP `bridge_protocols`); a missing `bridge_target` or unsupported protocol is rejected with `NWP-ACTION-PARAMS-INVALID`. Bridge Nodes are stateless per request and MUST NOT participate in cluster topology (`topology.*` → `NWP-RESERVED-TYPE-UNSUPPORTED`).
+
+NWP v0.19 (CR-0010) also standardizes inbound adapters. A node advertises inbound protocols separately through NDP `bridge_inbound_protocols`; inbound MCP/A2A requests are authenticated, normalized into NWP ActionFrames, and dispatched through the same action surface. A protocol is never assumed bidirectional merely because it appears in `bridge_protocols`.
 
 ---
 
@@ -81,9 +83,9 @@ Each entry in the `actions` map is an `ActionSpec` describing a callable operati
 
 ---
 
-## LLM / Thinking Profile (`profiles.llm`, alpha.16)
+## LLM / Thinking Profile (`profiles.llm`)
 
-NWP v0.16–v0.17 make model serving a first-class NWM concept. A model-serving
+NWP v0.16–v0.21 make model serving a first-class NWM concept. A model-serving
 Action or Complex Node advertises a standard **`profiles.llm`** block in its NWM
 (§4.2a): model descriptors, context-window and streaming/tool support, privacy
 hints, and the reasoning-disclosure policy. "Thinking Node" is a product-facing
@@ -97,6 +99,14 @@ alias, **not** a new `node_type` — declare `action` (model actions only) or
   request/response DTO shape, `stop_reason` enum, tool-call field names,
   sync / async / streaming response semantics, and the ErrorFrame-vs-payload
   error boundary, with snake_case keys across JSON and MessagePack.
+
+### Stateful context and delta completion (NWP v0.21, CR-0011)
+
+Profile version `0.2` adds an optional `context` descriptor and six lifecycle operations: `create`, `append`, `fork`, `reset`, `status`, and `release`. Context identifiers are opaque, owner-bound locators, never bearer credentials. Mutations use compare-and-swap `base_version`, require an idempotency key, and commit only on terminal success; cancellation, timeout, revocation, or stream failure aborts the reservation.
+
+The existing `llm.complete` ActionFrame remains the request carrier. Unary results use the typed action response; `stream=true` returns StreamFrames and only the terminal chunk may carry the committed context receipt. Stateful requests never silently fall back to stateless prompt replay. Usage separates logical, reused, evaluated, and wire input so model-input savings can be measured independently from MessagePack/NCP byte savings.
+
+> **Candidate implementation boundary:** the alpha.18 SDK source implements stateful unary and asynchronous completion with process-local stores. Stateful streaming, durable stores, the strict-native Ivy migration, and the evaluated-token benchmark remain CR-0011 acceptance work. Current reference servers reject stateful `stream=true` without fallback.
 
 ## HTTP Binding Rejection Codes (§9.5, alpha.16)
 
@@ -307,4 +317,4 @@ When a `QueryFrame` or `SubscribeFrame` carries a `type` field that the node doe
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

@@ -1,6 +1,6 @@
 # Daemon: nip-ca-server
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 > **Audience:** Operators running a self-hosted NIP Certificate Authority
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -189,4 +189,4 @@ The `example/` directory contains five reference client ports (Python, TypeScrip
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

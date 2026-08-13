@@ -1,6 +1,6 @@
 # Daemon: nps-runner
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -213,4 +213,4 @@ This is expected and harmless. The `409 Conflict` from `POST /v1/agents` means t
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

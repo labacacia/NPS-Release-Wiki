@@ -1,6 +1,6 @@
 # Reference: Frame Registry
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 Every NPS frame type is identified by a single byte. Frames from all five protocols share one unified byte space, routed by type code. The machine-readable source of truth is `spec/frame-registry.yaml` in the repository — that file is CI-validated on every commit.
 
@@ -80,7 +80,7 @@ Neural Web Protocol — query, action, and subscription.
 | Byte | Frame Name | Status | Spec Reference | Description |
 |------|------------|--------|----------------|-------------|
 | `0x10` | QueryFrame | Draft | NPS-2-NWP §6 | Structured data query for Memory Nodes. Supports filtering, field selection, cursor pagination, ordering, vector search, streaming mode, aggregation, and (NPS-CR-0002) optional `type` field for reserved namespaces (`topology.snapshot`, `topology.stream`). Unrecognized `type` values MUST be rejected with `NWP-RESERVED-TYPE-UNSUPPORTED`. |
-| `0x11` | ActionFrame | Draft | NPS-2-NWP §7 | Operation invocation for Action and Complex Nodes. Supports sync/async execution, idempotency, `callback_url`, priority, `request_id`, and system-reserved actions (`system.task.status`, `system.task.cancel`). |
+| `0x11` | ActionFrame | Draft | NPS-2-NWP §7 | Operation invocation for Action and Complex Nodes. Supports sync/async execution, idempotency, `callback_url`, priority, and `request_id`. Standard actions include task status/cancel, typed `llm.complete`, and CR-0011 `llm.context.status` / `llm.context.release`; LLM semantics add no new frame type. |
 | `0x12` | SubscribeFrame | Stable | NPS-2-NWP §13 | Change subscription management for Memory and Anchor Nodes. The CR-0006 formal wire shape (NWP v0.13) uses `subscription_id` (UUID v4), a QueryFrame-compatible `filter`, `heartbeat_interval_ms`, `max_events`, and an opaque `cursor` for lossless resume; the server pushes DiffFrame (0x02) events until cancellation or closure. HTTP mode uses Server-Sent Events. NPS-CR-0002 adds an optional `type` field — set `type="topology.stream"` for the §12.2 cluster change feed. Unrecognized `type` values MUST be rejected with `NWP-RESERVED-TYPE-UNSUPPORTED`. `topology.stream` subscriptions MUST carry both `topology:read` and `topology:subscribe` (NWP §12.4). |
 
 **Reserved in NWP range:** `0x13–0x1F`.
@@ -107,7 +107,7 @@ Neural Discovery Protocol — presence announcement, address resolution, and gra
 
 | Byte | Frame Name | Status | Spec Reference | Description |
 |------|------------|--------|----------------|-------------|
-| `0x30` | AnnounceFrame | Draft | NPS-4-NDP §3.1 | Node or Agent presence broadcast. Announces NID, physical addresses, capabilities, TTL, `activation_mode` (`ephemeral` / `resident` / `hybrid`), and (NPS-CR-0001) `node_roles` array (`memory` / `action` / `complex` / `anchor` / `bridge`; renamed from `node_kind` in NDP v0.8 — parsers MUST accept `node_kind` as an alias through alpha.5 only). Legacy `"gateway"` value is rejected with `NDP-ANNOUNCE-ROLE-REMOVED`. NDP v0.9 changes `spawn_spec_ref` from a URI string to a structured schema object and adds `heartbeat_interval_ms` (uint32, default 60 000 ms; 0 = disabled; stale announcers surface `NDP-ANNOUNCE-STALE` → `NPS-CLIENT-NOT-FOUND`). Must be signed with the IdentFrame private key. |
+| `0x30` | AnnounceFrame | Draft | NPS-4-NDP §3.1 | Signed Node/Agent presence and capability broadcast. In addition to addresses, TTL, roles, activation and SpawnSpec, NDP v0.10-v0.12 add HA `cluster_epoch`, directional `bridge_inbound_protocols`, monotonic `graph_seq`, and portable-registry validation. Legacy `gateway` is rejected and `node_kind` is no longer emitted. |
 | `0x31` | ResolveFrame | Draft | NPS-4-NDP §3.2 | Resolves a `nwp://` URL to a physical endpoint (host:port + certificate fingerprint). |
 | `0x32` | GraphFrame | Draft | NPS-4-NDP §5 | Node graph synchronization. Rewritten in NDP v0.8 to the §5 topology-snapshot format: `graph_id`, `nodes` (`nid` / `cluster_anchor` / `node_roles`), `edges` (`from_nid` / `to_nid` / `latency_ms` / `protocol`), `ttl`, and `metadata`. Limits: max 256 nodes / 1024 edges (`NDP-GRAPH-INVALID`, `NDP-GRAPH-TOO-LARGE`). Supports full and incremental sync modes. |
 
@@ -177,4 +177,4 @@ Do not implement or ship a new frame type before the RFC is accepted. The `frame
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

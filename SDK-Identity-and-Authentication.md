@@ -1,6 +1,6 @@
 # SDK How-To: Identity and Authentication
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 > **Audience:** Developers integrating NPS identity into an Agent or Node implementation.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -412,4 +412,4 @@ if level not in KNOWN_LEVELS:
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

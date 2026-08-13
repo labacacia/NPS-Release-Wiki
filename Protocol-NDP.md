@@ -1,12 +1,14 @@
 # Protocol: NDP — Neural Discovery Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
-**Spec**: `spec/NPS-4-NDP.md` v0.9 · **Port**: 17433 (shared) / 17436 (optional dedicated)
+**Spec**: `spec/NPS-4-NDP.md` v0.12 · **Port**: 17433 (shared) / 17436 (optional dedicated)
 
 NDP is DNS for the AI era. Where DNS maps human-readable domain names to IP addresses, NDP maps NPS identities to physical endpoints and capability profiles — without a central registry. Nodes announce their own presence and capabilities; resolvers cache those announcements with a TTL. Agents discover nodes by querying the local registry, DNS TXT records, or the NPS Cloud Registry, in that priority order.
 
 Related: [Protocol NWP](Protocol-NWP) | [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node) | [Operator Daemons Reference](Operator-Daemons-Reference)
+
+> **alpha.18 candidate:** NDP v0.12 is the portable registry profile. It includes CR-0009 `cluster_epoch` fencing for multi-Anchor HA, CR-0010 `bridge_inbound_protocols` discovery, monotonic `graph_seq`, deterministic split/rollback handling, and shared registry conformance cases. Discovery advertises capability and reachability; it does not define LLM request semantics.
 
 ---
 
@@ -73,6 +75,9 @@ A Node or Agent broadcasts its presence and capabilities. Receivers cache the an
 | `activation_endpoint` | object | Push target for `resident` / `hybrid` publishers; same shape as `addresses[]` entry. REQUIRED when `activation_mode` is `resident` or `hybrid` |
 | `cluster_anchor` | string (NID) | For non-Anchor nodes joining a cluster: identifies the Anchor Node they register with. Absent for standalone nodes and Anchor Nodes themselves. (NPS-CR-0001) |
 | `bridge_protocols` | array of strings | For Bridge Nodes: supported external protocols (see Bridge Node section). MUST be absent for non-Bridge nodes. (NPS-CR-0001) |
+| `bridge_inbound_protocols` | array of strings | External protocols accepted by inbound Bridge adapters. Direction is explicit and independent from outbound `bridge_protocols` (NPS-CR-0010). |
+| `cluster_epoch` | uint64 | Monotonic Anchor-cluster leadership epoch used to fence stale leaders and reject split-brain announcements (NPS-CR-0009). |
+| `graph_seq` | uint64 | Monotonic signed announcement sequence used for replay/rollback and conflict detection. |
 | `heartbeat_interval_ms` | uint32 | How often this node re-announces itself (milliseconds); default `60000` (`0` = disabled). Receivers SHOULD treat the node as offline if no AnnounceFrame arrives within 3× this interval — see staleness below (NDP v0.9) |
 | `spawn_spec_ref` | string ref → SpawnSpec | Reference the publishing daemon resolves to a structured **SpawnSpec** object (OCI image + command + resource_limits) for constructing an Agent process on demand (ephemeral/hybrid cold start; Profile L3). The type changed from a plain URI string to a structured schema object in NDP v0.9 — see SpawnSpec Schema below |
 | `health` | string | Publisher liveness self-report (NDP v0.9): `"healthy"` / `"degraded"` / `"draining"`. Absent ⇒ `"healthy"`. `"draining"` signals shutdown — SHOULD NOT receive new traffic |
@@ -272,4 +277,4 @@ The `nps-ledger` daemon mirrors this loop-detection scheme on `POST /v1/log/fede
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

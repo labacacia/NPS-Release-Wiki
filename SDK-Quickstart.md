@@ -1,6 +1,6 @@
 # SDK Quickstart
 
-**Status:** ✅ Latest published packages — v1.0.0-alpha.16
+**Status:** ✅ Latest published SDK packages — v1.0.0-alpha.17 · alpha.18 source candidate under review
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
@@ -22,22 +22,22 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 
 | Language | Install command | Current pin |
 |----------|-----------------|-------------|
-| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.16` | `1.0.0-alpha.16` |
-| Python | `pip install nps-lib==1.0.0a16` | `1.0.0a16` |
-| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.16` | `1.0.0-alpha.16` |
-| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.16")` | `1.0.0-alpha.16` |
-| Rust | `nps-sdk = "=1.0.0-alpha.16"` | `=1.0.0-alpha.16` (exact pin) |
-| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.16` | `v1.0.0-alpha.16` |
+| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.17` | `1.0.0-alpha.17` |
+| Python | `pip install nps-lib==1.0.0a17` | `1.0.0a17` |
+| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.17` | `1.0.0-alpha.17` |
+| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.17")` | `1.0.0-alpha.17` |
+| Rust | `nps-sdk = "=1.0.0-alpha.17"` | `=1.0.0-alpha.17` (exact pin) |
+| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.17` | `v1.0.0-alpha.17` |
 
 > **Python package name:** The PyPI distribution name is `nps-lib` (not `nps-sdk` — that name is taken by an unrelated package). The Python import namespace is `nps_sdk`.
 
 > **Rust pinning:** Use the `=` prefix for alpha releases to prevent Cargo from silently upgrading to a later alpha.
 
-> **npm `alpha` dist-tag:** `@labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.16`. Pin the explicit version above for reproducible builds.
+> **npm tags:** `@labacacia/nps-sdk@alpha` resolves to `1.0.0-alpha.17`; the unqualified npm `latest` tag intentionally remains on alpha.7. Pin `1.0.0-alpha.17` for reproducible alpha builds.
 
-> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.15 is the current pin.
+> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.17 is the current published SDK pin.
 
-> **alpha.15 release docs:** Source and specs now cover NCP Tier-3 BinaryVector (`binary_vector.v1`) compact float-vector encoding, inbound NWP Bridge server adapters (external MCP / A2A clients calling local NPS actions), native-mode NWP serving, and a typed remote NIP CA client — plus the earlier alpha.14 additions (typed CA clients, native-mode serving helpers, TC-N1/TC-N2 conformance helpers, live revocation hooks, .NET native NCP TLS/mTLS hardening). alpha.15 also realigns the NIP TrustFrame/RevokeFrame signed payload (**breaking:** old signed frames no longer verify).
+> **alpha.18 candidate:** Source and specs add portable server profiles across the stack and CR-0011 stateful LLM context/delta completion. These APIs are not published packages until the alpha.18 release completes.
 
 ---
 
@@ -152,7 +152,7 @@ Tier-1 JSON is convenient for debugging but produces roughly 2.5× more bytes th
 
 ### Ignoring the `AssuranceLevel` empty-string case
 
-`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.16`.
+`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.17`.
 
 ### Mixing suite versions
 
@@ -198,8 +198,8 @@ The alpha.15 release adds (capability described here; the exact API names are .N
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.16*
+*Last reviewed for published packages: v1.0.0-alpha.17; alpha.18 candidate reviewed separately*
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

@@ -1,6 +1,6 @@
 # SDK Common Patterns
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 > **Audience:** Developers building Agents or Nodes with any NPS SDK.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -329,17 +329,17 @@ If the actual response exceeds `X-NWP-Budget`, the node will either trim the res
 
 ### Always pin to the suite version
 
-NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.16`). Pin to this suite version, not to per-package/per-SDK versions.
+NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.17`). Pin to this suite version, not to per-package/per-SDK versions.
 
 **Correct:**
 ```
 # requirements.txt (Python)
-nps-lib==1.0.0-alpha.16
+nps-lib==1.0.0-alpha.17
 ```
 
 ```xml
 <!-- .csproj (.NET) -->
-<PackageReference Include="NPS.Core" Version="1.0.0-alpha.16" />
+<PackageReference Include="NPS.Core" Version="1.0.0-alpha.17" />
 ```
 
 **Incorrect:** pinning each NPS package to a different version (e.g., `NPS.Core` at alpha.5 while `NPS.NWP` is at alpha.4) creates cross-package incompatibilities that are hard to diagnose.
@@ -460,4 +460,4 @@ The exact registration API is language-specific; the .NET reference exposes `Add
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

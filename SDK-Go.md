@@ -1,6 +1,6 @@
 # SDK — Go
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 Go reference implementation of the Neural Protocol Suite. Covers all five sub-protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -21,7 +21,7 @@ Beyond the alpha.13 client baseline, the Go SDK carries the following capability
 ## Installation
 
 ```bash
-go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.16
+go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.17
 ```
 
 **Requirements:** Go 1.25+.
@@ -242,4 +242,4 @@ go test ./...
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

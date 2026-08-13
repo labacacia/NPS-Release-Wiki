@@ -1,6 +1,6 @@
 # Specs Index
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 This page is an index of all NPS protocol specifications, shared reference documents, RFCs, and CRs. It is a navigation aid only.
 
@@ -15,11 +15,11 @@ The canonical spec files are in the `spec/` directory of [`labacacia/NPS-Release
 | Spec | Version | Status | Date | What it covers |
 |------|---------|--------|------|----------------|
 | [NPS-0 Overview](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-0-Overview.md) | v0.4 | Proposed | 2026-04-19 | Suite architecture overview, design principles, frame namespace, encoding tiers, node types, security overview, versioning policy, relationship to existing protocols |
-| [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md) | v0.9 | Proposed | 2026-06-27 | Wire format, frame structure, encoding tiers (JSON Tier-1 / MsgPack Tier-2 / BinaryVector Tier-3 `binary_vector.v1`, v0.9), transport modes (HTTP / native), preamble (RFC-0001), `max_concurrent_streams` negotiation + QUIC stream mapping + rekeying (v0.7), `NopFrame` (0x07) keepalive + `ping_interval_ms` (v0.8), native-mode transport (RFC-0006), semantic compression via AnchorFrame |
-| [NPS-2 NWP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md) | v0.17 | Proposed | 2026-07-05 | Agent query/action protocol, node types (Memory / Action / Complex / Anchor / Bridge), Neural Web Manifest (NWM), graph traversal (§11), topology queries (CR-0002), `SubscribeFrame` formal spec (§13, CR-0006), NWM `manifest_version` / `manifest_updated_at` / `X-NWM-Version` (v0.14), Bridge Node conformance + `bridge_target` vectors (§16, v0.14), `X-NWP-Depth` / `X-NWP-Trace` headers, LLM/Thinking Profile `profiles.llm` (§4.2a, v0.16) + `llm.complete` contract (§7.5, v0.15), HTTP binding rejection codes (§9.5, v0.17) |
-| [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md) | v0.11 | Proposed | 2026-07-04 | Neural Identity Protocol — NID format (`urn:nps:...`), CA hierarchy (Root / Org / Agent / Node / Operator), Ed25519 + ECDSA P-256 signatures, assurance levels (RFC-0003), `cert_chain` / `cert_format`, IANA PEN 65715 OID wire-in (CR-0004), group/session NIDs (CR-0003), `ocsp_staple` (v0.9), `node_roles` (v0.10), short-lived/renewable edge-mTLS cert profile (§6.1, v0.10), standard `llm:*` capability strings (v0.11), reputation log client (RFC-0004), revocation |
-| [NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md) | v0.9 | Proposed | 2026-05-21 | Neural Discovery Protocol — AnnounceFrame, ResolveFrame, GraphFrame §5 topology-snapshot format (v0.8), §9 federation forwarding + `SecurityProfile` (v0.8), resolution modes (local multicast / DNS TXT / NPS Cloud Registry), `activation_mode` (ephemeral / resident / hybrid), structured `spawn_spec_ref` + `heartbeat_interval_ms` (v0.9), `node_roles` / `cluster_anchor` / `bridge_protocols` fields |
-| [NPS-5 NOP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md) | v0.7 | Proposed | 2026-05-21 | Neural Orchestration Protocol — multi-agent task dispatch, DAG task flows (TaskFrame 0x40), AlignStream (0x43, supersedes deprecated AlignFrame 0x05) with ack/NAK + aggregate strategies (v0.6), K-of-N sync barriers, webhook HMAC signing, saga compensation (v0.6), `result_ttl_seconds` (v0.7), CR-0007 L3 runtime integration, delegation chain (max depth 3), OpenTelemetry distributed tracing |
+| [NPS-1 NCP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-1-NCP.md) | v0.11 | Proposed | 2026-08-12 | Unified framing; JSON, MessagePack, and negotiated BinaryVector tiers; HTTP/native carriers; Hello/Caps negotiation, keepalive, flow control, unary correlation, failover continuity, and portable native-server interoperability profile |
+| [NPS-2 NWP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-2-NWP.md) | v0.21 | Proposed | 2026-08-12 | Memory/Action/Complex/Anchor/Bridge semantics; manifests, query/action/subscribe, multi-Anchor HA (CR-0009), bidirectional Bridge adapters (CR-0010), portable node servers, and opt-in stateful LLM context/delta completion (CR-0011) |
+| [NPS-3 NIP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md) | v0.14 | Proposed | 2026-08-12 | NIDs, CA hierarchy, signed identity/trust/revocation frames, assurance, role/capability enforcement, portable CA/verification profile, and owner-bound `llm:context` authorization |
+| [NPS-4 NDP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-4-NDP.md) | v0.12 | Proposed | 2026-08-12 | Announce/resolve/graph discovery, activation and SpawnSpec, federation, `cluster_epoch` HA fencing, directional Bridge discovery, and portable registry conformance |
+| [NPS-5 NOP](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-5-NOP.md) | v0.9 | Proposed | 2026-08-12 | Multi-agent DAG orchestration, delegation, streams/barriers, saga/callback handling, lease-safe L3 runtime integration, HA re-resolution, and portable orchestrator profile |
 
 ### Protocol Dependency Graph
 
@@ -38,12 +38,12 @@ NCP + NWP + NIP ──► NOP (NPS-5)
 
 | Document | Version | What it covers |
 |----------|---------|----------------|
-| `spec/error-codes.md` | v1.5 | Unified error code registry — all `{PROTOCOL}-{CATEGORY}-{DETAIL}` codes with NPS status code mappings. The authoritative list for all protocol layers. |
-| `spec/status-codes.md` | v0.4 | NPS native status code family and HTTP status code mappings. Used in both native mode and HTTP mode responses. |
+| `spec/error-codes.md` | v1.9 | Unified error code registry — all `{PROTOCOL}-{CATEGORY}-{DETAIL}` codes with NPS status code mappings. The authoritative list for all protocol layers. |
+| `spec/status-codes.md` | v0.7 | NPS native status code family and HTTP status code mappings. Used in both native mode and HTTP mode responses. |
 | `spec/token-budget.md` | v0.7 | Cognon (CGN) budget specification — the standardized token-unit formerly called NPT. Two profiles: CGN-Estimate (sampling/fallback permitted) and CGN-Billing (`verified_tokenizer`, NID-signed records); §4.2 headers `X-NWP-Tokens-Profile` / `X-NWP-Billing-Record` / `X-NWP-Billing-Tokenizer-Tier`. Tokenizer resolution chain: explicit declaration → auto-match → UTF-8/4 fallback. |
-| `spec/frame-registry.yaml` | v0.13 | Machine-readable frame type registry. Consumed by CI (`check-source-of-truth.py`). The canonical namespace for all `0x01`–`0xFF` frame type codes. New frame types MUST be registered here before merging. |
+| `spec/frame-registry.yaml` | v0.14 | Machine-readable frame type registry. Consumed by CI (`check-source-of-truth.py`). The canonical namespace for all `0x01`–`0xFF` frame type codes. New frame types MUST be registered here before merging. |
 | `spec/transport-profile.md` | v0.1 | Native-mode TCP/QUIC transport profile (RFC-0006) — length-prefix framing and the `NcpNativeClient` / `NcpServer` / `NcpSession` reference model. |
-| `spec/NPS-Roadmap.md` | v0.7 | Phase 0–4 roadmap. Phase 0 = foundation; Phase 1 = reference implementation (.NET); Phase 2 = SDK expansion; Phase 3 = production hardening; Phase 4 = ecosystem. |
+| `spec/NPS-Roadmap.md` | v0.8 | Phase 0–4 roadmap and the alpha.18 pre-beta hardening plan. |
 
 ---
 
@@ -78,6 +78,9 @@ Source: `spec/cr/` in NPS-Dev. CRs are pre-1.0 planning artifacts; after v1.0.0 
 | [CR-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0006-subscribe-frame.md) | SubscribeFrame formal specification (NWP §13) | Accepted (2026-05-28) | NWP v0.13 |
 | [CR-0007](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md) | NOP L3 runtime integration (nps-runner lease) | Accepted | NOP v0.7 |
 | [CR-0008](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0008-tier3-binary-vector.md) | Tier-3 BinaryVector v1 encoding (`binary_vector.v1`) | Proposed | NCP v0.9 |
+| [CR-0009](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0009-multi-anchor-ha.md) | Multi-Anchor HA, leadership epochs, and stale-leader fencing | Implemented | alpha.17 / NWP v0.18 |
+| [CR-0010](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0010-bridge-bidirectional.md) | Bidirectional Bridge Node profiles and inbound protocol discovery | Implemented | alpha.17 / NWP v0.19 |
+| [CR-0011](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0011-stateful-llm-context.md) | Stateful LLM context and delta completion | Draft candidate | alpha.18 / NWP v0.21 |
 
 See [CR Process](CR-Process) for the full description and authoring guide.
 
@@ -106,4 +109,4 @@ See [CR Process](CR-Process) for the full description and authoring guide.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

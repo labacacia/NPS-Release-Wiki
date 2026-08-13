@@ -1,6 +1,6 @@
 # Daemon: nps-ledger
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 > **Audience:** Operators running a reputation log instance; AaaS operators peering with one
 > **Distribution note:** `innolotus/nps-ledger` is a **private** repository. This page documents the protocol surface only.
@@ -167,4 +167,4 @@ The peer's tree appears to have regressed (its `tree_size` is lower than the las
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

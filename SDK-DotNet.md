@@ -1,6 +1,6 @@
 # SDK — .NET / C#
 
-**Status:** ✅ Latest published packages — v1.0.0-alpha.16
+**Status:** ✅ Latest published packages — v1.0.0-alpha.17
 
 C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SDK is the canonical reference implementation for the suite — all spec changes are validated here first.
 
@@ -10,13 +10,13 @@ C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SD
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| `LabAcacia.NPS.Core` | 1.0.0-alpha.16 | Shared frame types (`AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame`, `NopFrame` keepalive/heartbeat), JSON/MsgPack/BinaryVector codecs, `AnchorFrameCache`, `FrameRegistry`; NCP native-mode transport (`NcpNativeClient`/`NcpServer`/`NcpSession`, added in alpha.11); NCP Tier-3 BinaryVector codec (`Tier3BinaryVectorCodec`, alpha.14) |
-| `LabAcacia.NPS.NWP` | 1.0.0-alpha.16 | Neural Web Protocol — NWM manifest, `QueryFrame`/`ActionFrame`/`SubscribeFrame`/`DiffFrame`, Memory/Action/Complex node middleware; native-mode serving (`NwpNativeNodeServer`); inbound Bridge server adapters (`AddBridgeServer`/`UseBridgeServer`, `McpServerBridge`/`A2aServerBridge`) |
-| `LabAcacia.NPS.NWP.Anchor` | 1.0.0-alpha.16 | NWP Anchor Node: stateless AaaS entry point translating `ActionFrame`s to NOP `TaskFrame`s; `AnchorNodeMiddleware`, `AnchorActionSpec`, `AnchorNodeClient` for `topology.snapshot` / `topology.stream` |
-| `LabAcacia.NPS.NWP.Bridge` | 1.0.0-alpha.16 | NWP Bridge Node: stateless translator from NPS frames to non-NPS protocols (HTTP / gRPC / MCP / A2A target adapters) |
-| `LabAcacia.NPS.NIP` | 1.0.0-alpha.16 | Neural Identity Protocol — CA, Ed25519 key generation, `IdentFrame` issuance/revocation, OCSP, CRL; X.509 + ACME `agent-01` challenge (RFC-0002); typed remote CA client (`NipCaClient`) |
-| `LabAcacia.NPS.NDP` | 1.0.0-alpha.16 | Neural Discovery Protocol — announce/resolve frames (`AnnounceFrame.spawn_spec_ref` structured schema object, `heartbeat_interval_ms`), in-memory registry, Ed25519 validation; DNS TXT fallback (`ResolveViaDns`, `IDnsTxtLookup`, `SystemDnsTxtLookup`) |
-| `LabAcacia.NPS.NOP` | 1.0.0-alpha.16 | Neural Orchestration Protocol — `TaskFrame` (incl. `result_ttl_seconds`)/`DelegateFrame`/`SyncFrame`/`AlignStreamFrame`, DAG validator, orchestration engine |
+| `LabAcacia.NPS.Core` | 1.0.0-alpha.17 | Shared frame types (`AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame`, `NopFrame` keepalive/heartbeat), JSON/MsgPack/BinaryVector codecs, `AnchorFrameCache`, `FrameRegistry`; NCP native-mode transport (`NcpNativeClient`/`NcpServer`/`NcpSession`, added in alpha.11); NCP Tier-3 BinaryVector codec (`Tier3BinaryVectorCodec`, alpha.14) |
+| `LabAcacia.NPS.NWP` | 1.0.0-alpha.17 | Neural Web Protocol — NWM manifest, `QueryFrame`/`ActionFrame`/`SubscribeFrame`/`DiffFrame`, Memory/Action/Complex node middleware; native-mode serving (`NwpNativeNodeServer`); inbound Bridge server adapters (`AddBridgeServer`/`UseBridgeServer`, `McpServerBridge`/`A2aServerBridge`) |
+| `LabAcacia.NPS.NWP.Anchor` | 1.0.0-alpha.17 | NWP Anchor Node: stateless AaaS entry point translating `ActionFrame`s to NOP `TaskFrame`s; `AnchorNodeMiddleware`, `AnchorActionSpec`, `AnchorNodeClient` for `topology.snapshot` / `topology.stream` |
+| `LabAcacia.NPS.NWP.Bridge` | 1.0.0-alpha.17 | NWP Bridge Node: stateless translator from NPS frames to non-NPS protocols (HTTP / gRPC / MCP / A2A target adapters) |
+| `LabAcacia.NPS.NIP` | 1.0.0-alpha.17 | Neural Identity Protocol — CA, Ed25519 key generation, `IdentFrame` issuance/revocation, OCSP, CRL; X.509 + ACME `agent-01` challenge (RFC-0002); typed remote CA client (`NipCaClient`) |
+| `LabAcacia.NPS.NDP` | 1.0.0-alpha.17 | Neural Discovery Protocol — announce/resolve frames (`AnnounceFrame.spawn_spec_ref` structured schema object, `heartbeat_interval_ms`), in-memory registry, Ed25519 validation; DNS TXT fallback (`ResolveViaDns`, `IDnsTxtLookup`, `SystemDnsTxtLookup`) |
+| `LabAcacia.NPS.NOP` | 1.0.0-alpha.17 | Neural Orchestration Protocol — `TaskFrame` (incl. `result_ttl_seconds`)/`DelegateFrame`/`SyncFrame`/`AlignStreamFrame`, DAG validator, orchestration engine |
 
 **Requirements:** .NET 10 (LTS). All packages enable `<Nullable>enable</Nullable>`. MsgPack serialization uses `MessagePack 3.1.7` (alpha.13; the alpha.12 release was withdrawn for shipping the vulnerable `MessagePack 3.0.300` / NU1903).
 
@@ -350,8 +350,8 @@ The Ed25519-signed payload of `TrustFrame` and `RevokeFrame` now covers the curr
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.16*
+*Last reviewed for published packages: v1.0.0-alpha.17*
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

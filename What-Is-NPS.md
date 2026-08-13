@@ -1,7 +1,7 @@
 # What Is NPS?
 
 > **Audience:** Newcomers — no prior knowledge of NPS required
-> **Status:** ✅ Content complete — v1.0.0-alpha.16
+> **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 ---
@@ -20,7 +20,7 @@ Every HTTP/REST/GraphQL API on the planet was designed around the assumption tha
 
 ## The Solution: Five Coordinated Protocols
 
-**NPS (Neural Protocol Suite)** is a purpose-built protocol family that replaces the HTTP/REST stack for AI-native workloads. Rather than patching HTTP, it starts from scratch with a single design question: *what would a network protocol look like if AI agents were the primary client?*
+**NPS (Neural Protocol Suite)** is a purpose-built protocol family for AI-native workloads. It can run in an HTTP overlay during adoption or use native NCP transport; it does not require every deployment to discard HTTP on day one. Its design question is: *what would a network protocol look like if AI agents were the primary client?*
 
 The suite has five layers, each with a well-defined analogue in the human internet stack:
 
@@ -80,9 +80,9 @@ An **Anchor Node** is the stateless cluster entry point for an NPS deployment. I
 
 ### Bridge Node
 
-A **Bridge Node** translates between NPS frames and non-NPS external protocols — HTTP/REST, gRPC, MCP (Model Context Protocol), and A2A. An agent sends a standard NWP frame to the Bridge Node with a `bridge_target` parameter; the Bridge Node issues the appropriate outbound request in the target protocol's format and maps the response back into NWP frames. Bridge Nodes are stateless per request and do not participate in cluster topology. The `bridge_protocols` field in the NDP `AnnounceFrame` advertises which external protocols a given Bridge Node supports.
+A **Bridge Node** translates in either or both directions between NPS frames and non-NPS external protocols — HTTP/REST, gRPC, MCP (Model Context Protocol), and A2A. Outbound calls use `bridge_target`; inbound adapters expose foreign protocol surfaces and dispatch into NPS. Bridge Nodes are stateless per request and declare direction explicitly in NDP: `bridge_protocols` for NPS → external and `bridge_inbound_protocols` for external → NPS.
 
-> Note: this is the *outbound* direction (NPS → external). The reverse direction (external → NPS) is handled by ingress adapters in the `compat/` directory (`mcp-ingress`, `a2a-ingress`, `grpc-ingress`).
+The old standalone MCP/A2A/gRPC compatibility ingress packages had their final deprecated release in alpha.17 and leave the synchronized train in alpha.18. Their maintained replacement is the inbound surface of `NPS.NWP.Bridge`. A hosting library that does not announce `node_roles: ["bridge"]` is a Bridge adapter, not a discoverable Bridge Node.
 
 ### Agent Node
 
@@ -103,7 +103,7 @@ A **Memory Node** owns a data anchor and serves agent queries against it. It is 
 | **Agent identity** | Not defined at wire level | Defined via DID | mTLS / token | First-class `IdentFrame` + NIP CA + Ed25519 NID |
 | **Orchestration** | Out-of-band (application layer) | Limited peer messaging | Out-of-band | Wire-level `TaskFrame` DAGs with delegation + sync barriers |
 | **Discovery** | Not defined | Not defined | Not defined | NDP — DNS-analogous resolution with signed records |
-| **NPS compatibility** | `compat/mcp-ingress` adapter | `compat/a2a-ingress` adapter | `compat/grpc-ingress` adapter | Native |
+| **NPS compatibility** | `NPS.NWP.Bridge` inbound adapter | `NPS.NWP.Bridge` inbound adapter | `NPS.NWP.Bridge` inbound adapter | Native |
 
 NPS does not replace MCP — it adds a network layer *beneath* it. MCP answers "how does an LLM invoke a tool"; NPS answers "how does an AI agent access the internet and talk to other agents."
 
@@ -117,4 +117,4 @@ NPS does not replace MCP — it adds a network layer *beneath* it. MCP answers "
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

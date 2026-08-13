@@ -1,11 +1,11 @@
 # Daemon: nps-registry
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-`nps-registry` is the cross-machine NDP (NPS Discovery Protocol, NPS-4 **v0.9**) discovery registry for an NPS cluster. Where `npsd` knows only about its own host-local sessions, `nps-registry` aggregates AnnounceFrame records from multiple machines and answers NDP `Resolve` and `Graph` queries cluster-wide. It is the topology store that Anchor Node middleware queries to serve NWP `topology.snapshot` and `topology.stream` requests, and it is required for AaaS L2 conformance requirement L2-08.
+`nps-registry` is the cross-machine NDP (Neural Discovery Protocol, NPS-4 **v0.12**) registry for an NPS cluster. Where `npsd` knows only about its own host-local sessions, `nps-registry` aggregates AnnounceFrame records from multiple machines and answers NDP `Resolve` and `Graph` queries cluster-wide. It is the topology store that Anchor Node middleware queries to serve NWP `topology.snapshot` and `topology.stream` requests, and it is required for AaaS L2 conformance requirement L2-08.
 
 - **Source:** `NPS-Dev/tools/daemons/nps-registry/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
@@ -21,12 +21,15 @@ Each record corresponds to one NDP `AnnounceBody` deposited via `POST /v1/announ
 
 TTL-based lazy expiry: records are not deleted by a background timer. Instead, expired records are filtered out on read. Each announce refreshes the TTL; the default TTL is the value in the announce body, or 300 seconds if unset.
 
-### AnnounceFrame fields (NDP v0.9)
+### AnnounceFrame fields (NDP v0.9-v0.12)
 
 As of NDP v0.9 the AnnounceFrame carries two additional fields the registry honors:
 
 - **`heartbeat_interval_ms`** (uint32, optional, default `60000`) — how often the node re-announces itself. The registry SHOULD treat a node as offline if no AnnounceFrame arrives within **3×** this interval; a stale heartbeat surfaces as `NDP-ANNOUNCE-STALE` (→ `NPS-CLIENT-NOT-FOUND`). This is announce-time staleness, distinct from resolve-time `NDP-RESOLVE-STALE`.
 - **`spawn_spec_ref`** (structured schema object) — as of NDP v0.9 this field's type changed from a bare URI string to a structured reference that resolves to a **SpawnSpec** (OCI image + command + `resource_limits`, NDP §3.1.2). It describes how an ephemeral/hybrid agent node is cold-started on demand; resolution rules are standardized by [NPS-CR-0007](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md) §5.
+- **`cluster_epoch`** — monotonically fences stale Anchor leaders; equal highest epochs are treated as `NDP-CLUSTER-SPLIT`, never resolved arbitrarily (CR-0009).
+- **`bridge_inbound_protocols`** — declares external protocols accepted by inbound Bridge adapters independently from outbound `bridge_protocols` (CR-0010).
+- **`graph_seq`** — signed monotonic sequence for rollback and conflicting-announcement detection.
 
 ---
 
@@ -184,4 +187,4 @@ The registry may be using an in-memory store and has been restarted (clearing al
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

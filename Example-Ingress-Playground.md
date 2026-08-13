@@ -1,6 +1,6 @@
 # Example: Ingress Playground
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 **Repo:** `labacacia/NPS-examples`, directory: `ingress-playground/` (source in NPS-Dev `demos/ingress-playground/`)
 
@@ -204,4 +204,4 @@ demos/ingress-playground/
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

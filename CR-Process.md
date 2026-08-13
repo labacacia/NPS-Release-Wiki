@@ -1,6 +1,6 @@
 # CR (Change Request) Process
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 A Change Request (CR) is the lightweight design artifact used during the **pre-1.0** phase of the NPS suite to record the intent, motivation, and shape of a specification or implementation change before (or alongside) the code that lands it. The source documents live in `spec/cr/` inside NPS-Dev.
 
@@ -179,4 +179,4 @@ The removal commitment is binding. If removal slips, a new CR entry must be file
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

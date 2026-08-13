@@ -1,7 +1,7 @@
 # Glossary
 
 > **Audience:** Anyone (reference)
-> **Status:** ✅ Content complete — v1.0.0-alpha.16
+> **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 >
 > Each entry: one-sentence definition followed by the primary spec reference in parentheses.
@@ -151,4 +151,4 @@ The table below records field and term renames that affect wire compatibility. D
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

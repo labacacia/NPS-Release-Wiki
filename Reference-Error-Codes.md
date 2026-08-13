@@ -1,6 +1,6 @@
 # Reference: Error Codes
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 NPS uses a two-level error system. This page documents the **protocol error codes** — the fine-grained layer. Each code names exactly what went wrong in a specific protocol domain. The coarser layer, NPS status codes, classifies the error for transport routing; see [Reference: Status Codes](Reference-Status-Codes).
 
@@ -353,6 +353,36 @@ Neural Orchestration Protocol — DAG task dispatch, delegation, synchronization
 
 ---
 
+## Alpha.17-alpha.18 Registry Additions
+
+These current v1.9 registry entries supplement the protocol-grouped tables above.
+
+| Code | NPS Status Code | Description |
+|------|-----------------|-------------|
+| `NWP-LLM-CONTEXT-NOT-FOUND` | `NPS-CLIENT-NOT-FOUND` | Context or retained owner-scoped outcome is unknown. |
+| `NWP-LLM-CONTEXT-EXPIRED` | `NPS-CLIENT-GONE` | Context has an idle-expiry tombstone. |
+| `NWP-LLM-CONTEXT-VERSION-CONFLICT` | `NPS-CLIENT-CONFLICT` | CAS base version is stale or another mutation owns the reservation. |
+| `NWP-LLM-CONTEXT-BINDING-MISMATCH` | `NPS-CLIENT-CONFLICT` | Model, system, tools, or runtime binding differs. |
+| `NWP-LLM-CONTEXT-FORBIDDEN` | `NPS-AUTH-FORBIDDEN` | Caller is not the owner or lacks capability/scope. |
+| `NWP-LLM-CONTEXT-LIMIT-EXCEEDED` | `NPS-LIMIT-RESOURCE` | Per-principal live-context limit reached. |
+| `NWP-LLM-CONTEXT-OPERATION-UNSUPPORTED` | `NPS-SERVER-UNSUPPORTED` | Requested context operation was not advertised or implemented. |
+| `NWP-HTTP-BODY-TOO-LARGE` | `NPS-LIMIT-PAYLOAD` | Portable Node HTTP body exceeds its configured limit. |
+| `NWP-ANCHOR-NOT-LEADER` | `NPS-CLIENT-CONFLICT` | Topology write reached a standby/degraded Anchor. |
+| `NWP-ANCHOR-EPOCH-FENCED` | `NPS-CLIENT-CONFLICT` | A superseded Anchor leader is fenced by a higher epoch. |
+| `NWP-BRIDGE-DIRECTION-UNSUPPORTED` | `NPS-SERVER-UNSUPPORTED` | Protocol/direction pair was not declared. |
+| `NWP-BRIDGE-TARGET-INVALID` | `NPS-CLIENT-UNPROCESSABLE` | Outbound bridge target is absent or invalid. |
+| `NWP-BRIDGE-PROTOCOL-UNSUPPORTED` | `NPS-SERVER-UNSUPPORTED` | Outbound dispatcher is unavailable for the protocol. |
+| `NWP-BRIDGE-ENDPOINT-INVALID` | `NPS-CLIENT-UNPROCESSABLE` | Endpoint URL or SSRF policy validation failed. |
+| `NWP-BRIDGE-UPSTREAM-FAILED` | `NPS-DOWNSTREAM-UNAVAILABLE` | External transport or translation failed. |
+| `NWP-BRIDGE-SERVER-TOOL-NOT-FOUND` | `NPS-CLIENT-NOT-FOUND` | Inbound bridge action/tool is not exposed. |
+| `NWP-BRIDGE-SERVER-DISPATCHER-MISSING` | `NPS-SERVER-INTERNAL` | Inbound bridge backend is not configured. |
+| `NWP-BRIDGE-SERVER-DISPATCH-FAILED` | `NPS-SERVER-INTERNAL` | Inbound dispatch failed unexpectedly. |
+| `NIP-CERT-CAPABILITIES-EXCEEDED` | `NPS-AUTH-FORBIDDEN` | Self-declared capability exceeds the CA-attested extension. |
+| `NDP-ANNOUNCE-PROFILE-VIOLATION` | `NPS-AUTH-FORBIDDEN` | Announcement violates the active registry security profile. |
+| `NDP-CLUSTER-SPLIT` | `NPS-CLIENT-CONFLICT` | Two live Anchors claim the same cluster epoch. |
+| `NOP-CALLBACK-INVALID` | `NPS-CLIENT-BAD-PARAM` | Callback URL failed validation. |
+| `NOP-CALLBACK-HMAC-INVALID` | `NPS-AUTH-UNAUTHENTICATED` | Callback HMAC is malformed or does not match the raw body. |
+
 ## Disambiguation: NWP-ACTION-NOT-FOUND vs NWP-RESERVED-TYPE-UNSUPPORTED
 
 These two codes cover different failure modes within `QueryFrame`, `ActionFrame`, and `SubscribeFrame`, and are easy to confuse.
@@ -383,4 +413,4 @@ Use this code when the error is "I don't know how to handle this type of operati
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

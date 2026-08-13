@@ -1,10 +1,12 @@
 # Protocol Stack Architecture
 
 > **Audience:** Newcomers and protocol designers
-> **Status:** ✅ Content complete — v1.0.0-alpha.16
+> **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page explains *how* the five NPS layers relate to each other and *why* the boundaries are drawn where they are. For per-protocol reference, see the individual [Protocol-NCP](Protocol-NCP), [Protocol-NWP](Protocol-NWP), [Protocol-NIP](Protocol-NIP), [Protocol-NDP](Protocol-NDP), and [Protocol-NOP](Protocol-NOP) pages.
+
+**alpha.18 candidate versions:** NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9. The candidate adds portable server profiles, HA fencing, directional Bridge discovery, and the Draft CR-0011 context contract without changing the five-layer ownership model.
 
 ---
 
@@ -198,4 +200,4 @@ The key distinction is that HTTP and gRPC are general-purpose RPC mechanisms tha
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

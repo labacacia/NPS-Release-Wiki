@@ -1,12 +1,14 @@
 # Protocol: NCP — Neural Communication Protocol
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
-**Spec**: `spec/NPS-1-NCP.md` v0.9 · **Port**: 17433 (shared, suite-wide)
+**Spec**: `spec/NPS-1-NCP.md` v0.11 · **Port**: 17433 (shared, suite-wide)
 
 NCP is the wire-format and transport foundation of the entire NPS suite. Every higher-layer protocol — NWP, NIP, NDP, NOP — is carried as NCP frames. Think of it as HTTP/2 frames plus TCP: NCP defines *how bytes are shaped on the wire* and *how connections are established*, while the upper protocols define what those bytes mean. All NPS traffic arrives on port 17433; the Frame Type byte in each frame's header routes it to the correct protocol handler.
 
 Related: [Protocol NWP](Protocol-NWP) | [Protocol Stack Architecture](Protocol-Stack-Architecture) | [Reference: Frame Registry](Reference-Frame-Registry)
+
+> **alpha.18 candidate:** NCP v0.11 defines the portable native-server interoperability profile. A conforming server implements the preamble, Hello/Caps negotiation, tier policy, unary `request_id` correlation, keepalive, bounded frames, deterministic ErrorFrames, and clean reconnect behavior. This is a protocol profile, not a new transport or frame family.
 
 ---
 
@@ -376,4 +378,4 @@ Long-lived native-mode connections can be silently killed by NAT appliances or f
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

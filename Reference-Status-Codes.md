@@ -1,6 +1,6 @@
 # Reference: Status Codes
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 NPS status codes are the **coarse classification layer** of the two-level error system. Where protocol error codes (e.g. `NCP-ANCHOR-NOT-FOUND`) tell you exactly what went wrong, status codes group errors into broad transport-visible categories used for retry logic, HTTP mapping in overlay mode, and SDK-level error classification.
 
@@ -65,7 +65,7 @@ These indicate a problem with the request itself — bad framing, missing resour
 | `NPS-CLIENT-GONE` | 410 | Resource permanently removed |
 | `NPS-CLIENT-UNPROCESSABLE` | 422 | Request is syntactically valid but semantically unprocessable |
 
-> **Spec note (alpha.13).** Two status codes referenced by alpha.6–alpha.13 error codes are not yet rows in the authoritative `spec/status-codes.md` (v0.4): `NPS-CLIENT-RATE-LIMITED` (used by `NWP-REPUTATION-THROTTLED`; cf. `NPS-LIMIT-RATE`) and `NPS-CLIENT-REQUEST-TOO-LARGE` (used by `NWP-CGN-LIMIT-EXCEEDED`). The error-code mappings follow `spec/error-codes.md`; the status-code table will be reconciled upstream.
+> **Normative consistency note (status v0.7 / error registry v1.9).** The error registry still references `NPS-CLIENT-RATE-LIMITED`, `NPS-CLIENT-REQUEST-TOO-LARGE`, and generic `NPS-LIMIT-EXCEEDED`, while the authoritative status table standardizes `NPS-LIMIT-RATE`, `NPS-LIMIT-PAYLOAD`, and `NPS-LIMIT-RESOURCE`. This page follows `spec/status-codes.md`; protocol-error mappings remain as written in `spec/error-codes.md` until that upstream inconsistency is reconciled.
 
 ---
 
@@ -85,7 +85,7 @@ These indicate a problem with the request itself — bad framing, missing resour
 | `NPS-LIMIT-RATE` | 429 | Request rate exceeded; check the `X-NWP-Rate-Reset` header for the reset timestamp |
 | `NPS-LIMIT-BUDGET` | 429 | Cognon (CGN) token budget exceeded; see [Reference: Cognon Budget](Reference-Cognon-Budget) |
 | `NPS-LIMIT-PAYLOAD` | 413 | Payload exceeds the maximum negotiated frame size |
-| `NPS-LIMIT-EXCEEDED` | 429 | Generic limit exceeded (e.g. concurrent subscription count) |
+| `NPS-LIMIT-RESOURCE` | 429 | Bounded live-resource count exceeded, such as contexts, leases, or retained objects |
 
 ---
 
@@ -151,4 +151,4 @@ The `status` field carries the NPS status code (coarse). The `error` field carri
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

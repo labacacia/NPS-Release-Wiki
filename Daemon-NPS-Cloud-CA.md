@@ -1,6 +1,6 @@
 # Daemon: nps-cloud-ca
 
-**Status:** ✅ Content complete — v1.0.0-alpha.16
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
 > **Audience:** NPS Cloud subscribers and operators
 > **Distribution note:** `innolotus/nps-cloud-ca` is a **private** repository. This page documents only the protocol-visible interface. Internal product and billing details are in the private repo.
@@ -114,4 +114,4 @@ Full configuration (tenant database, billing integration, CA key management) is 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*

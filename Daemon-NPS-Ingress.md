@@ -37,17 +37,17 @@ The `/healthz`·`/readyz` probes are rendered by the transport-neutral `HealthPr
 
 ---
 
-## Protocol-bridge ingress packages (now published, alpha.15)
+## Protocol-bridge compatibility packages (deprecated)
 
-Separate from this Internet-ingress **daemon**, the suite also ships three **protocol-bridge ingress packages** that let external MCP / A2A / gRPC ecosystems reach NPS Nodes. Previously deferred on the roadmap, all three now ship on the suite train at alpha.15:
+Separate from this Internet-ingress **daemon**, the suite formerly shipped three protocol-specific compatibility packages for external-to-NPS ingress. Their final compatibility release is alpha.17; they are intentionally skipped from alpha.18 onward because the supported replacement is the bidirectional `LabAcacia.NPS.NWP.Bridge` package defined by CR-0010.
 
 | Package | Bridges |
 |---------|---------|
-| `LabAcacia.McpIngress` | NWP Memory/Action/Complex Node ↔ MCP 2024-11-05 adapter |
-| `LabAcacia.A2aIngress` | NOP `TaskFrame` ↔ A2A Task adapter |
-| `LabAcacia.GrpcIngress` | NWP Memory/Action/Complex Node ↔ gRPC adapter |
+| `LabAcacia.McpIngress` | External MCP to NWP compatibility adapter; deprecated after alpha.17 |
+| `LabAcacia.A2aIngress` | External A2A to NOP compatibility adapter; deprecated after alpha.17 |
+| `LabAcacia.GrpcIngress` | External gRPC to NWP compatibility adapter; deprecated after alpha.17 |
 
-These caught up to the suite version (they had lagged at an earlier alpha) and are published at `1.0.0-alpha.15` alongside the 11 SDK packages.
+New integrations should use `LabAcacia.NPS.NWP.Bridge`, declare direction explicitly, and advertise inbound protocols through NDP `bridge_inbound_protocols`.
 
 ---
 
@@ -155,4 +155,4 @@ Set `NPSINGRESS_PORT` to an available port, or stop the conflicting service. Che
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.16*
+*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
