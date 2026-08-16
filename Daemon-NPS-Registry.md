@@ -1,6 +1,6 @@
 # Daemon: nps-registry
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-registry/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-registry:1.0.0-alpha.16`
+- **Docker image:** `labacacia/nps-registry:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `nps-registry/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `:17436` (NDP optional-dedicated port per NPS-4)
 - **Layer:** L2
 
@@ -53,7 +53,7 @@ As of NDP v0.9 the AnnounceFrame carries two additional fields the registry hono
 {
   "status": "ok",
   "daemon": "nps-registry",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "layer": 2,
   "role": "NDP cross-machine discovery registry",
   "storage": "sqlite",
@@ -81,17 +81,27 @@ On `SIGTERM`, `nps-registry` drains gracefully over a **30-second window**: it s
 
 ```yaml
 nps-registry:
-  image: labacacia/nps-registry:1.0.0-alpha.16
+  build:
+    context: ./nps-registry
+    dockerfile: Dockerfile
+  image: labacacia/nps-registry:1.0.0-alpha.18
   restart: unless-stopped
   ports:
     - "${NPS_REGISTRY_PORT:-17436}:17436"
 ```
 
+> The `image:` tag names the image Compose **builds** from `nps-registry/Dockerfile` — it is
+> not a registry coordinate. The project publishes no container images, so `docker pull`
+> against this name will fail. Use `docker compose up -d --build`.
+
 To enable persistence, add a volume mount and set `NPSREGISTRY_SQLITE_PATH`:
 
 ```yaml
 nps-registry:
-  image: labacacia/nps-registry:1.0.0-alpha.16
+  build:
+    context: ./nps-registry
+    dockerfile: Dockerfile
+  image: labacacia/nps-registry:1.0.0-alpha.18
   restart: unless-stopped
   ports:
     - "17436:17436"
@@ -187,4 +197,4 @@ The registry may be using an in-memory store and has been restarted (clearing al
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

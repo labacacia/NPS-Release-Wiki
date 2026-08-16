@@ -1,6 +1,6 @@
 # Daemon: nps-ingress
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.16
+**Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ingress/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-ingress:1.0.0-alpha.16`
+- **Docker image:** `labacacia/nps-ingress:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `nps-ingress/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `:8080` (HTTP). Production deployments terminate TLS on `:443` via a reverse proxy (nginx, Caddy, or Traefik) in front of this daemon.
 - **Layer:** L2
 
@@ -39,13 +39,13 @@ The `/healthz`·`/readyz` probes are rendered by the transport-neutral `HealthPr
 
 ## Protocol-bridge compatibility packages (deprecated)
 
-Separate from this Internet-ingress **daemon**, the suite formerly shipped three protocol-specific compatibility packages for external-to-NPS ingress. Their final compatibility release is alpha.17; they are intentionally skipped from alpha.18 onward because the supported replacement is the bidirectional `LabAcacia.NPS.NWP.Bridge` package defined by CR-0010.
+Separate from this Internet-ingress **daemon**, the suite formerly shipped three protocol-specific compatibility packages for external-to-NPS ingress. Their last published release is v1.0.0-alpha.16 (2026-07-23) — a prepared alpha.17 deprecation release was never published — and they are intentionally skipped from alpha.18 onward because the supported replacement is the bidirectional `LabAcacia.NPS.NWP.Bridge` package defined by CR-0010.
 
 | Package | Bridges |
 |---------|---------|
-| `LabAcacia.McpIngress` | External MCP to NWP compatibility adapter; deprecated after alpha.17 |
-| `LabAcacia.A2aIngress` | External A2A to NOP compatibility adapter; deprecated after alpha.17 |
-| `LabAcacia.GrpcIngress` | External gRPC to NWP compatibility adapter; deprecated after alpha.17 |
+| `LabAcacia.McpIngress` | External MCP to NWP compatibility adapter; deprecated, last published at alpha.16 |
+| `LabAcacia.A2aIngress` | External A2A to NOP compatibility adapter; deprecated, last published at alpha.16 |
+| `LabAcacia.GrpcIngress` | External gRPC to NWP compatibility adapter; deprecated, last published at alpha.16 |
 
 New integrations should use `LabAcacia.NPS.NWP.Bridge`, declare direction explicitly, and advertise inbound protocols through NDP `bridge_inbound_protocols`.
 
@@ -84,7 +84,7 @@ As of alpha.13 `nps-ingress` exposes standard operability endpoints alongside th
 {
   "status": "ok",
   "daemon": "nps-ingress",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "layer": 2,
   "role": "internet-ingress",
   "port": 8080
@@ -108,7 +108,10 @@ On `SIGTERM`, `nps-ingress` drains gracefully over a **30-second window**: it st
 
 ```yaml
 nps-ingress:
-  image: labacacia/nps-ingress:1.0.0-alpha.16
+  build:
+    context: ./nps-ingress
+    dockerfile: Dockerfile
+  image: labacacia/nps-ingress:1.0.0-alpha.18
   restart: unless-stopped
   ports:
     - "${NPS_INGRESS_PORT:-8080}:8080"
@@ -117,6 +120,11 @@ nps-ingress:
 ```
 
 The host port is configurable via the `NPS_INGRESS_PORT` environment variable at compose launch time (default `8080`).
+
+> The `image:` value is only the name Compose gives the image it builds from
+> `nps-ingress/Dockerfile` — the service declares `build:`, and the project publishes no
+> container images to any registry. `docker pull labacacia/nps-ingress:1.0.0-alpha.18` will
+> fail; start the stack with `docker compose up -d --build`.
 
 ---
 
@@ -155,4 +163,4 @@ Set `NPSINGRESS_PORT` to an available port, or stop the conflicting service. Che
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

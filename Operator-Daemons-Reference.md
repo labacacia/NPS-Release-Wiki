@@ -1,10 +1,17 @@
 # Operator Daemons Reference
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Latest published packages — v1.0.0-alpha.16
+> **Status:** ✅ Latest published packages — v1.0.0-alpha.18
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/nps-daemons` bundle; two additional daemons are private to the NPS Cloud platform.
+
+> **Docker images are built locally, never pulled.** The project publishes **no** container
+> images — not to Docker Hub, not to GHCR, not to any private registry. The `Docker image`
+> row in each table below is the tag that `docker compose` applies to the image it **builds
+> from the daemon's `Dockerfile`**, because every compose service declares `build:` alongside
+> `image:`. Bring a stack up with `docker compose up -d --build`; `docker pull` / `docker run`
+> against these names will fail with "manifest unknown".
 
 > **Operational endpoints (alpha.6+).** **npsd** and **nip-ca-server** expose `GET /healthz`
 > (liveness), `GET /readyz` (readiness), and `GET /metrics` (Prometheus format) alongside the
@@ -12,9 +19,9 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 > `HealthProbeRenderer` (alpha.14) shared across the daemon set, so probe payloads are
 > consistent regardless of host transport. On `SIGTERM` they perform a graceful drain
 > (default 30 s) before exit. **nip-ca-server** serves `/metrics` on its **management port
-> `17436`** — the public CA port `17435` no longer exposes `/metrics`. The bundle ships
-> `deploy/docker-compose/`, `deploy/systemd/`, and a `Makefile`
-> (`up` / `down` / `install-systemd`).
+> `17436`** — the public CA port `17435` no longer exposes `/metrics`. The bundle ships a
+> single root `docker-compose.yml` alongside the four daemon source directories; there is
+> no `deploy/` tree and no `Makefile` (verified against `v1.0.0-alpha.18`).
 
 ---
 
@@ -24,7 +31,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 |----------|-------|
 | **Port** | `17433` (default, loopback) |
 | **Distribution** | `labacacia/nps-daemons` (public) |
-| **Docker image** | `labacacia/npsd:{suite_version}` |
+| **Docker image** | `labacacia/npsd:{suite_version}` (local build tag) |
 | **Layer** | L1 — host-local NCP/NIP/NDP/NWP |
 
 ### Purpose
@@ -56,7 +63,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "layer": "L1",
   "role": "node",
   "port": 17433,
@@ -103,7 +110,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 |----------|-------|
 | **Port** | None (connects outbound to npsd) |
 | **Distribution** | `labacacia/nps-daemons` (public, bundled with npsd) |
-| **Docker image** | `labacacia/nps-runner:{suite_version}` |
+| **Docker image** | `labacacia/nps-runner:{suite_version}` (local build tag) |
 
 ### Purpose
 
@@ -167,7 +174,7 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 |----------|-------|
 | **Port** | `8080` (HTTP; `443` in production via reverse proxy) |
 | **Distribution** | `labacacia/nps-daemons` (public) |
-| **Docker image** | `labacacia/nps-ingress:{suite_version}` |
+| **Docker image** | `labacacia/nps-ingress:{suite_version}` (local build tag) |
 
 ### Purpose
 
@@ -175,11 +182,11 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 
 > **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-ingress` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring remains in progress as of alpha.13.
 
-### Current status (latest published alpha.16)
+### Current status (latest published alpha.18)
 
-Published alpha.16 keeps the public-facing HTTP listener with `/health` as the OSS baseline. Real ingress logic (rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in. The docs align the native NCP TLS/mTLS contract at the SDK/spec layer; direct daemon endpoint wiring remains a follow-up. The deployment surface (process name, Docker image tag, port) is stable.
+Published alpha.18 keeps the public-facing HTTP listener with `/health` as the OSS baseline. Real ingress logic (rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in. The docs align the native NCP TLS/mTLS contract at the SDK/spec layer; direct daemon endpoint wiring remains a follow-up. The deployment surface (process name, Docker image tag, port) is stable.
 
-The MCP, A2A, and gRPC **ingress compatibility packages** (`LabAcacia.McpIngress` / `LabAcacia.A2aIngress` / `LabAcacia.GrpcIngress`) — previously deferred — now ship on the suite train at alpha.15. See [nps-ingress](Daemon-NPS-Ingress) for the per-package detail.
+The MCP, A2A, and gRPC **ingress compatibility packages** (`LabAcacia.McpIngress` / `LabAcacia.A2aIngress` / `LabAcacia.GrpcIngress`) shipped on the suite train from alpha.15 and are now **deprecated** — they are skipped from alpha.18 onward in favour of the bidirectional `LabAcacia.NPS.NWP.Bridge` package (CR-0010). See [nps-ingress](Daemon-NPS-Ingress) for the per-package detail and last published versions.
 
 ### Required environment variables
 
@@ -198,7 +205,7 @@ The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or 
 {
   "status": "ok",
   "daemon": "nps-ingress",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "uptime_s": 120
 }
 ```
@@ -211,7 +218,7 @@ The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or 
 |----------|-------|
 | **Port** | `17436` |
 | **Distribution** | `labacacia/nps-daemons` (public) |
-| **Docker image** | `labacacia/nps-registry:{suite_version}` |
+| **Docker image** | `labacacia/nps-registry:{suite_version}` (local build tag) |
 
 ### Purpose
 
@@ -246,7 +253,7 @@ By default, `nps-registry` runs with an ephemeral in-memory store. Set `NPSREGIS
 {
   "status": "ok",
   "daemon": "nps-registry",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "storage": "sqlite",
   "seq": 17,
   "uptime_s": 3600
@@ -300,7 +307,7 @@ Run one `nps-registry` instance per cluster, fronted by an internal load balance
 {
   "status": "ok",
   "daemon": "nps-ledger",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "phase": 3,
   "storage": "sqlite",
   "log_id": "urn:nps:log:operator-a1b2c3d4e5f6g7h8",
@@ -337,7 +344,7 @@ For full operating instructions, see [Operator Reputation Log](Operator-Reputati
 | **Port** | `17435` (public CA, default via Docker Compose); `17436` (management — `/metrics`, `/healthz`, `/readyz`) |
 | **Distribution** | `labacacia/nip-ca-server` (PUBLIC) |
 | **Repository** | [github.com/labacacia/nip-ca-server](https://github.com/labacacia/nip-ca-server) |
-| **Docker image** | `ghcr.io/labacacia/nip-ca-server:{suite_version}` |
+| **Docker image** | Built locally from the repo `Dockerfile` — none published to GHCR or Docker Hub |
 
 ### Purpose
 
@@ -400,9 +407,12 @@ NIPCA__KEYPASSPHRASE=change-me-to-a-long-random-string
 POSTGRES_PASSWORD=change-me-too
 EOF
 
-docker compose up -d
+docker compose up -d --build
 curl http://localhost:17435/health
 ```
+
+The `nip-ca` service builds from the repository `Dockerfile`; there is no prebuilt image to
+pull. (The `postgres:16-alpine` sidecar is a stock upstream image and is pulled normally.)
 
 ---
 
@@ -448,4 +458,4 @@ it is a preview surface and not yet a production component.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

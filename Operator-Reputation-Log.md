@@ -1,7 +1,7 @@
 # Operator: NID Reputation Log
 
 > **Audience:** Operators (running an nps-ledger instance) + AaaS operators (consuming a log)
-> **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+> **Status:** ✅ Reviewed for v1.0.0-alpha.18
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The NPS reputation log is Certificate Transparency for AI agents — an append-only, signed, Merkle-tree-backed log of NID behavioral incidents. Any party (AaaS gateway, CA, auditor) can publish signed observations about a NID, and any node can query the log before admitting an agent. Multiple independent log operators are expected; nodes choose which logs to trust.
@@ -251,12 +251,21 @@ For hot paths, nodes SHOULD cache log query results with a short TTL (default 60
 
 On first boot, `nps-ledger` generates an operator Ed25519 keypair at `${NPSLEDGER_DATA_DIR}/operator.ed25519.pkcs8` (mode `0600`). The `log_id` is derived from the keypair fingerprint unless overridden.
 
-**To join a gossip federation**, set `NPSLEDGER_PEERS` to a comma-separated list of peer endpoints:
+**To join a gossip federation**, set `NPSLEDGER_PEERS` to a comma-separated list of peer endpoints.
+
+No `nps-ledger` container image is published to any registry, so build one from the
+repository first and run your local tag:
 
 ```bash
-NPSLEDGER_PEERS=log2.example.com:17440,log3.example.com:17440 \
-NPSLEDGER_GOSSIP_INTERVAL_S=30 \
-  docker run labacacia/nps-ledger:1.0.0-alpha.16 ...
+# Build once from the innolotus/nps-ledger checkout
+git checkout v1.0.0-alpha.18
+docker build -t innolotus/nps-ledger:1.0.0-alpha.18 .
+
+# Then run with the gossip peers configured
+docker run \
+  -e NPSLEDGER_PEERS=log2.example.com:17440,log3.example.com:17440 \
+  -e NPSLEDGER_GOSSIP_INTERVAL_S=30 \
+  innolotus/nps-ledger:1.0.0-alpha.18
 ```
 
 Peer operators must reciprocally add your endpoint to their `NPSLEDGER_PEERS` list. STH gossip is bidirectional.
@@ -271,4 +280,4 @@ Peer operators must reciprocally add your endpoint to their `NPSLEDGER_PEERS` li
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

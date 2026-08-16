@@ -1,6 +1,6 @@
 # Specs Index
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Reviewed for v1.0.0-alpha.18
 
 This page is an index of all NPS protocol specifications, shared reference documents, RFCs, and CRs. It is a navigation aid only.
 
@@ -80,7 +80,7 @@ Source: `spec/cr/` in NPS-Dev. CRs are pre-1.0 planning artifacts; after v1.0.0 
 | [CR-0008](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0008-tier3-binary-vector.md) | Tier-3 BinaryVector v1 encoding (`binary_vector.v1`) | Proposed | NCP v0.9 |
 | [CR-0009](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0009-multi-anchor-ha.md) | Multi-Anchor HA, leadership epochs, and stale-leader fencing | Implemented | alpha.17 / NWP v0.18 |
 | [CR-0010](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0010-bridge-bidirectional.md) | Bidirectional Bridge Node profiles and inbound protocol discovery | Implemented | alpha.17 / NWP v0.19 |
-| [CR-0011](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0011-stateful-llm-context.md) | Stateful LLM context and delta completion | Draft candidate | alpha.18 / NWP v0.21 |
+| [CR-0011](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0011-stateful-llm-context.md) | Stateful LLM context and delta completion | Implemented | alpha.18 / NWP v0.21 |
 
 See [CR Process](CR-Process) for the full description and authoring guide.
 
@@ -109,4 +109,4 @@ See [CR Process](CR-Process) for the full description and authoring guide.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

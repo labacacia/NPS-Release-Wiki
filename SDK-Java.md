@@ -1,20 +1,24 @@
 # SDK — Java
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published artifact — v1.0.0-alpha.18 (released 2026-08-15)
 
 Java client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
 ---
 
-## Capability set (alpha.13 parity + alpha.14 / alpha.15 additions)
+## Capability set (current — accumulated through alpha.18)
 
-The Java SDK tracks the suite feature train. Beyond the alpha.13 client baseline, it carries the following capability-level additions (exact type names may differ by language — see the source):
+The Java SDK tracks the suite feature train; everything in this section is present in the published `1.0.0-alpha.18` artifact, and the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, it carries the following capability-level additions (exact type names may differ by language — see the source):
 
 - **NCP Tier-3 BinaryVector (`binary_vector.v1`)** (NCP v0.9, alpha.14) — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame`. Negotiated via caps and only used when both peers advertise `binary_vector.v1`. Malformed payloads surface as documented client errors (`NCP-BINARY-VECTOR-*` → `NPS-CLIENT-BAD-FRAME`); the reserved tier bits return `NCP-FRAME-FLAGS-INVALID`.
 - **Inbound NWP Bridge server adapters** (alpha.14) — lets external MCP / A2A clients call local NPS actions (the inverse of the outbound Bridge Node). Secure-by-default: valid `X-NWP-Agent` NID + a configured verifier, bounded request bodies (→ 413), dispatch timeout (→ 504), sanitized client errors, and an action allowlist. See [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node).
 - **Native-mode NWP serving** (alpha.14) — Memory / Action Nodes serve `QueryFrame` / `ActionFrame` directly over a native NCP session rather than a hand-rolled frame loop.
 - **NIP signed-payload realignment** (alpha.15, **breaking**) — TrustFrame / RevokeFrame now sign the current NPS-3 field set (`issued_at`, `serial`, `signer_nid`, `target_nid`) and use current revocation naming (`NIP-CERT-REVOKED`). Signed frames produced by the old alpha.14-era shape no longer verify. See [SDK Identity and Authentication](SDK-Identity-and-Authentication).
 - **NDP AnnounceFrame signed canonical form** (alpha.15, **breaking**) — the signed body is now normative and cross-SDK consistent (sign all wire fields except `signature` / `health` / `last_seen` / `frame`; omit null optionals; `heartbeat_interval_ms` canonicalised to the default `60000` only when absent, explicit `0` signed literally).
+- **Server and orchestration parity with the .NET reference** (alpha.17) — native NCP transport, NWP Action / Complex / Memory Nodes, bidirectional Bridges, NIP CA plus full verification, NOP orchestration, and daemon observability/telemetry, on the existing JDK `com.sun.net.httpserver` binding.
+- **Portable profiles and shared conformance vectors** (alpha.17) — the Java SDK executes the same language-neutral fixtures as the other five SDKs for NCP 0.11 native-server handshakes, NWP 0.20 Node/Bridge serving, NIP 0.13 CA/revocation, NDP 0.12 registry admission, and NOP 0.9 orchestration.
+- **NPS-CR-0011 / NWP 0.21 stateful LLM context** (alpha.18) — owner-bound opaque context IDs with `create` / `append` / `fork` / `reset` / `status` / `release`, compare-and-swap versions, atomic unary and async cancellation, NWM 0.2 discovery, and `llm:context` authorization under NIP 0.14, validated against the 19 shared CR-0011 conformance vectors. Stateless completion stays compatible; stateful requests never silently fall back. Stateful NDJSON streaming commits the terminal frame atomically, aborts (never caches) failed or incomplete streams, and replays a completed sequence idempotently under a fresh server-owned `stream_id`.
+- **Official NWP LLM usage telemetry** (alpha.18) — `input_tokens`, `output_tokens`, prefix/KV-cache hit, reused tokens, and evaluated tokens, plus unary `CapsFrame.request_id` correlation echoed by the native NWP server helpers; `CapsFrame.cached` stays distinct from model prefix/KV-cache reuse. Adds `NPS-LIMIT-RESOURCE` for bounded live-object limits and `wireInputBytes` on the LLM usage DTO.
 
 ---
 
@@ -24,7 +28,7 @@ The Java SDK tracks the suite feature train. Beyond the alpha.13 client baseline
 
 ```kotlin
 dependencies {
-    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.17")
+    implementation("com.labacacia.nps:nps-java:1.0.0-alpha.18")
 }
 ```
 
@@ -34,7 +38,7 @@ dependencies {
 <dependency>
   <groupId>com.labacacia.nps</groupId>
   <artifactId>nps-java</artifactId>
-  <version>1.0.0-alpha.17</version>
+  <version>1.0.0-alpha.18</version>
 </dependency>
 ```
 
@@ -46,11 +50,13 @@ dependencies {
 
 | Dependency | Version | Purpose |
 |------------|---------|---------|
-| `org.msgpack:msgpack-core` | 0.9.8 | Tier-2 MsgPack encoding |
-| `com.fasterxml.jackson.core:jackson-databind` | 2.17.2 | Tier-1 JSON encoding |
+| `org.msgpack:msgpack-core` | 0.9.11 | Tier-2 MsgPack encoding |
+| `com.fasterxml.jackson.core:jackson-databind` | 2.18.9 | Tier-1 JSON encoding |
 | `org.slf4j:slf4j-api` | 2.0.13 | Logging facade |
-| `org.bouncycastle:bcprov-jdk18on` | 1.79 | X.509 builder (RFC-0002) |
-| `org.bouncycastle:bcpkix-jdk18on` | 1.79 | X.509 builder (RFC-0002) |
+| `org.bouncycastle:bcprov-jdk18on` | 1.84 | X.509 builder (RFC-0002) |
+| `org.bouncycastle:bcpkix-jdk18on` | 1.84 | X.509 builder (RFC-0002) |
+
+> The MessagePack / Jackson / BouncyCastle versions above were raised in alpha.18, clearing every runtime dependency advisory reported by the alpha.18 OSV gate.
 
 ---
 
@@ -234,4 +240,4 @@ Test classes: `AnchorFrameCacheTest` (12), `FrameHeaderTest` (8), `NpsFrameCodec
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

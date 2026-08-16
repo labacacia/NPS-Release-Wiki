@@ -1,7 +1,7 @@
 # Operator Quickstart: Daemon Bundle
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Latest published bundle — v1.0.0-alpha.16
+> **Status:** ✅ Latest published bundle — v1.0.0-alpha.18
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-runner**, **nps-ingress**, and **nps-registry** — in a single git repository with a reference `docker-compose.yml`. This is the recommended starting point for operators who want to run a self-hosted NPS cluster. (The private daemons **nps-ledger** and **nps-cloud-ca** ship separately; see [Operator Daemons Reference](Operator-Daemons-Reference).)
@@ -12,6 +12,13 @@ The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-r
 |------|---------|
 | [Option A: Docker Compose](#option-a-docker-compose) | Isolated deployments, CI, quick evaluation |
 | [Option B: Native packages](#option-b-native-packages-systemd--windows-service) | Bare-metal / VM servers, systemd-managed fleets, Windows hosts |
+
+> **The project does not publish prebuilt artifacts.** No container images are pushed to
+> Docker Hub, GHCR, or any other registry, and the release pages carry no native
+> installers. Both options below build the daemons from source out of the
+> [`labacacia/nps-daemons`](https://github.com/labacacia/nps-daemons) repository. Option A is
+> the supported path: `docker compose up --build` compiles each daemon from its `Dockerfile`
+> and tags the result locally.
 
 ---
 
@@ -28,26 +35,31 @@ The repository root contains:
 | Path | Description |
 |------|-------------|
 | `docker-compose.yml` | Reference four-service composition |
-| `deploy/docker-compose/` | Curated Compose overlays (dev / prod, optional nip-ca-server sidecar) |
-| `deploy/systemd/` | systemd unit files for native installs |
-| `Makefile` | Convenience targets — `make up` / `make down` / `make install-systemd` |
 | `npsd/` | npsd daemon source and Dockerfile |
 | `nps-runner/` | nps-runner daemon source and Dockerfile |
 | `nps-ingress/` | nps-ingress daemon source and Dockerfile |
 | `nps-registry/` | nps-registry daemon source and Dockerfile |
+| `docs/` | Daemon documentation |
+| `spec/` | Vendored spec copy the daemons implement |
 | `CHANGELOG.md` | Per-release notes |
 
-> **Makefile shortcuts (alpha.6+).** From the repository root: `make up` brings the
-> Compose stack up (wraps `docker compose up -d`), `make down` tears it down, and
-> `make install-systemd` installs the units from `deploy/systemd/` for a native
-> deployment. See `deploy/docker-compose/` and `deploy/systemd/` for the underlying
-> files.
+> **No `deploy/` tree and no `Makefile`.** Earlier revisions of this page listed
+> `deploy/docker-compose/`, `deploy/systemd/`, and `make up` / `make down` /
+> `make install-systemd` shortcuts. Those have never existed in the published
+> bundle — verified against `v1.0.0-alpha.18`. Use the root `docker-compose.yml`
+> directly (Option A) or build and install from source (Option B).
 
 ---
 
 ## Step 2: Review `docker-compose.yml`
 
-The compose file defines one service per daemon. The key port bindings are:
+The compose file defines one service per daemon. Every service declares **both** a `build:`
+stanza (pointing at that daemon's `Dockerfile`) and an `image:` tag such as
+`labacacia/npsd:1.0.0-alpha.18`. Because `build:` is present, the `image:` value is only the
+name Compose gives the **locally built** artifact — it is not pulled from a registry, and no
+such image exists on Docker Hub or GHCR. Always bring the stack up with `--build`.
+
+The key port bindings are:
 
 | Service | Internal port | External default | Notes |
 |---------|--------------|-----------------|-------|
@@ -113,13 +125,17 @@ These apply when you add **nps-ledger** (private) to your cluster and want it to
 ## Step 3: Start the bundle
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
+
+The first run compiles all four daemons from source, which takes a few minutes. Subsequent
+runs reuse the Docker build cache. Omitting `--build` works only once the local images
+already exist — there is nothing to pull from a registry if they do not.
 
 To start a single daemon:
 
 ```bash
-docker compose up -d npsd
+docker compose up -d --build npsd
 ```
 
 To tail logs:
@@ -151,7 +167,7 @@ Expected npsd response shape:
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "layer": "L1",
   "role": "node",
   "port": 17433,
@@ -215,24 +231,38 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 
 ## Upgrade procedure
 
-1. Pin all services to the new suite version in `docker-compose.yml`:
-
-   ```yaml
-   image: labacacia/npsd:1.0.0-alpha.16        # change to target version
-   image: labacacia/nps-runner:1.0.0-alpha.16
-   image: labacacia/nps-ingress:1.0.0-alpha.16
-   image: labacacia/nps-registry:1.0.0-alpha.16
-   ```
-
-2. Back up all named volumes (see above).
-
-3. Pull new images and restart:
+1. Check out the target suite tag in your clone — this is what actually determines the code
+   you run, because the images are built locally from these sources:
 
    ```bash
-   docker compose pull && docker compose up -d
+   git fetch --tags && git checkout v1.0.0-alpha.18
    ```
 
-4. Confirm health on all ports.
+2. Confirm the local build tags in `docker-compose.yml` match that suite version:
+
+   ```yaml
+   image: labacacia/npsd:1.0.0-alpha.18        # change to target version
+   image: labacacia/nps-runner:1.0.0-alpha.18
+   image: labacacia/nps-ingress:1.0.0-alpha.18
+   image: labacacia/nps-registry:1.0.0-alpha.18
+   ```
+
+   These are **local** tags applied to the images Compose builds; there is no registry to
+   pull them from.
+
+3. Back up all named volumes (see above).
+
+4. Rebuild the images and restart:
+
+   ```bash
+   docker compose build --pull && docker compose up -d
+   ```
+
+   `--pull` here refreshes the .NET **base** images referenced by each `Dockerfile`; the NPS
+   daemon images themselves are always produced by the build. `docker compose pull` on its
+   own will fail — the `labacacia/*` tags are not published anywhere.
+
+5. Confirm health on all ports.
 
 ---
 
@@ -252,17 +282,38 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 
 Native packages are self-contained binaries — no Docker, no .NET runtime installation required. Each package registers the daemon as a system service that starts on boot.
 
-Download from the [nps-daemons releases page](https://github.com/labacacia/nps-daemons/releases).
+> **⚠️ No native packages are published for the current suite train.** The
+> [nps-daemons releases page](https://github.com/labacacia/nps-daemons/releases) attaches **no**
+> `.deb` / `.rpm` / `.msi` assets to v1.0.0-alpha.18 (nor to alpha.15 / alpha.16). The last
+> release that carried native installers was **v1.0.0-alpha.5**, and those predate the
+> `nps-gateway` → `nps-ingress` rename, so they are not usable for a current deployment. No
+> Windows MSI has ever been published.
+>
+> The commands below therefore document the **shape** of a native install — the layout,
+> service accounts, and configuration files a package produces. To run natively today, build
+> the binaries yourself from the daemon sources:
+>
+> ```bash
+> git clone https://github.com/labacacia/nps-daemons && cd nps-daemons
+> git checkout v1.0.0-alpha.18
+> for d in npsd nps-runner nps-ingress nps-registry; do
+>     dotnet publish "$d" -c Release -r linux-x64 --self-contained -o "out/$d"
+> done
+> ```
+>
+> then wrap the output with `dpkg-deb` / `rpmbuild` / WiX and install your own unit files, or
+> run the published binaries directly under systemd. For a supported path, prefer
+> [Option A](#option-a-docker-compose), which builds the same sources through Compose.
 
 ### Ubuntu / Debian (amd64)
 
 ```bash
 # Set the suite version (Debian format: ~ separates pre-release)
-DEB_VER="1.0.0~alpha.15"
-SUITE_VER="1.0.0-alpha.16"
+DEB_VER="1.0.0~alpha.18"
+SUITE_VER="1.0.0-alpha.18"
 
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}_${DEB_VER}_amd64.deb"
+    # Substitute your own package artefacts — these URLs are not published upstream.
     sudo dpkg -i "${pkg}_${DEB_VER}_amd64.deb"
 done
 ```
@@ -312,12 +363,12 @@ Data directories under `/var/lib/nps/` are not removed on uninstall (`apt purge`
 ### Fedora / RHEL (x86_64)
 
 ```bash
-SUITE_VER="1.0.0-alpha.16"
+SUITE_VER="1.0.0-alpha.18"
 RPM_VER="1.0.0"
-RPM_REL="0.alpha.15"   # for stable releases: "1"
+RPM_REL="0.alpha.18"   # for stable releases: "1"
 
 for pkg in npsd nps-runner nps-ingress nps-registry; do
-    curl -LO "https://github.com/labacacia/nps-daemons/releases/download/v${SUITE_VER}/${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
+    # Substitute your own package artefacts — these are not published upstream.
     sudo rpm -i "${pkg}-${RPM_VER}-${RPM_REL}.x86_64.rpm"
 done
 ```
@@ -341,16 +392,16 @@ sudo rpm -e npsd nps-runner nps-ingress nps-registry
 
 ### Windows (x64, MSI)
 
-Each daemon ships as a per-daemon `.msi` installer. Run as Administrator.
+The intended packaging is a per-daemon `.msi` installer. **No MSI has been published to date** —
+build one from the daemon sources (WiX over `dotnet publish -r win-x64 --self-contained`)
+before running the steps below. Run as Administrator.
 
 ```powershell
-$ver = "1.0.0-alpha.16"
+$ver = "1.0.0-alpha.18"
 
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
+    # Substitute your own MSI — none is published upstream.
     $file = "$pkg-$ver-win-x64.msi"
-    Invoke-WebRequest `
-        -Uri "https://github.com/labacacia/nps-daemons/releases/download/v$ver/$file" `
-        -OutFile $file
     Start-Process msiexec.exe -ArgumentList "/i `"$file`" /quiet /norestart" -Wait
 }
 
@@ -405,8 +456,8 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.16*
+*Last reviewed for published packages: v1.0.0-alpha.18*
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

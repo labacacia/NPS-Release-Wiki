@@ -1,6 +1,6 @@
 # SDK Quickstart
 
-**Status:** ✅ Latest published SDK packages — v1.0.0-alpha.17 · alpha.18 source candidate under review
+**Status:** ✅ Latest published SDK packages — v1.0.0-alpha.18 (released 2026-08-15)
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
@@ -22,22 +22,22 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 
 | Language | Install command | Current pin |
 |----------|-----------------|-------------|
-| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.17` | `1.0.0-alpha.17` |
-| Python | `pip install nps-lib==1.0.0a17` | `1.0.0a17` |
-| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.17` | `1.0.0-alpha.17` |
-| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.17")` | `1.0.0-alpha.17` |
-| Rust | `nps-sdk = "=1.0.0-alpha.17"` | `=1.0.0-alpha.17` (exact pin) |
-| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.17` | `v1.0.0-alpha.17` |
+| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.18` | `1.0.0-alpha.18` |
+| Python | `pip install nps-lib==1.0.0a18` | `1.0.0a18` |
+| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.18` | `1.0.0-alpha.18` |
+| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.18")` | `1.0.0-alpha.18` |
+| Rust | `nps-sdk = "=1.0.0-alpha.18"` | `=1.0.0-alpha.18` (exact pin) |
+| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.18` | `v1.0.0-alpha.18` |
 
 > **Python package name:** The PyPI distribution name is `nps-lib` (not `nps-sdk` — that name is taken by an unrelated package). The Python import namespace is `nps_sdk`.
 
 > **Rust pinning:** Use the `=` prefix for alpha releases to prevent Cargo from silently upgrading to a later alpha.
 
-> **npm tags:** `@labacacia/nps-sdk@alpha` resolves to `1.0.0-alpha.17`; the unqualified npm `latest` tag intentionally remains on alpha.7. Pin `1.0.0-alpha.17` for reproducible alpha builds.
+> **npm tags:** `@labacacia/nps-sdk@alpha` resolves to `1.0.0-alpha.18`; the unqualified npm `latest` tag intentionally remains on alpha.7. Pin `1.0.0-alpha.18` for reproducible alpha builds.
 
-> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.17 is the current published SDK pin.
+> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.18 is the current published SDK pin.
 
-> **alpha.18 candidate:** Source and specs add portable server profiles across the stack and CR-0011 stateful LLM context/delta completion. These APIs are not published packages until the alpha.18 release completes.
+> **alpha.18 (2026-08-15) — published on every registry.** It ships NPS-CR-0011 / NWP 0.21 stateful LLM context (owner-bound context IDs, create/append/fork/reset/status/release, compare-and-swap versions, atomic cancellation, NWM 0.2 discovery, NIP 0.14 `llm:context` authorization) in all six SDKs, plus official NWP LLM usage telemetry with unary `CapsFrame.request_id` correlation and the `NPS-LIMIT-RESOURCE` code. Protocol versions at this pin: NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9.
 
 ---
 
@@ -152,7 +152,7 @@ Tier-1 JSON is convenient for debugging but produces roughly 2.5× more bytes th
 
 ### Ignoring the `AssuranceLevel` empty-string case
 
-`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.17`.
+`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.18`.
 
 ### Mixing suite versions
 
@@ -160,7 +160,9 @@ All NuGet/PyPI/npm/Maven/crates.io packages within the same language SDK are ver
 
 ---
 
-## Published alpha.15 feature set
+## Published feature set (accumulated through alpha.18)
+
+This section is cumulative: every capability listed below is present in the current `1.0.0-alpha.18` packages. The release tag in each block is the release the capability first landed in.
 
 All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions:
 
@@ -187,6 +189,24 @@ The alpha.15 release adds (capability described here; the exact API names are .N
 - **Typed remote NIP CA client** — CA discovery, CRL retrieval, and Ed25519 register / renew / revoke / verify, including RFC-0002 X.509 registration.
 - **NIP TrustFrame/RevokeFrame signed-payload realignment** — the Ed25519-signed payload now includes the current NPS-3 fields (`issued_at`, `serial`, `signer_nid`, `target_nid`) and uses current revocation naming (`NIP-CERT-REVOKED`). **Breaking:** signed frames produced by the old alpha.14-era SDK shape no longer verify after upgrading.
 
+The alpha.16 release re-issued the alpha.15 package set (the alpha.15 version numbers were already taken on the public registries) and fixed daemon distribution test isolation. It adds no new SDK surface.
+
+The alpha.17 release adds:
+
+- **Full server/orchestration parity across all six SDKs** — the .NET reference server surface (native NCP transport, NWP Action / Complex / Memory Nodes, bidirectional Bridges, NIP CA plus full verification, NOP orchestration, daemon observability and telemetry) is ported to Python, TypeScript, Java, Rust, and Go.
+- **Portable profiles and shared conformance vectors** — one language-neutral fixture set for NCP 0.11 native-server handshakes, NWP 0.20 Node/Bridge serving, NIP 0.13 CA/revocation behaviour, NDP 0.12 registry admission, and NOP 0.9 orchestration; every SDK executes the same fixtures.
+- **NativeAOT-safe .NET frame codecs** and publish validation for the official package family.
+
+The alpha.18 release adds:
+
+- **NPS-CR-0011 / NWP 0.21 stateful LLM context** — owner-bound opaque context IDs with `create` / `append` / `fork` / `reset` / `status` / `release`, compare-and-swap versions, atomic unary and async cancellation, NWM 0.2 discovery, and `llm:context` authorization under NIP 0.14. Implemented in all six SDKs against 19 shared conformance vectors. Stateless completion stays compatible, and stateful requests never silently fall back to stateless.
+- **Stateful NDJSON streaming semantics** — atomic terminal-frame commit, abnormal-termination abort (failed or incomplete streams are never cached), and idempotent replay of a completed sequence under a fresh server-owned `stream_id`. `stream=true` is incompatible with async acknowledgement.
+- **Official NWP LLM usage telemetry** — `input_tokens`, `output_tokens`, prefix/KV-cache hit, reused tokens, and evaluated tokens, plus unary `CapsFrame.request_id` correlation echoed consistently by the native NWP server helpers in every SDK. `CapsFrame.cached` stays explicitly distinct from model prefix/KV-cache reuse.
+- **`NPS-LIMIT-RESOURCE`** for bounded live-object limits, and `LlmUsageDto.wire_input_bytes` for decoder-boundary request measurement.
+- **.NET NativeAOT nullable-`UInt64` fix** — restores Tier-2 round trips for NDP `AnnounceFrame.cluster_epoch`.
+
+Protocol versions at the alpha.18 pin: **NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9** (error codes 1.9, frame registry 0.14).
+
 ---
 
 ## What to read next
@@ -198,8 +218,8 @@ The alpha.15 release adds (capability described here; the exact API names are .N
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.17; alpha.18 candidate reviewed separately*
+*Last reviewed for published packages: v1.0.0-alpha.18*
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

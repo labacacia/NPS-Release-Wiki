@@ -1,10 +1,10 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** ✅ Wiki reviewed for the unreleased v1.0.0-alpha.18 candidate.
+> **Status:** ✅ Wiki reviewed for the released v1.0.0-alpha.18 suite.
 >
-> Latest published SDK suite: **v1.0.0-alpha.17** (2026-08-02). The public
-> daemon bundle and `nip-ca-server` remain independently published at
-> **v1.0.0-alpha.16**; their alpha.18 source candidates are not registry releases.
+> Latest published SDK suite: **v1.0.0-alpha.18** (2026-08-15). The public
+> daemon bundle and `nip-ca-server` are published on the same train and are
+> also at **v1.0.0-alpha.18**.
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -65,18 +65,18 @@ document.
 
 This wiki tracks the suite version declared in
 [`NPS-Release/version.yaml`](https://github.com/labacacia/NPS-Release/blob/main/version.yaml)
-— latest published SDK packages are **v1.0.0-alpha.17**. This Wiki is reviewed
-against the **unreleased v1.0.0-alpha.18 candidate**: NCP 0.11, NWP 0.21,
-NIP 0.14, NDP 0.12, and NOP 0.9. It covers the alpha.17 portable six-SDK
+— latest published SDK packages are **v1.0.0-alpha.18**. This Wiki is reviewed
+against the **released v1.0.0-alpha.18 suite** (2026-08-15): NCP 0.11, NWP 0.21,
+NIP 0.14, NDP 0.12, and NOP 0.9. It covers the portable six-SDK
 server/runtime baseline, multi-Anchor HA, bidirectional Bridge semantics, and
-the candidate CR-0011 stateful LLM context contract. Candidate examples must
-not be read as evidence that alpha.18 packages or images have been published.
+the CR-0011 stateful LLM context contract, which is implemented across all six
+SDKs.
 
 Pages are re-reviewed at each suite release. Normative protocol details always
 come from `NPS-Release/spec`; package availability comes from the relevant
-registry or GitHub release, not from a candidate source version.
+registry or GitHub release.
 
-*Wiki last updated: v1.0.0-alpha.18 candidate review (2026-08-13)*
+*Wiki last updated: v1.0.0-alpha.18 release review (2026-08-16)*
 
 ---
 

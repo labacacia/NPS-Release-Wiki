@@ -1,7 +1,7 @@
 # What Is NPS?
 
 > **Audience:** Newcomers — no prior knowledge of NPS required
-> **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+> **Status:** ✅ Reviewed for v1.0.0-alpha.18
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 ---
@@ -82,7 +82,7 @@ An **Anchor Node** is the stateless cluster entry point for an NPS deployment. I
 
 A **Bridge Node** translates in either or both directions between NPS frames and non-NPS external protocols — HTTP/REST, gRPC, MCP (Model Context Protocol), and A2A. Outbound calls use `bridge_target`; inbound adapters expose foreign protocol surfaces and dispatch into NPS. Bridge Nodes are stateless per request and declare direction explicitly in NDP: `bridge_protocols` for NPS → external and `bridge_inbound_protocols` for external → NPS.
 
-The old standalone MCP/A2A/gRPC compatibility ingress packages had their final deprecated release in alpha.17 and leave the synchronized train in alpha.18. Their maintained replacement is the inbound surface of `NPS.NWP.Bridge`. A hosting library that does not announce `node_roles: ["bridge"]` is a Bridge adapter, not a discoverable Bridge Node.
+The old standalone MCP/A2A/gRPC compatibility ingress packages were last published at v1.0.0-alpha.16 (2026-07-23) — an alpha.17 deprecation release was prepared but never published — and they left the synchronized train at alpha.18. Their maintained replacement is the inbound surface of `NPS.NWP.Bridge`. A hosting library that does not announce `node_roles: ["bridge"]` is a Bridge adapter, not a discoverable Bridge Node.
 
 ### Agent Node
 
@@ -117,4 +117,4 @@ NPS does not replace MCP — it adds a network layer *beneath* it. MCP answers "
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

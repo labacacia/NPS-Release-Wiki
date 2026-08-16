@@ -1,6 +1,6 @@
 # Release Process
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Reviewed for v1.0.0-alpha.18
 
 This page documents how an NPS suite release is prepared and published. The process is designed around a single-oracle version model: one file is authoritative, and all other files must match it.
 
@@ -37,7 +37,7 @@ This rule was codified after the alpha.5.2 incident, where some distribution rep
 
 **Alpha has no sub-versions.** Since alpha.6 the suite policy is to advance `1.0.0-alpha.N` → `1.0.0-alpha.N+1` for *every* release, including hotfixes and re-cuts. The old `1.0.0-alpha.N.M` hotfix format (e.g. `1.0.0-alpha.5.1`) was retired after the alpha.5.2 drift incident — there is no `alpha.5.x` going forward. A patch on top of an alpha simply becomes the next whole alpha.
 
-The current latest released suite version is **v1.0.0-alpha.16** (released 2026-07-23). All releases bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
+The current latest released suite version is **v1.0.0-alpha.18** (released 2026-08-15). All releases bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
 
 ---
 
@@ -72,7 +72,7 @@ The full release follows these steps in order:
    - `tools/release/sync-nps-cloud-ca.sh` → `innolotus/nps-cloud-ca` (private)
    - `tools/release/sync-nps-ledger.sh` → `innolotus/nps-ledger` (private)
    - SDK sync scripts for each of the six language SDK distribution repos
-   - Ingress sync scripts for `NPS-mcp-ingress`, `NPS-a2a-ingress`, `NPS-grpc-ingress`
+   - *(No longer run since alpha.18)* Ingress sync scripts for `NPS-mcp-ingress`, `NPS-a2a-ingress`, `NPS-grpc-ingress` — the three compat ingress repos were last published at v1.0.0-alpha.16 (an alpha.17 deprecation release was prepared but never published) and left the synchronized release train at alpha.18; they are marked `expected: skip` in `version.yaml`
 
 10. **Tag the release in NPS-Release.** Create a `v{suite_version}` git tag in `labacacia/NPS-Release`. The tag is the public release marker.
 
@@ -132,4 +132,4 @@ Fix: Assertion B in `check-source-of-truth.py` now blocks the release if any SDK
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

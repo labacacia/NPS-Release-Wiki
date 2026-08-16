@@ -1,6 +1,6 @@
 # Daemon: bundle-overlay
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.16
+**Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** Operators and release shepherds
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -17,22 +17,23 @@
 
 | File | Role |
 |------|------|
-| `docker-compose.yml` | Top-level compose file; four services (`npsd`, `nps-runner`, `nps-ingress`, `nps-registry`), each pinned to `labacacia/<name>:VERSION` |
+| `docker-compose.yml` | Top-level compose file; four services (`npsd`, `nps-runner`, `nps-ingress`, `nps-registry`), each with a `build:` context pointing at its daemon subdirectory plus an `image:` tag `labacacia/<name>:VERSION` naming the locally built result |
 | `README.md` | Public-facing README for `labacacia/nps-daemons`; describes the three-layer architecture and quick-start instructions |
 | `CHANGELOG.md` | Aggregated daemon changelog; single place for operators to track all daemon changes across releases |
 | `NOTICE` | Copyright and license attribution |
 
 ---
 
-## docker-compose.yml (at v1.0.0-alpha.16)
+## docker-compose.yml (at v1.0.0-alpha.18)
 
 ```yaml
-version: "3.9"
-
 services:
 
   npsd:
-    image: labacacia/npsd:1.0.0-alpha.16
+    build:
+      context: ./npsd
+      dockerfile: Dockerfile
+    image: labacacia/npsd:1.0.0-alpha.18
     restart: unless-stopped
     ports:
       - "127.0.0.1:17433:17433"
@@ -44,13 +45,19 @@ services:
       NPSD_DATA_DIR: /data
 
   nps-runner:
-    image: labacacia/nps-runner:1.0.0-alpha.16
+    build:
+      context: ./nps-runner
+      dockerfile: Dockerfile
+    image: labacacia/nps-runner:1.0.0-alpha.18
     restart: unless-stopped
     depends_on:
       - npsd
 
   nps-ingress:
-    image: labacacia/nps-ingress:1.0.0-alpha.16
+    build:
+      context: ./nps-ingress
+      dockerfile: Dockerfile
+    image: labacacia/nps-ingress:1.0.0-alpha.18
     restart: unless-stopped
     ports:
       - "${NPS_INGRESS_PORT:-8080}:8080"
@@ -58,7 +65,10 @@ services:
       - npsd
 
   nps-registry:
-    image: labacacia/nps-registry:1.0.0-alpha.16
+    build:
+      context: ./nps-registry
+      dockerfile: Dockerfile
+    image: labacacia/nps-registry:1.0.0-alpha.18
     restart: unless-stopped
     ports:
       - "${NPS_REGISTRY_PORT:-17436}:17436"
@@ -69,6 +79,11 @@ volumes:
 
 Key notes:
 
+- Every service pairs `build:` with `image:`. Because a `build:` context is present, the
+  `image:` value is simply the **tag Compose applies to the image it builds from source** —
+  it is not a registry coordinate. The project publishes no container images, so
+  `docker pull labacacia/npsd:…` will fail; bring the stack up with
+  `docker compose up -d --build` instead.
 - `npsd` binds host-side to `127.0.0.1` (loopback only) even though the container uses `0.0.0.0`. Public ingress goes through `nps-ingress`.
 - `nps-runner` has no port mappings — it has no HTTP surface.
 - Ingress and registry host ports are configurable via `NPS_INGRESS_PORT` and `NPS_REGISTRY_PORT` at compose launch time.
@@ -79,7 +94,7 @@ Key notes:
 
 Every image tag in `docker-compose.yml` must equal the suite version oracle. CI Assertion C enforces this:
 
-- CI reads the suite version from the oracle (e.g. `1.0.0-alpha.16`).
+- CI reads the suite version from the oracle (e.g. `1.0.0-alpha.18`).
 - It scans every `image:` line in `docker-compose.yml` for tags.
 - It fails if any tag does not match the oracle.
 
@@ -122,7 +137,7 @@ The per-daemon `CHANGELOG.md` files remain the source of truth for individual da
 
 ## Release history note: alpha.12 withdrawn
 
-The current bundle pins the **alpha.16** daemon set, built against `MessagePack 3.1.7`. **alpha.12 was withdrawn** before general use: its NuGet packages shipped the vulnerable `MessagePack 3.0.300` (NU1903). **alpha.13 superseded it**, rebuilding the daemon set against `MessagePack 3.1.7` (carried forward through alpha.14–alpha.16); operators must skip alpha.12 entirely and pin `1.0.0-alpha.16`.
+The current bundle pins the **alpha.18** daemon set, built against `MessagePack 3.1.7`. **alpha.12 was withdrawn** before general use: its NuGet packages shipped the vulnerable `MessagePack 3.0.300` (NU1903). **alpha.13 superseded it**, rebuilding the daemon set against `MessagePack 3.1.7` (carried forward through alpha.14–alpha.18); operators must skip alpha.12 entirely and pin `1.0.0-alpha.18`.
 
 ---
 
@@ -149,4 +164,4 @@ Operators who need those daemons must have NPS Cloud access. See [Daemon NPS-Clo
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

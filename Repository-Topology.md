@@ -1,6 +1,6 @@
 # Repository Topology
 
-**Status:** ✅ Latest published topology — v1.0.0-alpha.16
+**Status:** ✅ Latest published topology — v1.0.0-alpha.18
 
 This page maps every NPS-related repository, its role, and how it relates to the central source monorepo.
 
@@ -65,7 +65,7 @@ All arrows are one-way syncs: NPS-Dev → distribution repo. Distribution repos 
 | `nps-ledger` | innolotus | K-of-N audit + reputation log daemon | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-ledger/` |
 | `nps-orchestrator` | orilynn-studio | Consumer / example orchestrator service | Public | Independent — not synced from NPS-Dev; tracked by `version.yaml` for version parity only |
 
-> **Ingress packages on the suite train.** The three ingress adapter packages (`LabAcacia.McpIngress`, `LabAcacia.A2aIngress`, `LabAcacia.GrpcIngress`) — deferred in the alpha.13 re-cut — are now caught up and publish on the suite train: all three ship at **v1.0.0-alpha.15**, alongside the 11 SDK packages.
+> **Ingress packages have left the suite train.** The three ingress adapter packages (`LabAcacia.McpIngress`, `LabAcacia.A2aIngress`, `LabAcacia.GrpcIngress`) were **last published at v1.0.0-alpha.16** (2026-07-23). An alpha.17 deprecation release was prepared but never tagged or published, and the packages were removed from the synchronized release train as of **alpha.18** (`expected: skip` in `version.yaml`). Their maintained replacement is the inbound surface of `LabAcacia.NPS.NWP.Bridge`.
 
 ---
 
@@ -98,7 +98,7 @@ Scripts live in `tools/release/` in NPS-Dev. Each script:
 | `sync-nps-cloud-ca.sh` | `tools/daemons/nps-cloud-ca/` | `innolotus/nps-cloud-ca` (no Gitee) |
 | `sync-nps-ledger.sh` | `tools/daemons/nps-ledger/` | `innolotus/nps-ledger` (no Gitee) |
 
-SDK and ingress sync scripts follow the same pattern but are per-language / per-adapter.
+SDK sync scripts follow the same pattern but are per-language. The per-adapter ingress sync scripts follow the same pattern too, but are no longer run on the release train — the three ingress repos stopped at their last published release, v1.0.0-alpha.16.
 
 ### Publish Overlay Pattern
 
@@ -125,8 +125,8 @@ All public labacacia repos are mirrored to Gitee (`gitee.com/labacacia/`) via `t
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.16*
+*Last reviewed for published packages: v1.0.0-alpha.18*
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

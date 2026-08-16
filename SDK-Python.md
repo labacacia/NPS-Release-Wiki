@@ -1,6 +1,6 @@
 # SDK — Python
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published package — v1.0.0-alpha.18 (released 2026-08-15)
 
 Python client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -9,13 +9,13 @@ Python client library for the Neural Protocol Suite. Covers all five protocols: 
 ## Installation
 
 ```bash
-pip install nps-lib==1.0.0a17
+pip install nps-lib==1.0.0a18
 ```
 
 For development extras (pytest, coverage, linting):
 
 ```bash
-pip install "nps-lib[dev]==1.0.0a17"
+pip install "nps-lib[dev]==1.0.0a18"
 ```
 
 > **Package name:** The PyPI distribution is `nps-lib`. The name `nps-sdk` is taken by an unrelated package (Ingenico). The Python import namespace is always `nps_sdk`.
@@ -24,7 +24,7 @@ pip install "nps-lib[dev]==1.0.0a17"
 
 **Tests:** 221+ passing, ≥ 90% coverage target.
 
-> **Suite version:** This SDK tracks suite `v1.0.0-alpha.15`. alpha.12 was withdrawn; pin `nps-lib==1.0.0a15`.
+> **Suite version:** This SDK tracks suite `v1.0.0-alpha.18` (NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9). alpha.12 was withdrawn; pin `nps-lib==1.0.0a18`.
 
 ---
 
@@ -212,7 +212,9 @@ pytest -k test_nip     # NIP tests only
 
 ---
 
-## alpha.15 feature set
+## Feature set (accumulated through alpha.18)
+
+This section is cumulative: everything listed below is present in the published `1.0.0a18` package. The release tag on each block is where the capability first landed.
 
 The Python SDK ships the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions:
 
@@ -233,6 +235,23 @@ The alpha.15 release adds:
 
 > The `EncodingTier.BINARY_VECTOR` and `binary_vector.v1` names are confirmed for the Python SDK; the inbound Bridge server, native-mode serving, and CA-client surfaces follow the .NET reference capability ([SDK DotNet](SDK-DotNet)) — consult the Python module reference for exact symbol names.
 
+The alpha.16 release re-issued the alpha.15 package set (those version numbers were already taken on the public registries); it adds no new Python surface.
+
+The alpha.17 release adds:
+
+- **Server and orchestration parity with the .NET reference** — native NCP transport, NWP Action / Complex / Memory Nodes, bidirectional Bridges, NIP CA plus full verification, NOP orchestration, and daemon observability/telemetry are now available in the Python SDK, not only the client surface.
+- **Portable profiles and shared conformance vectors** — the Python SDK executes the same language-neutral fixtures as the other five SDKs for NCP 0.11 native-server handshakes, NWP 0.20 Node/Bridge serving, NIP 0.13 CA/revocation, NDP 0.12 registry admission, and NOP 0.9 orchestration.
+
+The alpha.18 release adds:
+
+- **NPS-CR-0011 / NWP 0.21 stateful LLM context** — owner-bound opaque context IDs with `create` / `append` / `fork` / `reset` / `status` / `release`, compare-and-swap versions, atomic unary and async cancellation, NWM 0.2 discovery, and `llm:context` authorization under NIP 0.14. Validated against the 19 shared CR-0011 conformance vectors. Stateless completion remains compatible; stateful requests never silently fall back.
+- **Stateful NDJSON streaming** — atomic terminal-frame commit, abnormal-termination abort (failed or incomplete streams are never cached), and idempotent replay of a completed sequence under a fresh server-owned `stream_id`. `stream=true` is incompatible with async acknowledgement.
+- **Official NWP LLM usage telemetry** — `input_tokens`, `output_tokens`, prefix/KV-cache hit, reused tokens, and evaluated tokens, plus unary `CapsFrame.request_id` correlation echoed by the native NWP server helpers. `CapsFrame.cached` stays distinct from model prefix/KV-cache reuse.
+- **`NPS-LIMIT-RESOURCE`** for bounded live-object limits, and `wire_input_bytes` on the LLM usage DTO for decoder-boundary request measurement.
+- The stateful LLM Action coordinator **fails closed** when no deployment authorizer is configured, and passes the exact admission/commit capability set (`llm:complete` + `llm:context`, plus stream/tool capabilities when used) to that authorizer.
+
+> The alpha.17/alpha.18 entries describe the suite-level capability as delivered in the Python SDK; consult the Python module reference for exact symbol names.
+
 ---
 
 ## See also
@@ -243,4 +262,4 @@ The alpha.15 release adds:
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

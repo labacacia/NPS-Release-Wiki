@@ -1,20 +1,24 @@
 # SDK — Rust
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published crates — v1.0.0-alpha.18 (released 2026-08-15)
 
 Rust client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
 ---
 
-## Capability set (alpha.13 parity + alpha.14 / alpha.15 additions)
+## Capability set (current — accumulated through alpha.18)
 
-Beyond the alpha.13 client baseline, the Rust SDK carries the following capability-level additions (exact type/path names may differ by language — see the source):
+Everything in this section is present in the published `1.0.0-alpha.18` crates; the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, the Rust SDK carries the following capability-level additions (exact type/path names may differ by language — see the source):
 
 - **NCP Tier-3 BinaryVector (`binary_vector.v1`)** (NCP v0.9, alpha.14) — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame`. Negotiated via caps and only used when both peers advertise `binary_vector.v1`. Malformed payloads surface as documented client errors (`NCP-BINARY-VECTOR-*` → `NPS-CLIENT-BAD-FRAME`); the reserved tier bits return `NCP-FRAME-FLAGS-INVALID`.
 - **Inbound NWP Bridge server adapters** (alpha.14) — lets external MCP / A2A clients call local NPS actions (the inverse of the outbound Bridge Node). Secure-by-default: valid `X-NWP-Agent` NID + a configured verifier, bounded request bodies (→ 413), dispatch timeout (→ 504), sanitized client errors, and an action allowlist. See [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node).
 - **Native-mode NWP serving** (alpha.14) — Memory / Action Nodes serve `QueryFrame` / `ActionFrame` directly over a native NCP session rather than a hand-rolled frame loop.
 - **NIP signed-payload realignment** (alpha.15, **breaking**) — TrustFrame / RevokeFrame now sign the current NPS-3 field set (`issued_at`, `serial`, `signer_nid`, `target_nid`) and use current revocation naming (`NIP-CERT-REVOKED`). Signed frames produced by the old alpha.14-era shape no longer verify. See [SDK Identity and Authentication](SDK-Identity-and-Authentication).
 - **NDP AnnounceFrame signed canonical form** (alpha.15, **breaking**) — the signed body is now normative and cross-SDK consistent (sign all wire fields except `signature` / `health` / `last_seen` / `frame`; omit null optionals; `heartbeat_interval_ms` canonicalised to the default `60000` only when absent, explicit `0` signed literally).
+- **Server and orchestration parity with the .NET reference** (alpha.17) — native NCP transport, NWP Action / Complex / Memory Nodes, bidirectional Bridges, NIP CA plus full verification, NOP orchestration, and daemon observability/telemetry, on the existing framework-agnostic `handle()` binding. Vulnerable transport and PKI dependencies were upgraded in the same release.
+- **Portable profiles and shared conformance vectors** (alpha.17) — the Rust SDK executes the same language-neutral fixtures as the other five SDKs for NCP 0.11 native-server handshakes, NWP 0.20 Node/Bridge serving, NIP 0.13 CA/revocation, NDP 0.12 registry admission, and NOP 0.9 orchestration.
+- **NPS-CR-0011 / NWP 0.21 stateful LLM context** (alpha.18) — owner-bound opaque context IDs with `create` / `append` / `fork` / `reset` / `status` / `release`, compare-and-swap versions, atomic unary and async cancellation, NWM 0.2 discovery, and `llm:context` authorization under NIP 0.14, validated against the 19 shared CR-0011 conformance vectors. Stateless completion stays compatible; stateful requests never silently fall back. Stateful NDJSON streaming commits the terminal frame atomically, aborts (never caches) failed or incomplete streams, and replays a completed sequence idempotently under a fresh server-owned `stream_id`.
+- **Official NWP LLM usage telemetry** (alpha.18) — `input_tokens`, `output_tokens`, prefix/KV-cache hit, reused tokens, and evaluated tokens, plus unary `CapsFrame.request_id` correlation echoed by the native NWP server helpers; `CapsFrame.cached` stays distinct from model prefix/KV-cache reuse. Adds `NPS-LIMIT-RESOURCE` for bounded live-object limits and `wire_input_bytes` on the LLM usage DTO.
 
 ---
 
@@ -24,7 +28,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nps-sdk = "=1.0.0-alpha.17"
+nps-sdk = "=1.0.0-alpha.18"
 tokio   = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
@@ -46,9 +50,10 @@ tokio   = { version = "1", features = ["rt-multi-thread", "macros"] }
 | `nps-nip` | NIP frames: `IdentFrame` (incl. `node_roles` self-declared role tags), `TrustFrame`, `RevokeFrame`; `NipIdentity` (Ed25519 key management); `ReputationLogClient` (RFC-0004 Phase 2, added in alpha.7); `nps_nip::x509` (anchored to IANA PEN 65715); `nps_nip::acme` |
 | `nps-ndp` | NDP frames: `AnnounceFrame` (`spawn_spec_ref` structured schema object; `heartbeat_interval_ms`), `ResolveFrame`, `GraphFrame`; `InMemoryNdpRegistry`; `NdpAnnounceValidator`; `resolve_via_dns`, `DnsTxtLookup` trait, `parse_nps_txt_record` |
 | `nps-nop` | NOP frames: `TaskFrame` (`result_ttl_seconds`), `DelegateFrame`, `SyncFrame`, `AlignStreamFrame`; `BackoffStrategy`; `NopClient` |
+| `nps-conformance` | Shared conformance fixtures and harness entry points (Node L1/L2 catalogs, portable cross-language vectors) |
 | `nps-sdk` | Re-export umbrella crate — all protocols under `nps_sdk::` namespace |
 
-All crates are in the same Cargo workspace. You can depend on the umbrella `nps-sdk` crate or on individual crates if you only need specific protocols.
+Eight crates are published to crates.io at `1.0.0-alpha.18` (`nps-conformance` joined the published set in the alpha.18 train). All crates are in the same Cargo workspace. You can depend on the umbrella `nps-sdk` crate or on individual crates if you only need specific protocols.
 
 ---
 
@@ -221,4 +226,4 @@ Test breakdown: `nps-core` 27, `nps-ndp` 25, `nps-nip` 16, `nps-nop` 20. Total: 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

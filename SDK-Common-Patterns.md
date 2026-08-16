@@ -1,6 +1,6 @@
 # SDK Common Patterns
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Reviewed for v1.0.0-alpha.18 (released 2026-08-15)
 
 > **Audience:** Developers building Agents or Nodes with any NPS SDK.
 > **Source-of-truth precedence:** `spec/` documents win over this page if they disagree.
@@ -329,22 +329,23 @@ If the actual response exceeds `X-NWP-Budget`, the node will either trim the res
 
 ### Always pin to the suite version
 
-NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.17`). Pin to this suite version, not to per-package/per-SDK versions.
+NPS is a protocol suite; all components release together under a single suite version (`1.0.0-alpha.18`). Pin to this suite version, not to per-package/per-SDK versions.
 
 **Correct:**
 ```
 # requirements.txt (Python)
-nps-lib==1.0.0-alpha.17
+# PyPI normalises the pre-release segment, so the suite tag alpha.18 is written 1.0.0a18 here
+nps-lib==1.0.0a18
 ```
 
 ```xml
 <!-- .csproj (.NET) -->
-<PackageReference Include="NPS.Core" Version="1.0.0-alpha.17" />
+<PackageReference Include="LabAcacia.NPS.Core" Version="1.0.0-alpha.18" />
 ```
 
-**Incorrect:** pinning each NPS package to a different version (e.g., `NPS.Core` at alpha.5 while `NPS.NWP` is at alpha.4) creates cross-package incompatibilities that are hard to diagnose.
+**Incorrect:** pinning each NPS package to a different version (e.g., `LabAcacia.NPS.Core` at alpha.5 while `LabAcacia.NPS.NWP` is at alpha.4) creates cross-package incompatibilities that are hard to diagnose.
 
-> **No alpha sub-versions since alpha.6.** Releases now advance `alpha.N → alpha.N+1` (e.g. the current `1.0.0-alpha.15`); there is no `alpha.5.x`-style hotfix sequence going forward. The shims below cover field renames that landed during the alpha.5.x line and are needed only when interoperating with old (pre-alpha.6) peers.
+> **No alpha sub-versions since alpha.6.** Releases now advance `alpha.N → alpha.N+1` (e.g. the current `1.0.0-alpha.18`); there is no `alpha.5.x`-style hotfix sequence going forward. The shims below cover field renames that landed during the alpha.5.x line and are needed only when interoperating with old (pre-alpha.6) peers.
 
 ### Legacy field-name shims (pre-alpha.6 peers)
 
@@ -460,4 +461,4 @@ The exact registration API is language-specific; the .NET reference exposes `Add
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

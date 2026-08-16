@@ -1,6 +1,6 @@
 # Daemon: npsd
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,7 +9,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/npsd/`
 - **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/npsd:1.0.0-alpha.16`
+- **Docker image:** `labacacia/npsd:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `npsd/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `127.0.0.1:17433` (loopback only — never expose directly to the Internet)
 - **Layer:** L1
 
@@ -63,7 +63,7 @@
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "layer": 1,
   "role": "protocol-access-host",
   "port": 17433,
@@ -99,7 +99,10 @@ On `SIGTERM`, `npsd` performs a graceful shutdown with a **30-second drain windo
 
 ```yaml
 npsd:
-  image: labacacia/npsd:1.0.0-alpha.16
+  build:
+    context: ./npsd
+    dockerfile: Dockerfile
+  image: labacacia/npsd:1.0.0-alpha.18
   restart: unless-stopped
   ports:
     - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-ingress
@@ -110,6 +113,11 @@ npsd:
     NPSD_PORT: 17433
     NPSD_DATA_DIR: /data
 ```
+
+> Because the service declares `build:`, the `image:` line only names the artefact Compose
+> builds locally from `npsd/Dockerfile` — the project publishes no container images, so
+> `docker pull labacacia/npsd:1.0.0-alpha.18` will not resolve. Start with
+> `docker compose up -d --build`.
 
 > The compose service uses `NPSD_HOST: 0.0.0.0` because Docker networking provides its own isolation. The `ports` binding pins host-side to `127.0.0.1` so the container port is still not reachable from outside the machine.
 
@@ -167,4 +175,4 @@ The recipient NID's inbox has hit `NPSD_MAX_INBOX_DEPTH_PER_NID` (default 1024).
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

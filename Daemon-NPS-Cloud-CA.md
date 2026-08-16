@@ -1,6 +1,6 @@
 # Daemon: nps-cloud-ca
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** NPS Cloud subscribers and operators
 > **Distribution note:** `innolotus/nps-cloud-ca` is a **private** repository. This page documents only the protocol-visible interface. Internal product and billing details are in the private repo.
@@ -10,7 +10,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-cloud-ca/`
 - **Distribution:** `innolotus/nps-cloud-ca` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `innolotus/nps-cloud-ca:1.0.0-alpha.16` (private registry)
+- **Docker image:** `innolotus/nps-cloud-ca:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; subscribers with repository access build it from the repo `Dockerfile` (`docker build -t innolotus/nps-cloud-ca:1.0.0-alpha.18 .`).
 - **Default port:** `:17435` (NIP optional-dedicated per NPS-3 §1)
 - **Layer:** L3
 - **Timeline:** Ships publicly with NPS Cloud GA, planned 2027 Q1+
@@ -32,7 +32,7 @@
 
 ---
 
-## Implementation status (alpha.16)
+## Implementation status (alpha.18)
 
 The current release is a **Phase 1 deferral skeleton**. The URL surface is present but all issuance endpoints return `NIP-CA-NOT-READY` (HTTP 503) with a pointer to the OSS CA so callers fail informatively. The process name, port, and Docker image tag are stable from alpha.3 to lock in the deployment surface.
 
@@ -81,7 +81,7 @@ These endpoints define the public protocol surface. Internal product behaviour (
 {
   "status": "ok",
   "daemon": "nps-cloud-ca",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "layer": 3,
   "role": "NPS Cloud NID Certificate Authority",
   "port": 17435
@@ -114,4 +114,4 @@ Full configuration (tenant database, billing integration, CA key management) is 
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

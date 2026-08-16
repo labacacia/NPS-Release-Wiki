@@ -1,6 +1,6 @@
 # Daemon: nps-ledger
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** Operators running a reputation log instance; AaaS operators peering with one
 > **Distribution note:** `innolotus/nps-ledger` is a **private** repository. This page documents the protocol surface only.
@@ -12,7 +12,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ledger/`
 - **Distribution:** `innolotus/nps-ledger` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `innolotus/nps-ledger:1.0.0-alpha.16` (private registry)
+- **Docker image:** `innolotus/nps-ledger:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; operators with repository access build it from the repo `Dockerfile` (`docker build -t innolotus/nps-ledger:1.0.0-alpha.18 .`).
 - **Default port:** `:17440`
 - **Layer:** L3
 
@@ -54,7 +54,7 @@ The `/healthz`·`/readyz` probes are rendered by the transport-neutral `HealthPr
 {
   "status": "ok",
   "daemon": "nps-ledger",
-  "version": "1.0.0-alpha.16",
+  "version": "1.0.0-alpha.18",
   "layer": 3,
   "role": "CT-style NID reputation log",
   "phase": 3,
@@ -167,4 +167,4 @@ The peer's tree appears to have regressed (its `tree_size` is lower than the las
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*

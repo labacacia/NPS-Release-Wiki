@@ -1,6 +1,6 @@
 # Daemon: nip-ca-server
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** Operators running a self-hosted NIP Certificate Authority
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -9,8 +9,8 @@
 
 - **Source:** `NPS-Dev/tools/nip-ca-server/` (lives outside `tools/daemons/` — it has its own distribution repo)
 - **Distribution:** `labacacia/nip-ca-server` — **PUBLIC**
-- **Docker image:** `ghcr.io/labacacia/nip-ca-server:1.0.0-alpha.16`
-- **Default port:** `:17434` (plain HTTP; TLS terminated externally)
+- **Docker image:** none published. The repository's `docker-compose.yml` declares a `build:` context for the `nip-ca` service, so the image is compiled locally from the repo `Dockerfile` at `docker compose up --build` time. There is no image on GHCR or Docker Hub to pull.
+- **Default port:** `:17435` (plain HTTP; TLS terminated externally)
 - **Note:** Not part of the `labacacia/nps-daemons` bundle — distributed separately
 
 ---
@@ -40,8 +40,17 @@ NIPCA__KEYPASSPHRASE=change-me-to-a-long-random-string
 POSTGRES_PASSWORD=change-me-too
 EOF
 
-docker compose up -d
-curl http://localhost:17434/health
+docker compose up -d --build
+curl http://localhost:17435/health
+```
+
+`--build` is required on the first run: the `nip-ca` service is built from the repository
+`Dockerfile`, not pulled — no prebuilt `nip-ca-server` image is published to any registry.
+(The `postgres:16-alpine` sidecar is a stock upstream image and is pulled normally.) To build
+the image on its own, without Compose:
+
+```bash
+docker build -t nip-ca-server:1.0.0-alpha.18 .
 ```
 
 ---
@@ -145,7 +154,7 @@ The `agent-01` ACME challenge (RFC 8555 + NPS-RFC-0002) is enabled by setting `N
 
 ## TLS
 
-The container exposes plain HTTP on port 17434. Run it behind nginx, Caddy, or Traefik for TLS termination. `NIPCA__BASEURL` must point at the public HTTPS endpoint.
+The container exposes plain HTTP on port 17435. Run it behind nginx, Caddy, or Traefik for TLS termination. `NIPCA__BASEURL` must point at the public HTTPS endpoint.
 
 ---
 
@@ -189,4 +198,4 @@ The `example/` directory contains five reference client ports (Python, TypeScrip
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.18*
