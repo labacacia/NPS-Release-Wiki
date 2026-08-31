@@ -145,8 +145,8 @@ The current bundle pins the **alpha.18** daemon set, built against `MessagePack 
 
 The two private trust-anchor daemons are excluded:
 
-- `nps-cloud-ca` → published separately to `innolotus/nps-cloud-ca`
-- `nps-ledger` → published separately to `innolotus/nps-ledger`
+- `nps-cloud-ca` → published separately to `labacacia/NPS-Cloud-CA`
+- `nps-ledger` → published separately to `labacacia/NPS-Ledger`
 
 Operators who need those daemons must have NPS Cloud access. See [Daemon NPS-Cloud-CA](Daemon-NPS-Cloud-CA) and [Daemon NPS-Ledger](Daemon-NPS-Ledger).
 

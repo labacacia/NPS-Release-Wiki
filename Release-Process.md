@@ -8,7 +8,7 @@ This page documents how an NPS suite release is prepared and published. The proc
 
 ## Single-Source-of-Truth Model
 
-NPS-Dev is the authoring source for everything. Distribution repos (`labacacia/NPS-sdk-py`, `labacacia/NPS-sdk-ts`, `labacacia/nps-daemons`, etc.) receive one-way sync pushes from NPS-Dev via the scripts in `tools/release/`. **Never make breaking changes directly in a distribution repo** — they will be overwritten on the next sync.
+NPS-Dev is the authoring source for everything. Distribution repos (`labacacia/NPS-SDK-Python`, `labacacia/NPS-SDK-TypeScript`, `labacacia/nps-daemons`, etc.) receive one-way sync pushes from NPS-Dev via the scripts in `tools/release/`. **Never make breaking changes directly in a distribution repo** — they will be overwritten on the next sync.
 
 ### The Single Oracle Rule
 
@@ -69,8 +69,8 @@ The full release follows these steps in order:
 9. **Run sync scripts** for each distribution repo:
    - `tools/release/sync-nps-daemons.sh` → `labacacia/nps-daemons` (+ Gitee mirror)
    - `tools/release/sync-nip-ca-server.sh` → `labacacia/nip-ca-server` (+ Gitee mirror)
-   - `tools/release/sync-nps-cloud-ca.sh` → `innolotus/nps-cloud-ca` (private)
-   - `tools/release/sync-nps-ledger.sh` → `innolotus/nps-ledger` (private)
+   - `tools/release/sync-nps-cloud-ca.sh` → `labacacia/NPS-Cloud-CA` (private)
+   - `tools/release/sync-nps-ledger.sh` → `labacacia/NPS-Ledger` (private)
    - SDK sync scripts for each of the six language SDK distribution repos
    - *(No longer run since alpha.18)* Ingress sync scripts for `NPS-mcp-ingress`, `NPS-a2a-ingress`, `NPS-grpc-ingress` — the three compat ingress repos were last published at v1.0.0-alpha.16 (an alpha.17 deprecation release was prepared but never published) and left the synchronized release train at alpha.18; they are marked `expected: skip` in `version.yaml`
 

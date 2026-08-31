@@ -271,7 +271,7 @@ Run one `nps-registry` instance per cluster, fronted by an internal load balance
 | Property | Value |
 |----------|-------|
 | **Port** | `17440` |
-| **Distribution** | `innolotus/nps-ledger` (PRIVATE — NPS Cloud) |
+| **Distribution** | `labacacia/NPS-Ledger` (PRIVATE — NPS Cloud) |
 | **Docker image** | Private registry |
 
 ### Purpose
@@ -326,7 +326,7 @@ For full operating instructions, see [Operator Reputation Log](Operator-Reputati
 | Property | Value |
 |----------|-------|
 | **Port** | `17435` |
-| **Distribution** | `innolotus/nps-cloud-ca` (PRIVATE — NPS Cloud) |
+| **Distribution** | `labacacia/NPS-Cloud-CA` (PRIVATE — NPS Cloud) |
 | **GA target** | 2027 Q1+ |
 
 ### Purpose

@@ -16,7 +16,7 @@ Thank you for your interest in contributing to the Neural Protocol Suite. This p
 - CI failures and release process problems
 - Documentation gaps
 
-**NEVER file bugs in satellite repos** (`labacacia/NPS-sdk-py`, `labacacia/NPS-sdk-ts`, `labacacia/NPS-sdk-java`, `labacacia/NPS-sdk-rust`, `labacacia/NPS-sdk-go`, `labacacia/NPS-sdk-dotnet`, `labacacia/nps-daemons`, `labacacia/nip-ca-server`, etc.). Those repos are distribution-only — they receive one-way sync pushes from NPS-Dev. Issues filed there will be closed as out-of-scope with a redirect to NPS-Dev.
+**NEVER file bugs in satellite repos** (`labacacia/NPS-SDK-Python`, `labacacia/NPS-SDK-TypeScript`, `labacacia/NPS-sdk-java`, `labacacia/NPS-sdk-rust`, `labacacia/NPS-sdk-go`, `labacacia/NPS-sdk-dotnet`, `labacacia/nps-daemons`, `labacacia/nip-ca-server`, etc.). Those repos are distribution-only — they receive one-way sync pushes from NPS-Dev. Issues filed there will be closed as out-of-scope with a redirect to NPS-Dev.
 
 The one exception: issues with the *demo content itself* (typos, unclear output, outdated results) may be filed against `labacacia/NPS-examples`. Protocol bugs found through a demo still go to NPS-Dev.
 

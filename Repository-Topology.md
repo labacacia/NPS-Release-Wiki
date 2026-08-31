@@ -15,8 +15,8 @@ labacacia/NPS-Dev  (source monorepo — all authoring happens here)
 │   (specs, RFCs, CRs)                    (GitHub Pages + spec distribution)
 │
 ├── impl/dotnet/ ────────────────────────► labacacia/NPS-sdk-dotnet
-├── impl/python/ ────────────────────────► labacacia/NPS-sdk-py
-├── impl/typescript/ ────────────────────► labacacia/NPS-sdk-ts
+├── impl/python/ ────────────────────────► labacacia/NPS-SDK-Python
+├── impl/typescript/ ────────────────────► labacacia/NPS-SDK-TypeScript
 ├── impl/java/ ──────────────────────────► labacacia/NPS-sdk-java
 ├── impl/rust/ ──────────────────────────► labacacia/NPS-sdk-rust
 ├── impl/go/ ────────────────────────────► labacacia/NPS-sdk-go
@@ -26,8 +26,8 @@ labacacia/NPS-Dev  (source monorepo — all authoring happens here)
 │   ├── nps-runner/    ──────────────────►├── nps-runner/
 │   ├── nps-ingress/   ──────────────────►├── nps-ingress/
 │   ├── nps-registry/  ──────────────────►└── nps-registry/
-│   ├── nps-cloud-ca/  ──────────────────► innolotus/nps-cloud-ca (private)
-│   └── nps-ledger/    ──────────────────► innolotus/nps-ledger (private)
+│   ├── nps-cloud-ca/  ──────────────────► labacacia/NPS-Cloud-CA (private)
+│   └── nps-ledger/    ──────────────────► labacacia/NPS-Ledger (private)
 │
 ├── tools/nip-ca-server/ ────────────────► labacacia/nip-ca-server
 │
@@ -95,8 +95,8 @@ Scripts live in `tools/release/` in NPS-Dev. Each script:
 |--------|------------------|------------|
 | `sync-nps-daemons.sh` | `tools/daemons/{npsd,nps-runner,nps-ingress,nps-registry}/` + `bundle-overlay/` | `labacacia/nps-daemons` → Gitee mirror |
 | `sync-nip-ca-server.sh` | `tools/nip-ca-server/` | `labacacia/nip-ca-server` → Gitee mirror |
-| `sync-nps-cloud-ca.sh` | `tools/daemons/nps-cloud-ca/` | `innolotus/nps-cloud-ca` (no Gitee) |
-| `sync-nps-ledger.sh` | `tools/daemons/nps-ledger/` | `innolotus/nps-ledger` (no Gitee) |
+| `sync-nps-cloud-ca.sh` | `tools/daemons/nps-cloud-ca/` | `labacacia/NPS-Cloud-CA` (no Gitee) |
+| `sync-nps-ledger.sh` | `tools/daemons/nps-ledger/` | `labacacia/NPS-Ledger` (no Gitee) |
 
 SDK sync scripts follow the same pattern but are per-language. The per-adapter ingress sync scripts follow the same pattern too, but are no longer run on the release train — the three ingress repos stopped at their last published release, v1.0.0-alpha.16.
 
