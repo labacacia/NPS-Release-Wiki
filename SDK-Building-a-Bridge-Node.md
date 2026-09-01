@@ -294,9 +294,9 @@ Three open-source reference implementations are available:
 
 | Repository | External protocol | Direction |
 |-----------|------------------|-----------|
-| `labacacia/NPS-mcp-ingress` | Model Context Protocol | external → NPS (ingress; NOT a Bridge Node but a useful reference for MCP wire format) |
-| `labacacia/NPS-a2a-ingress` | Google Agent-to-Agent | external → NPS (ingress) |
-| `labacacia/NPS-grpc-ingress` | gRPC | external → NPS (ingress) |
+| `labacacia/NPS-MCP-Ingress` | Model Context Protocol | external → NPS (ingress; NOT a Bridge Node but a useful reference for MCP wire format) |
+| `labacacia/NPS-A2A-Ingress` | Google Agent-to-Agent | external → NPS (ingress) |
+| `labacacia/NPS-gRPC-Ingress` | gRPC | external → NPS (ingress) |
 
 These ingress packages carry the inverse direction from a Bridge Node, but their protocol-translation logic (MCP tool schema mapping, A2A task state machine, gRPC proto-to-NPS frame mapping) is the most complete reference for each protocol's quirks. Study the translation layer and adapt it for the outbound path.
 

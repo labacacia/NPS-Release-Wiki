@@ -3,14 +3,14 @@
 **Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** NPS Cloud subscribers and operators
-> **Distribution note:** `innolotus/nps-cloud-ca` is a **private** repository. This page documents only the protocol-visible interface. Internal product and billing details are in the private repo.
+> **Distribution note:** `labacacia/NPS-Cloud-CA` is a **private** repository. This page documents only the protocol-visible interface. Internal product and billing details are in the private repo.
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 `nps-cloud-ca` is the NPS Cloud Certificate Authority — the multi-tenant, billing-aware NID CA operated by INNO LOTUS PTY LTD for NPS Cloud subscribers. It issues NID certificates for agents and nodes across organisations, handles CRL/OCSP, and integrates with the full ACME workflow defined in NPS-RFC-0002.
 
 - **Source:** `NPS-Dev/tools/daemons/nps-cloud-ca/`
-- **Distribution:** `innolotus/nps-cloud-ca` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `innolotus/nps-cloud-ca:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; subscribers with repository access build it from the repo `Dockerfile` (`docker build -t innolotus/nps-cloud-ca:1.0.0-alpha.18 .`).
+- **Distribution:** `labacacia/NPS-Cloud-CA` — **PRIVATE** (NPS Cloud product)
+- **Docker image:** `labacacia/nps-cloud-ca:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; subscribers with repository access build it from the repo `Dockerfile` (`docker build -t labacacia/nps-cloud-ca:1.0.0-alpha.18 .`).
 - **Default port:** `:17435` (NIP optional-dedicated per NPS-3 §1)
 - **Layer:** L3
 - **Timeline:** Ships publicly with NPS Cloud GA, planned 2027 Q1+
@@ -102,7 +102,7 @@ During the Phase 1 skeleton period, the health endpoint returns `200 ok` while i
 
 On `SIGTERM` the daemon performs a graceful shutdown with a 30 s drain window before exiting.
 
-Full configuration (tenant database, billing integration, CA key management) is documented in the private `innolotus/nps-cloud-ca` repository.
+Full configuration (tenant database, billing integration, CA key management) is documented in the private `labacacia/NPS-Cloud-CA` repository.
 
 ---
 

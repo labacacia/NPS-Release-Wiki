@@ -14,29 +14,29 @@ labacacia/NPS-Dev  (source monorepo — all authoring happens here)
 ├── spec/ ──────────────────────────────► labacacia/NPS-Release
 │   (specs, RFCs, CRs)                    (GitHub Pages + spec distribution)
 │
-├── impl/dotnet/ ────────────────────────► labacacia/NPS-sdk-dotnet
-├── impl/python/ ────────────────────────► labacacia/NPS-sdk-py
-├── impl/typescript/ ────────────────────► labacacia/NPS-sdk-ts
-├── impl/java/ ──────────────────────────► labacacia/NPS-sdk-java
-├── impl/rust/ ──────────────────────────► labacacia/NPS-sdk-rust
-├── impl/go/ ────────────────────────────► labacacia/NPS-sdk-go
+├── impl/dotnet/ ────────────────────────► labacacia/NPS-SDK-DotNet
+├── impl/python/ ────────────────────────► labacacia/NPS-SDK-Python
+├── impl/typescript/ ────────────────────► labacacia/NPS-SDK-TypeScript
+├── impl/java/ ──────────────────────────► labacacia/NPS-SDK-Java
+├── impl/rust/ ──────────────────────────► labacacia/NPS-SDK-Rust
+├── impl/go/ ────────────────────────────► labacacia/NPS-SDK-Go
 │
-├── tools/daemons/                        ┌─ labacacia/nps-daemons (bundle, public)
+├── tools/daemons/                        ┌─ labacacia/NPS-Daemons (bundle, public)
 │   ├── npsd/          ──────────────────►├── npsd/
 │   ├── nps-runner/    ──────────────────►├── nps-runner/
 │   ├── nps-ingress/   ──────────────────►├── nps-ingress/
 │   ├── nps-registry/  ──────────────────►└── nps-registry/
-│   ├── nps-cloud-ca/  ──────────────────► innolotus/nps-cloud-ca (private)
-│   └── nps-ledger/    ──────────────────► innolotus/nps-ledger (private)
+│   ├── nps-cloud-ca/  ──────────────────► labacacia/NPS-Cloud-CA (private)
+│   └── nps-ledger/    ──────────────────► labacacia/NPS-Ledger (private)
 │
-├── tools/nip-ca-server/ ────────────────► labacacia/nip-ca-server
+├── tools/nip-ca-server/ ────────────────► labacacia/NIP-CA-Server
 │
-├── compat/mcp-ingress/ ─────────────────► labacacia/NPS-mcp-ingress
-├── compat/a2a-ingress/ ─────────────────► labacacia/NPS-a2a-ingress
-└── compat/grpc-ingress/ ────────────────► labacacia/NPS-grpc-ingress
+├── compat/mcp-ingress/ ─────────────────► labacacia/NPS-MCP-Ingress
+├── compat/a2a-ingress/ ─────────────────► labacacia/NPS-A2A-Ingress
+└── compat/grpc-ingress/ ────────────────► labacacia/NPS-gRPC-Ingress
 
 orilynn-studio/nps-orchestrator  (independent consumer / example — not synced from NPS-Dev)
-labacacia/NPS-examples           (curated demos — source in NPS-Dev demos/)
+labacacia/NPS-Examples           (curated demos — source in NPS-Dev demos/)
 ```
 
 All arrows are one-way syncs: NPS-Dev → distribution repo. Distribution repos are never edited directly; their next state comes from the next sync run.
@@ -49,20 +49,20 @@ All arrows are one-way syncs: NPS-Dev → distribution repo. Distribution repos 
 |------|-------------|------|------------|----------------|
 | `NPS-Dev` | labacacia | Source monorepo — all spec authoring, SDK development, tooling | Public | YES — all source lives here |
 | `NPS-Release` | labacacia | Spec distribution + GitHub Pages docs site | Public | Specs only (synced from NPS-Dev `spec/`) |
-| `NPS-sdk-dotnet` | labacacia | .NET SDK distribution | Public | NO — synced from NPS-Dev `impl/dotnet/` |
-| `NPS-sdk-py` | labacacia | Python SDK distribution | Public | NO — synced from NPS-Dev `impl/python/` |
-| `NPS-sdk-ts` | labacacia | TypeScript SDK distribution | Public | NO — synced from NPS-Dev `impl/typescript/` |
-| `NPS-sdk-java` | labacacia | Java SDK distribution | Public | NO — synced from NPS-Dev `impl/java/` |
-| `NPS-sdk-rust` | labacacia | Rust SDK distribution | Public | NO — synced from NPS-Dev `impl/rust/` |
-| `NPS-sdk-go` | labacacia | Go SDK distribution | Public | NO — synced from NPS-Dev `impl/go/` |
-| `nps-daemons` | labacacia | OSS daemon bundle (npsd + nps-runner + nps-ingress + nps-registry) | Public | NO — synced from NPS-Dev `tools/daemons/` (4 OSS daemons + bundle-overlay) |
-| `nip-ca-server` | labacacia | NIP CA Server standalone distribution | Public | NO — synced from NPS-Dev `tools/nip-ca-server/` |
-| `NPS-mcp-ingress` | labacacia | MCP Ingress adapter distribution (`LabAcacia.McpIngress`) | Public | NO — synced from NPS-Dev `compat/mcp-ingress/` |
-| `NPS-a2a-ingress` | labacacia | A2A Ingress adapter distribution (`LabAcacia.A2aIngress`) | Public | NO — synced from NPS-Dev `compat/a2a-ingress/` |
-| `NPS-grpc-ingress` | labacacia | gRPC Ingress adapter distribution (`LabAcacia.GrpcIngress`) | Public | NO — synced from NPS-Dev `compat/grpc-ingress/` |
-| `NPS-examples` | labacacia | Curated runnable demos (`nwp-graph-walk`, `ingress-playground`, `cross-sdk-interop`) | Public | NO — mirrors NPS-Dev `demos/`; tagged independently |
-| `nps-cloud-ca` | innolotus | NPS Cloud CA daemon (private — 2027 Q1+ target) | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-cloud-ca/` |
-| `nps-ledger` | innolotus | K-of-N audit + reputation log daemon | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-ledger/` |
+| `NPS-SDK-DotNet` | labacacia | .NET SDK distribution | Public | NO — synced from NPS-Dev `impl/dotnet/` |
+| `NPS-SDK-Python` | labacacia | Python SDK distribution | Public | NO — synced from NPS-Dev `impl/python/` |
+| `NPS-SDK-TypeScript` | labacacia | TypeScript SDK distribution | Public | NO — synced from NPS-Dev `impl/typescript/` |
+| `NPS-SDK-Java` | labacacia | Java SDK distribution | Public | NO — synced from NPS-Dev `impl/java/` |
+| `NPS-SDK-Rust` | labacacia | Rust SDK distribution | Public | NO — synced from NPS-Dev `impl/rust/` |
+| `NPS-SDK-Go` | labacacia | Go SDK distribution | Public | NO — synced from NPS-Dev `impl/go/` |
+| `NPS-Daemons` | labacacia | OSS daemon bundle (npsd + nps-runner + nps-ingress + nps-registry) | Public | NO — synced from NPS-Dev `tools/daemons/` (4 OSS daemons + bundle-overlay) |
+| `NIP-CA-Server` | labacacia | NIP CA Server standalone distribution | Public | NO — synced from NPS-Dev `tools/nip-ca-server/` |
+| `NPS-MCP-Ingress` | labacacia | MCP Ingress adapter distribution (`LabAcacia.McpIngress`) | Public | NO — synced from NPS-Dev `compat/mcp-ingress/` |
+| `NPS-A2A-Ingress` | labacacia | A2A Ingress adapter distribution (`LabAcacia.A2aIngress`) | Public | NO — synced from NPS-Dev `compat/a2a-ingress/` |
+| `NPS-gRPC-Ingress` | labacacia | gRPC Ingress adapter distribution (`LabAcacia.GrpcIngress`) | Public | NO — synced from NPS-Dev `compat/grpc-ingress/` |
+| `NPS-Examples` | labacacia | Curated runnable demos (`nwp-graph-walk`, `ingress-playground`, `cross-sdk-interop`) | Public | NO — mirrors NPS-Dev `demos/`; tagged independently |
+| `NPS-Cloud-CA` | labacacia | NPS Cloud CA daemon (private — 2027 Q1+ target) | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-cloud-ca/` |
+| `NPS-Ledger` | labacacia | K-of-N audit + reputation log daemon | **Private** | NO — synced from NPS-Dev `tools/daemons/nps-ledger/` |
 | `nps-orchestrator` | orilynn-studio | Consumer / example orchestrator service | Public | Independent — not synced from NPS-Dev; tracked by `version.yaml` for version parity only |
 
 > **Ingress packages have left the suite train.** The three ingress adapter packages (`LabAcacia.McpIngress`, `LabAcacia.A2aIngress`, `LabAcacia.GrpcIngress`) were **last published at v1.0.0-alpha.16** (2026-07-23). An alpha.17 deprecation release was prepared but never tagged or published, and the packages were removed from the synchronized release train as of **alpha.18** (`expected: skip` in `version.yaml`). Their maintained replacement is the inbound surface of `LabAcacia.NPS.NWP.Bridge`.
@@ -77,8 +77,8 @@ These repos exist as public stubs with README placeholder files. CI tracks them 
 |------|-------------|-----------------|
 | `NPS-Studio` | labacacia | Frame-stream visualizer / debugger (NPS-Dev alpha.6 queue) |
 | `NPS-NWP-Manager` | labacacia | Web-based NWM authoring and node management tool — now ships a runnable **v0.1 stub** (`GET /health`, `GET /v1/nodes`) as of alpha.13 |
-| `NPS-sdk-cpp` | labacacia | C++ SDK |
-| `NPS-sdk-php` | labacacia | PHP SDK |
+| `NPS-SDK-CPP` | labacacia | C++ SDK |
+| `NPS-SDK-PHP` | labacacia | PHP SDK |
 
 ---
 
@@ -93,10 +93,10 @@ Scripts live in `tools/release/` in NPS-Dev. Each script:
 
 | Script | Source in NPS-Dev | Target repo |
 |--------|------------------|------------|
-| `sync-nps-daemons.sh` | `tools/daemons/{npsd,nps-runner,nps-ingress,nps-registry}/` + `bundle-overlay/` | `labacacia/nps-daemons` → Gitee mirror |
-| `sync-nip-ca-server.sh` | `tools/nip-ca-server/` | `labacacia/nip-ca-server` → Gitee mirror |
-| `sync-nps-cloud-ca.sh` | `tools/daemons/nps-cloud-ca/` | `innolotus/nps-cloud-ca` (no Gitee) |
-| `sync-nps-ledger.sh` | `tools/daemons/nps-ledger/` | `innolotus/nps-ledger` (no Gitee) |
+| `sync-nps-daemons.sh` | `tools/daemons/{npsd,nps-runner,nps-ingress,nps-registry}/` + `bundle-overlay/` | `labacacia/NPS-Daemons` → Gitee mirror |
+| `sync-nip-ca-server.sh` | `tools/nip-ca-server/` | `labacacia/NIP-CA-Server` → Gitee mirror |
+| `sync-nps-cloud-ca.sh` | `tools/daemons/nps-cloud-ca/` | `labacacia/NPS-Cloud-CA` (no Gitee) |
+| `sync-nps-ledger.sh` | `tools/daemons/nps-ledger/` | `labacacia/NPS-Ledger` (no Gitee) |
 
 SDK sync scripts follow the same pattern but are per-language. The per-adapter ingress sync scripts follow the same pattern too, but are no longer run on the release train — the three ingress repos stopped at their last published release, v1.0.0-alpha.16.
 

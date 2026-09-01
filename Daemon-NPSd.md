@@ -8,7 +8,7 @@
 `npsd` is the host-local NPS protocol daemon — the L1 state host that every other NPS daemon and every local agent talks to first. It holds the host's root Ed25519 keypair, issues sub-NIDs for local agents on demand, maintains a per-NID inbox queue, and exposes the daemon's own Neural Web Manifest. Public Internet ingress is handled by [Daemon NPS-Ingress](Daemon-NPS-Ingress); `npsd` itself binds loopback only.
 
 - **Source:** `NPS-Dev/tools/daemons/npsd/`
-- **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
+- **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
 - **Docker image:** `labacacia/npsd:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `npsd/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `127.0.0.1:17433` (loopback only — never expose directly to the Internet)
 - **Layer:** L1

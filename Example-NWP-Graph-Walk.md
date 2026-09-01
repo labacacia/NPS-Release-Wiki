@@ -2,7 +2,7 @@
 
 **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
-**Repo:** `labacacia/NPS-examples`, directory: `nwp-graph-walk/` (source in NPS-Dev `demos/nwp-graph-walk/`)
+**Repo:** `labacacia/NPS-Examples`, directory: `nwp-graph-walk/` (source in NPS-Dev `demos/nwp-graph-walk/`)
 
 This demo demonstrates NWP Complex Node graph traversal — how an agent issues one request and receives aggregated results from a multi-hop graph of nodes, with server-enforced depth control and cycle detection.
 

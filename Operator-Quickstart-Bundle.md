@@ -16,7 +16,7 @@ The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-r
 > **The project does not publish prebuilt artifacts.** No container images are pushed to
 > Docker Hub, GHCR, or any other registry, and the release pages carry no native
 > installers. Both options below build the daemons from source out of the
-> [`labacacia/nps-daemons`](https://github.com/labacacia/nps-daemons) repository. Option A is
+> [`labacacia/NPS-Daemons`](https://github.com/labacacia/NPS-Daemons) repository. Option A is
 > the supported path: `docker compose up --build` compiles each daemon from its `Dockerfile`
 > and tags the result locally.
 
@@ -27,7 +27,7 @@ The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-r
 ### Step 1: Clone the bundle
 
 ```bash
-git clone https://github.com/labacacia/nps-daemons && cd nps-daemons
+git clone https://github.com/labacacia/NPS-Daemons && cd nps-daemons
 ```
 
 The repository root contains:
@@ -283,7 +283,7 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
 Native packages are self-contained binaries — no Docker, no .NET runtime installation required. Each package registers the daemon as a system service that starts on boot.
 
 > **⚠️ No native packages are published for the current suite train.** The
-> [nps-daemons releases page](https://github.com/labacacia/nps-daemons/releases) attaches **no**
+> [nps-daemons releases page](https://github.com/labacacia/NPS-Daemons/releases) attaches **no**
 > `.deb` / `.rpm` / `.msi` assets to v1.0.0-alpha.18 (nor to alpha.15 / alpha.16). The last
 > release that carried native installers was **v1.0.0-alpha.5**, and those predate the
 > `nps-gateway` → `nps-ingress` rename, so they are not usable for a current deployment. No
@@ -294,7 +294,7 @@ Native packages are self-contained binaries — no Docker, no .NET runtime insta
 > the binaries yourself from the daemon sources:
 >
 > ```bash
-> git clone https://github.com/labacacia/nps-daemons && cd nps-daemons
+> git clone https://github.com/labacacia/NPS-Daemons && cd nps-daemons
 > git checkout v1.0.0-alpha.18
 > for d in npsd nps-runner nps-ingress nps-registry; do
 >     dotnet publish "$d" -c Release -r linux-x64 --self-contained -o "out/$d"

@@ -2,7 +2,7 @@
 
 **Status:** ✅ Reviewed for v1.0.0-alpha.18
 
-**Repo:** `labacacia/NPS-examples`, directory: `cross-sdk-interop/` (source in NPS-Dev `demos/cross-sdk-interop/`)
+**Repo:** `labacacia/NPS-Examples`, directory: `cross-sdk-interop/` (source in NPS-Dev `demos/cross-sdk-interop/`)
 
 This demo catches behavioral drift between SDKs that per-SDK unit tests cannot catch: encoding byte-for-byte parity, edge-case input handling, and empty-string semantics. A shell script starts an NWP server, fans out calls from multiple language clients, and diffs the outputs.
 

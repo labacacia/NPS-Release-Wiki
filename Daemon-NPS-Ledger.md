@@ -3,16 +3,16 @@
 **Status:** ✅ Latest published package — v1.0.0-alpha.18
 
 > **Audience:** Operators running a reputation log instance; AaaS operators peering with one
-> **Distribution note:** `innolotus/nps-ledger` is a **private** repository. This page documents the protocol surface only.
+> **Distribution note:** `labacacia/NPS-Ledger` is a **private** repository. This page documents the protocol surface only.
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 `nps-ledger` is the NID reputation log daemon, implementing [NPS-RFC-0004](https://github.com/labacacia/NPS-Release/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md). It is a Certificate-Transparency-style append-only log that records NID reputation events (rate-limit violations, revocations, policy breaches, and similar incidents). Auditors can verify entries are included in the log via RFC 9162 Merkle inclusion proofs.
 
-`nps-ledger` is part of the NPS Cloud trust-anchor layer. It ships as a private binary in the `innolotus` organization and is available with NPS Cloud. For the OSS layer, see [Daemon NIP-CA-Server](Daemon-NIP-CA-Server).
+`nps-ledger` is part of the NPS Cloud trust-anchor layer. It ships from a private repository in the `labacacia` organization and is available with NPS Cloud. For the OSS layer, see [Daemon NIP-CA-Server](Daemon-NIP-CA-Server).
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ledger/`
-- **Distribution:** `innolotus/nps-ledger` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `innolotus/nps-ledger:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; operators with repository access build it from the repo `Dockerfile` (`docker build -t innolotus/nps-ledger:1.0.0-alpha.18 .`).
+- **Distribution:** `labacacia/NPS-Ledger` — **PRIVATE** (NPS Cloud product)
+- **Docker image:** `labacacia/nps-ledger:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; operators with repository access build it from the repo `Dockerfile` (`docker build -t labacacia/nps-ledger:1.0.0-alpha.18 .`).
 - **Default port:** `:17440`
 - **Layer:** L3
 

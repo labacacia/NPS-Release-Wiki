@@ -8,10 +8,10 @@
 `nip-ca-server` is the open-source reference implementation of the NIP Certificate Authority role. It is a single-binary ASP.NET Core service that issues, renews, and revokes Ed25519 NID certificates for NPS Agents and Nodes, per [NPS-3 NIP §8](https://github.com/labacacia/NPS-Release/blob/main/spec/NPS-3-NIP.md). This is the CA option available today for any self-hosted NPS deployment.
 
 - **Source:** `NPS-Dev/tools/nip-ca-server/` (lives outside `tools/daemons/` — it has its own distribution repo)
-- **Distribution:** `labacacia/nip-ca-server` — **PUBLIC**
+- **Distribution:** `labacacia/NIP-CA-Server` — **PUBLIC**
 - **Docker image:** none published. The repository's `docker-compose.yml` declares a `build:` context for the `nip-ca` service, so the image is compiled locally from the repo `Dockerfile` at `docker compose up --build` time. There is no image on GHCR or Docker Hub to pull.
 - **Default port:** `:17435` (plain HTTP; TLS terminated externally)
-- **Note:** Not part of the `labacacia/nps-daemons` bundle — distributed separately
+- **Note:** Not part of the `labacacia/NPS-Daemons` bundle — distributed separately
 
 ---
 
@@ -30,7 +30,7 @@
 ## Quick start (Docker)
 
 ```bash
-git clone https://github.com/labacacia/nip-ca-server.git
+git clone https://github.com/labacacia/NIP-CA-Server.git
 cd nip-ca-server
 
 cat > .env <<'EOF'

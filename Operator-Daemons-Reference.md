@@ -4,7 +4,7 @@
 > **Status:** ✅ Latest published packages — v1.0.0-alpha.18
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/nps-daemons` bundle; two additional daemons are private to the NPS Cloud platform.
+This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/NPS-Daemons` bundle; two additional daemons are private to the NPS Cloud platform.
 
 > **Docker images are built locally, never pulled.** The project publishes **no** container
 > images — not to Docker Hub, not to GHCR, not to any private registry. The `Docker image`
@@ -30,7 +30,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 | Property | Value |
 |----------|-------|
 | **Port** | `17433` (default, loopback) |
-| **Distribution** | `labacacia/nps-daemons` (public) |
+| **Distribution** | `labacacia/NPS-Daemons` (public) |
 | **Docker image** | `labacacia/npsd:{suite_version}` (local build tag) |
 | **Layer** | L1 — host-local NCP/NIP/NDP/NWP |
 
@@ -109,7 +109,7 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 | Property | Value |
 |----------|-------|
 | **Port** | None (connects outbound to npsd) |
-| **Distribution** | `labacacia/nps-daemons` (public, bundled with npsd) |
+| **Distribution** | `labacacia/NPS-Daemons` (public, bundled with npsd) |
 | **Docker image** | `labacacia/nps-runner:{suite_version}` (local build tag) |
 
 ### Purpose
@@ -173,7 +173,7 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 | Property | Value |
 |----------|-------|
 | **Port** | `8080` (HTTP; `443` in production via reverse proxy) |
-| **Distribution** | `labacacia/nps-daemons` (public) |
+| **Distribution** | `labacacia/NPS-Daemons` (public) |
 | **Docker image** | `labacacia/nps-ingress:{suite_version}` (local build tag) |
 
 ### Purpose
@@ -217,7 +217,7 @@ The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or 
 | Property | Value |
 |----------|-------|
 | **Port** | `17436` |
-| **Distribution** | `labacacia/nps-daemons` (public) |
+| **Distribution** | `labacacia/NPS-Daemons` (public) |
 | **Docker image** | `labacacia/nps-registry:{suite_version}` (local build tag) |
 
 ### Purpose
@@ -271,7 +271,7 @@ Run one `nps-registry` instance per cluster, fronted by an internal load balance
 | Property | Value |
 |----------|-------|
 | **Port** | `17440` |
-| **Distribution** | `innolotus/nps-ledger` (PRIVATE — NPS Cloud) |
+| **Distribution** | `labacacia/NPS-Ledger` (PRIVATE — NPS Cloud) |
 | **Docker image** | Private registry |
 
 ### Purpose
@@ -326,7 +326,7 @@ For full operating instructions, see [Operator Reputation Log](Operator-Reputati
 | Property | Value |
 |----------|-------|
 | **Port** | `17435` |
-| **Distribution** | `innolotus/nps-cloud-ca` (PRIVATE — NPS Cloud) |
+| **Distribution** | `labacacia/NPS-Cloud-CA` (PRIVATE — NPS Cloud) |
 | **GA target** | 2027 Q1+ |
 
 ### Purpose
@@ -342,8 +342,8 @@ For full operating instructions, see [Operator Reputation Log](Operator-Reputati
 | Property | Value |
 |----------|-------|
 | **Port** | `17435` (public CA, default via Docker Compose); `17436` (management — `/metrics`, `/healthz`, `/readyz`) |
-| **Distribution** | `labacacia/nip-ca-server` (PUBLIC) |
-| **Repository** | [github.com/labacacia/nip-ca-server](https://github.com/labacacia/nip-ca-server) |
+| **Distribution** | `labacacia/NIP-CA-Server` (PUBLIC) |
+| **Repository** | [github.com/labacacia/NIP-CA-Server](https://github.com/labacacia/NIP-CA-Server) |
 | **Docker image** | Built locally from the repo `Dockerfile` — none published to GHCR or Docker Hub |
 
 ### Purpose
@@ -398,7 +398,7 @@ Write endpoints require `Authorization: Bearer <token>` when `NIPCA__OPERATORAPI
 ### Quick start
 
 ```bash
-git clone https://github.com/labacacia/nip-ca-server.git && cd nip-ca-server
+git clone https://github.com/labacacia/NIP-CA-Server.git && cd nip-ca-server
 
 cat > .env <<'EOF'
 NIPCA__CANID=urn:nps:org:ca.example.com
@@ -422,7 +422,7 @@ pull. (The `postgres:16-alpine` sidecar is a stock upstream image and is pulled 
 |----------|-------|
 | **Type** | Command-line tool (no long-running port) |
 | **Version** | v0.2 |
-| **Distribution** | `labacacia/nps-daemons` tooling (PUBLIC) |
+| **Distribution** | `labacacia/NPS-Daemons` tooling (PUBLIC) |
 
 ### Purpose
 

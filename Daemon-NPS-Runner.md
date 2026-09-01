@@ -8,7 +8,7 @@
 `nps-runner` is the NPS FaaS task executor. It watches the local [Daemon NPSd](Daemon-NPSd) inbox for JSON spawn-spec messages, spawns worker subprocesses on demand, and manages their full lifecycle: stdout/stderr capture, idle-timeout and max-runtime enforcement, concurrency cap, and completion notifications back into the inbox.
 
 - **Source:** `NPS-Dev/tools/daemons/nps-runner/`
-- **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
+- **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
 - **Docker image:** `labacacia/nps-runner:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `nps-runner/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Exposed port:** none for protocol traffic — `nps-runner` communicates entirely through the `npsd` inbox. As of alpha.13 it exposes operability endpoints (`/healthz`, `/readyz`, `/metrics`) on a local management port for probes and scraping.
 - **Layer:** L1
@@ -192,7 +192,7 @@ Resource profile, failure isolation, and trust boundary all differ significantly
 - `nps-runner` executes user-supplied commands; `npsd` must not have a permission surface for that.
 - Horizontal scaling is independent — you may run more runners on a machine without touching `npsd`.
 
-See `docs/daemons/architecture.md` in the `labacacia/nps-daemons` distribution for the full rationale.
+See `docs/daemons/architecture.md` in the `labacacia/NPS-Daemons` distribution for the full rationale.
 
 ---
 

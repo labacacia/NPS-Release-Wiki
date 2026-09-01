@@ -7,7 +7,7 @@
 The NPS reputation log is Certificate Transparency for AI agents — an append-only, signed, Merkle-tree-backed log of NID behavioral incidents. Any party (AaaS gateway, CA, auditor) can publish signed observations about a NID, and any node can query the log before admitting an agent. Multiple independent log operators are expected; nodes choose which logs to trust.
 
 **Spec**: `spec/rfcs/NPS-RFC-0004-nid-reputation-log.md` (Status: Accepted; Phase 3 landed in alpha.5)
-**Reference implementation**: `nps-ledger` (private; `innolotus/nps-ledger`)
+**Reference implementation**: `nps-ledger` (private; `labacacia/NPS-Ledger`)
 
 ---
 
@@ -257,15 +257,15 @@ No `nps-ledger` container image is published to any registry, so build one from 
 repository first and run your local tag:
 
 ```bash
-# Build once from the innolotus/nps-ledger checkout
+# Build once from the labacacia/NPS-Ledger checkout
 git checkout v1.0.0-alpha.18
-docker build -t innolotus/nps-ledger:1.0.0-alpha.18 .
+docker build -t labacacia/nps-ledger:1.0.0-alpha.18 .
 
 # Then run with the gossip peers configured
 docker run \
   -e NPSLEDGER_PEERS=log2.example.com:17440,log3.example.com:17440 \
   -e NPSLEDGER_GOSSIP_INTERVAL_S=30 \
-  innolotus/nps-ledger:1.0.0-alpha.18
+  labacacia/nps-ledger:1.0.0-alpha.18
 ```
 
 Peer operators must reciprocally add your endpoint to their `NPSLEDGER_PEERS` list. STH gossip is bidirectional.

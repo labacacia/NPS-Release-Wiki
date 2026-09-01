@@ -8,7 +8,7 @@
 `nps-ingress` is the public Internet ingress daemon for the NPS suite. It accepts NCP-over-HTTP (and, in production, NCP-over-TLS) connections from external clients, terminates TLS, performs rate limiting and authentication, and forwards frames upstream to [Daemon NPSd](Daemon-NPSd) at port 17433. Unlike `npsd` — which binds loopback only — `nps-ingress` is intentionally Internet-facing.
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ingress/`
-- **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
+- **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
 - **Docker image:** `labacacia/nps-ingress:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `nps-ingress/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `:8080` (HTTP). Production deployments terminate TLS on `:443` via a reverse proxy (nginx, Caddy, or Traefik) in front of this daemon.
 - **Layer:** L2

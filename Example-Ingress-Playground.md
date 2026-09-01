@@ -2,7 +2,7 @@
 
 **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
 
-**Repo:** `labacacia/NPS-examples`, directory: `ingress-playground/` (source in NPS-Dev `demos/ingress-playground/`)
+**Repo:** `labacacia/NPS-Examples`, directory: `ingress-playground/` (source in NPS-Dev `demos/ingress-playground/`)
 
 This demo shows three ingress protocols — MCP, A2A, and gRPC — each translating external requests into NPS frames and forwarding them to the same upstream NWP Action Node. One process, one business function, three simultaneous protocol facades.
 

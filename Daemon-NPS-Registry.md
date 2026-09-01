@@ -8,7 +8,7 @@
 `nps-registry` is the cross-machine NDP (Neural Discovery Protocol, NPS-4 **v0.12**) registry for an NPS cluster. Where `npsd` knows only about its own host-local sessions, `nps-registry` aggregates AnnounceFrame records from multiple machines and answers NDP `Resolve` and `Graph` queries cluster-wide. It is the topology store that Anchor Node middleware queries to serve NWP `topology.snapshot` and `topology.stream` requests, and it is required for AaaS L2 conformance requirement L2-08.
 
 - **Source:** `NPS-Dev/tools/daemons/nps-registry/`
-- **Distribution:** `labacacia/nps-daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
+- **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
 - **Docker image:** `labacacia/nps-registry:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `nps-registry/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `:17436` (NDP optional-dedicated port per NPS-4)
 - **Layer:** L2
