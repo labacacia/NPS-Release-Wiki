@@ -2,6 +2,12 @@
 
 **Status:** ✅ Latest published package — v1.0.0-alpha.18
 
+> **Alpha.19 source candidate (not published):** the SQLite registry retains
+> Announce/Resolve/Graph, highest-epoch Anchor selection and federated cluster
+> tuple ingest, and interoperates with npsd managed-agent signed announcements.
+> Announce signature/IdentFrame cryptographic validation and replicated-database
+> HA remain explicit non-claims. See [Alpha.19 Current Status](Alpha19-Current-Status).
+
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 

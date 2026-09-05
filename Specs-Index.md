@@ -1,6 +1,6 @@
 # Specs Index
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18
+**Status:** ✅ Released alpha.18 index; 🚧 alpha.19 source candidate reconciled 2026-09-05
 
 This page is an index of all NPS protocol specifications, shared reference documents, RFCs, and CRs. It is a navigation aid only.
 
@@ -8,9 +8,26 @@ This page is an index of all NPS protocol specifications, shared reference docum
 
 The canonical spec files are in the `spec/` directory of [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) (distribution) and their source in [`labacacia/NPS-Dev`](https://github.com/labacacia/NPS-Dev/tree/main/spec) (authoring). Both are identical for released versions.
 
+For unreleased source truth, see [Alpha.19 Current Status](Alpha19-Current-Status).
+NPS-Release remains the normative source for the published alpha.18 suite until
+alpha.19 publication is separately approved.
+
+## Alpha.19 Source Candidate
+
+| Spec | Version | Status | Candidate focus |
+|---|---|---|---|
+| NPS-1 NCP | **0.12** | Proposed | Runtime keepalive/closure and QUIC/backpressure policy |
+| NPS-2 NWP | **0.22** | Proposed | NWM normalization and renewable subscription metadata |
+| NPS-3 NIP | **0.15** | Proposed | Renewal and live-revocation freshness/fail-closed policy |
+| NPS-4 NDP | **0.13** | Proposed | Durable sequence/epoch recovery and partition fencing |
+| NPS-5 NOP | **0.10** | Proposed | Bounded replay/TTL/eviction and aggregate fault behavior |
+
+The candidate shared registry is `frame-registry.yaml` 0.15 and error codes are
+1.10. These versions are authoring state, not a release announcement.
+
 ---
 
-## Protocol Specifications
+## Released Alpha.18 Protocol Specifications
 
 | Spec | Version | Status | Date | What it covers |
 |------|---------|--------|------|----------------|
@@ -53,12 +70,12 @@ Source: `spec/rfcs/` in NPS-Dev.
 
 | RFC | Title | Status | Alpha version landed |
 |-----|-------|--------|---------------------|
-| [RFC-0001](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.md) | Add NCP connection preamble for native-mode traffic identification | Accepted (Phase 1 active) | alpha.3 |
-| [RFC-0002](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0002-x509-acme-nid-certs.md) | Adopt X.509 + ACME for NID certificates | Proposed — EXPERIMENTAL (blocked on IANA PEN receipt) | — |
-| [RFC-0003](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0003-agent-identity-assurance-levels.md) | Three-tier Agent identity assurance levels for anti-scraping / trust gating | Accepted, Phase 3 gated (21-day notice required before activation) | Phase 1–2 in alpha.5 |
-| [RFC-0004](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md) | Append-only NID reputation log (Certificate Transparency for Agents) | Accepted, Phase 3 active | Phase 3 landed in alpha.5 |
-| [RFC-0005](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0005-reputation-policy-enforcement.md) | Reputation Policy Enforcement | Draft | — |
-| [RFC-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0006-ncp-native-transport.md) | NCP native-mode transport (TCP length-prefix framing) | Draft | Phase 1 in alpha.11 (.NET) |
+| [RFC-0001](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0001-ncp-connection-preamble.md) | Add NCP connection preamble for native-mode traffic identification | **Active** | alpha.3; six-SDK Phase 2 helper/test evidence current |
+| [RFC-0002](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0002-x509-acme-nid-certs.md) | Adopt X.509 + ACME for NID certificates | **Active** | PEN 65715 assigned; six-SDK X.509 + `agent-01` evidence current |
+| [RFC-0003](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0003-agent-identity-assurance-levels.md) | Three-tier Agent identity assurance levels for anti-scraping / trust gating | **Active** | Phase 1–2 current; Phase-3 flag day remains future |
+| [RFC-0004](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0004-nid-reputation-log.md) | Append-only NID reputation log (Certificate Transparency for Agents) | **Active** | Six-SDK client/proof behavior; .NET + `nps-ledger` reference operator |
+| [RFC-0005](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0005-reputation-policy-enforcement.md) | Reputation Policy Enforcement | **Active** | Current allow/process-local/fail-most-restrictive defaults |
+| [RFC-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/rfcs/NPS-RFC-0006-ncp-native-transport.md) | NCP native-mode transport (TCP length-prefix framing) | **Accepted** | Six-SDK source plus candidate daemon evidence; not silently promoted to Active |
 
 See [RFC Process](RFC-Process) for the full lifecycle description and how to open a new RFC.
 
@@ -75,9 +92,9 @@ Source: `spec/cr/` in NPS-Dev. CRs are pre-1.0 planning artifacts; after v1.0.0 
 | [CR-0003](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0003-orchestrator-group-session-nids.md) | Group / session NIDs (`group-` / `session-` prefixes, `IdentFrame.lineage`) | Implemented | NIP v0.8 |
 | [CR-0004](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0004-pen-wirein.md) | IANA PEN 65715 OID wire-in (replaces provisional `…99999` arc) | Implemented | NIP v0.8 (PEN assigned 2026-05-08) |
 | [CR-0005](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0005-nip-ca-ra-model.md) | NIP-CA registration-authority model (bootstrap tokens, pending registrations) | Implemented | NIP v0.8 |
-| [CR-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0006-subscribe-frame.md) | SubscribeFrame formal specification (NWP §13) | Accepted (2026-05-28) | NWP v0.13 |
-| [CR-0007](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md) | NOP L3 runtime integration (nps-runner lease) | Accepted | NOP v0.7 |
-| [CR-0008](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0008-tier3-binary-vector.md) | Tier-3 BinaryVector v1 encoding (`binary_vector.v1`) | Proposed | NCP v0.9 |
+| [CR-0006](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0006-subscribe-frame.md) | SubscribeFrame formal specification (NWP §13) | Implemented | NWP v0.13; six-SDK wire/cursor evidence current |
+| [CR-0007](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md) | NOP L3 runtime integration (nps-runner lease) | Implemented | NOP v0.7 |
+| [CR-0008](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0008-tier3-binary-vector.md) | Tier-3 BinaryVector v1 encoding (`binary_vector.v1`) | Implemented | NCP v0.9 |
 | [CR-0009](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0009-multi-anchor-ha.md) | Multi-Anchor HA, leadership epochs, and stale-leader fencing | Implemented | alpha.17 / NWP v0.18 |
 | [CR-0010](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0010-bridge-bidirectional.md) | Bidirectional Bridge Node profiles and inbound protocol discovery | Implemented | alpha.17 / NWP v0.19 |
 | [CR-0011](https://github.com/labacacia/NPS-Dev/blob/main/spec/cr/NPS-CR-0011-stateful-llm-context.md) | Stateful LLM context and delta completion | Implemented | alpha.18 / NWP v0.21 |
@@ -91,13 +108,14 @@ See [CR Process](CR-Process) for the full description and authoring guide.
 | Document | Version | What it covers |
 |----------|---------|----------------|
 | `spec/services/NPS-AaaS-Profile.md` | v0.7 | Agent-as-a-Service compliance profile (service side). Defines Anchor Node + Bridge Node compliance levels (L1/L2/L3), Vector Proxy Layer, capability gating. NPS-CR-0001 split the original Gateway Node here. |
-| `spec/services/NPS-Node-Profile.md` | v0.1 | Node-side compliance spec. Defines L1/L2/L3 compliance levels and `activation_mode` values (ephemeral / resident / hybrid). Orthogonal to AaaS Profile. |
+| `spec/services/NPS-Node-Profile.md` | v0.2 candidate | Node-side compliance spec. Defines L1/L2/L3 compliance levels and `activation_mode` values (ephemeral / resident / hybrid). Orthogonal to AaaS Profile. |
 
 ### Conformance Test Suites
 
 | Document | What it covers |
 |----------|----------------|
-| `spec/services/conformance/NPS-Node-L1.md` | L1 conformance test suite v0.1 — 21 `TC-N1-*` test cases using paired-peer methodology |
+| `spec/services/conformance/NPS-Node-L1.md` | L1 conformance test suite v0.1 — **20** `TC-N1-*` case headings using paired-peer methodology |
+| `spec/services/conformance/NPS-Node-L2.md` | L2 conformance test suite v0.7 — **38** case headings; catalog/component evidence is not deployment certification |
 | `spec/services/conformance/NPS-NODE-L1-CERTIFIED.md` | L1 self-declaration template |
 
 ---
@@ -109,4 +127,5 @@ See [CR Process](CR-Process) for the full description and authoring guide.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Released suite reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
+through NPS-Dev PR #115 on 2026-09-05.*

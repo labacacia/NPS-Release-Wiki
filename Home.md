@@ -5,6 +5,13 @@
 > Latest published SDK suite: **v1.0.0-alpha.18** (2026-08-15). The public
 > daemon bundle and `nip-ca-server` are published on the same train and are
 > also at **v1.0.0-alpha.18**.
+>
+> **Alpha.19 source candidate:** protocol authoring versions are NCP 0.12,
+> NWP 0.22, NIP 0.15, NDP 0.13 and NOP 0.10; all six SDK source trees execute
+> the shared hardening vectors, and the four public daemon source trees have
+> completed their debt-closure reconciliation. See
+> [Alpha.19 Current Status](Alpha19-Current-Status). This is not a package,
+> image, tag or release announcement.
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -54,7 +61,7 @@ document.
 
 - [npsd](Daemon-NPSd) — host-local identity, inbox, and protocol daemon
 - [nps-runner](Daemon-NPS-Runner) — task executor
-- [nps-ingress](Daemon-NPS-Ingress) — HTTP-mode ingress
+- [nps-ingress](Daemon-NPS-Ingress) — published HTTP mode; native TLS/mTLS source candidate
 - [nps-registry](Daemon-NPS-Registry) — node / member registry
 - [nps-ledger](Daemon-NPS-Ledger) — NID reputation log + STH gossip
 - [nps-cloud-ca](Daemon-NPS-Cloud-CA) — private NPS Cloud CA
@@ -76,7 +83,11 @@ Pages are re-reviewed at each suite release. Normative protocol details always
 come from `NPS-Release/spec`; package availability comes from the relevant
 registry or GitHub release.
 
-*Wiki last updated: v1.0.0-alpha.18 release review (2026-08-16)*
+For the unreleased source candidate, use [Alpha.19 Current Status](Alpha19-Current-Status);
+the alpha.18 versions above remain the installable/published contract.
+
+*Wiki current-status reconciliation: alpha.19 source candidate through NPS-Dev
+PR #115; latest published suite remains v1.0.0-alpha.18 (2026-09-05).*
 
 ---
 

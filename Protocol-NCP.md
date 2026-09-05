@@ -1,14 +1,19 @@
 # Protocol: NCP — Neural Communication Protocol
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
 
-**Spec**: `spec/NPS-1-NCP.md` v0.11 · **Port**: 17433 (shared, suite-wide)
+**Released spec**: `spec/NPS-1-NCP.md` v0.11 · **Port**: 17433 (shared, suite-wide)
+
+> **Alpha.19 source candidate (not published): NCP 0.12 Proposed.** It adds
+> executable runtime keepalive/dead-peer closure plus deterministic QUIC
+> migration, 0-RTT rejection, flow-control and backpressure policy. Six SDKs
+> execute the shared fault vectors. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 NCP is the wire-format and transport foundation of the entire NPS suite. Every higher-layer protocol — NWP, NIP, NDP, NOP — is carried as NCP frames. Think of it as HTTP/2 frames plus TCP: NCP defines *how bytes are shaped on the wire* and *how connections are established*, while the upper protocols define what those bytes mean. All NPS traffic arrives on port 17433; the Frame Type byte in each frame's header routes it to the correct protocol handler.
 
 Related: [Protocol NWP](Protocol-NWP) | [Protocol Stack Architecture](Protocol-Stack-Architecture) | [Reference: Frame Registry](Reference-Frame-Registry)
 
-> **alpha.18 candidate:** NCP v0.11 defines the portable native-server interoperability profile. A conforming server implements the preamble, Hello/Caps negotiation, tier policy, unary `request_id` correlation, keepalive, bounded frames, deterministic ErrorFrames, and clean reconnect behavior. This is a protocol profile, not a new transport or frame family.
+> **alpha.18 release:** NCP v0.11 defines the portable native-server interoperability profile. A conforming server implements the preamble, Hello/Caps negotiation, tier policy, unary `request_id` correlation, keepalive, bounded frames, deterministic ErrorFrames, and clean reconnect behavior. This is a protocol profile, not a new transport or frame family.
 
 ---
 
@@ -378,4 +383,5 @@ Long-lived native-mode connections can be silently killed by NAT appliances or f
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Released page reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
+on 2026-09-05.*
