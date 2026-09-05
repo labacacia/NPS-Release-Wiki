@@ -2,6 +2,11 @@
 
 **Status:** ✅ Latest published package — v1.0.0-alpha.18 (released 2026-08-15)
 
+> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
+> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
+> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+
 Python client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
 ---

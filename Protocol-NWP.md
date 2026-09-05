@@ -1,8 +1,12 @@
 # Protocol: NWP — Neural Web Protocol
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
 
-**Spec**: `spec/NPS-2-NWP.md` v0.21 · **Port**: 17433 (shared) / 17434 (optional dedicated)
+**Released spec**: `spec/NPS-2-NWP.md` v0.21 · **Port**: 17433 (shared) / 17434 (optional dedicated)
+
+> **Alpha.19 source candidate (not published): NWP 0.22 Proposed.** It closes
+> NWM normalization, renewable subscription lease/SLA/billing metadata and
+> related failure paths across six SDKs. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 NWP is the HTTP-equivalent for Agent-to-Node interaction in NPS. Where HTTP defines how browsers and servers exchange web pages, NWP defines how AI Agents query data, invoke actions, and subscribe to changes on Neural Nodes — with responses that are directly machine-understandable, requiring no semantic parsing layer. NWP runs on top of [Protocol NCP](Protocol-NCP) the same way HTTP semantics run on top of TCP.
 
@@ -317,4 +321,5 @@ When a `QueryFrame` or `SubscribeFrame` carries a `type` field that the node doe
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Released page reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
+on 2026-09-05.*
