@@ -203,4 +203,4 @@ The registry may be using an in-memory store and has been restarted (clearing al
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*

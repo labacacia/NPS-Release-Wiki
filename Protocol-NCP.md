@@ -383,6 +383,6 @@ Long-lived native-mode connections can be silently killed by NAT appliances or f
 
 ---
 
-> Last reviewed at suite version: v1.0.0-alpha.18
+> Last reviewed at suite version: v1.0.0-alpha.19
 >
 > Alpha.19 source status reconciled on 2026-09-05.

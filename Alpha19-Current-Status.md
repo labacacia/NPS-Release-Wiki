@@ -87,4 +87,4 @@ unchanged. Remaining alpha.19 work is release/security/package dry-runs and
 independent pre-release review. Publication still requires separate explicit
 approval.
 
-> Last reviewed at suite version: v1.0.0-alpha.18
+> Last reviewed at suite version: v1.0.0-alpha.19

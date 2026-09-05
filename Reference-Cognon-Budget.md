@@ -219,4 +219,4 @@ Enforcing `X-NWP-Budget` on push streams would require the node to buffer future
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.19 candidate*

@@ -151,4 +151,4 @@ The `status` field carries the NPS status code (coarse). The `error` field carri
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.19 candidate*

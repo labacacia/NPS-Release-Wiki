@@ -198,4 +198,4 @@ The `example/` directory contains five reference client ports (Python, TypeScrip
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*

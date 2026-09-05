@@ -170,4 +170,4 @@ Operators who need those daemons must have NPS Cloud access. See [Daemon NPS-Clo
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*
