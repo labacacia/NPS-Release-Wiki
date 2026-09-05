@@ -37,7 +37,21 @@ go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.18
 
 **Tests:** 106 passing.
 
-**Note:** There is currently no `VERSION` constant exported from the module. If your code needs to check the SDK version at runtime, read it from your own `go.mod`. This is a known gap; a follow-up issue tracks adding a `core.Version` constant.
+**Runtime version boundary:** the published alpha.18 module does not export a
+version constant. The alpha.19 source candidate closes that gap with the
+compile-time `core.Version` API:
+
+```go
+import "github.com/labacacia/NPS-sdk-go/core"
+
+fmt.Println(core.Version)
+```
+
+The constant is mechanically checked against the module `VERSION` file and is
+updated with it during release preparation. Until alpha.19 is separately
+approved and published, applications pinned to alpha.18 should use Go build
+information (`runtime/debug.ReadBuildInfo`) or their application-owned module
+pin when they need dependency-version diagnostics.
 
 ---
 
