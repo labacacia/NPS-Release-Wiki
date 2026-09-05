@@ -1,14 +1,19 @@
 # Protocol: NDP — Neural Discovery Protocol
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
 
-**Spec**: `spec/NPS-4-NDP.md` v0.12 · **Port**: 17433 (shared) / 17436 (optional dedicated)
+**Released spec**: `spec/NPS-4-NDP.md` v0.12 · **Port**: 17433 (shared) / 17436 (optional dedicated)
+
+> **Alpha.19 source candidate (not published): NDP 0.13 Proposed.** It closes
+> durable sequence/epoch recovery plus restart/partition/stale/equal-epoch
+> fault handling across six SDKs. DNS TXT lookup/parse/fallback is implemented
+> in all six. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 NDP is DNS for the AI era. Where DNS maps human-readable domain names to IP addresses, NDP maps NPS identities to physical endpoints and capability profiles — without a central registry. Nodes announce their own presence and capabilities; resolvers cache those announcements with a TTL. Agents discover nodes by querying the local registry, DNS TXT records, or the NPS Cloud Registry, in that priority order.
 
 Related: [Protocol NWP](Protocol-NWP) | [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node) | [Operator Daemons Reference](Operator-Daemons-Reference)
 
-> **alpha.18 candidate:** NDP v0.12 is the portable registry profile. It includes CR-0009 `cluster_epoch` fencing for multi-Anchor HA, CR-0010 `bridge_inbound_protocols` discovery, monotonic `graph_seq`, deterministic split/rollback handling, and shared registry conformance cases. Discovery advertises capability and reachability; it does not define LLM request semantics.
+> **alpha.18 release:** NDP v0.12 is the portable registry profile. It includes CR-0009 `cluster_epoch` fencing for multi-Anchor HA, CR-0010 `bridge_inbound_protocols` discovery, monotonic `graph_seq`, deterministic split/rollback handling, and shared registry conformance cases. Discovery advertises capability and reachability; it does not define LLM request semantics.
 
 ---
 
@@ -277,4 +282,5 @@ The `nps-ledger` daemon mirrors this loop-detection scheme on `POST /v1/log/fede
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Released page reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
+on 2026-09-05.*

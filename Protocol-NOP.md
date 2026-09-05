@@ -1,15 +1,20 @@
 # Protocol: NOP — Neural Orchestration Protocol
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
 
-**Spec**: `spec/NPS-5-NOP.md` v0.9 · **Port**: 17433 (shared) / 17437 (optional dedicated)
+**Released spec**: `spec/NPS-5-NOP.md` v0.9 · **Port**: 17433 (shared) / 17437 (optional dedicated)
 **Supersedes**: NCP AlignFrame (0x05) — deprecated, removed in NPS v1.0
+
+> **Alpha.19 source candidate (not published): NOP 0.10 Proposed.** It closes
+> bounded replay/eviction, TTL and aggregation semantics under loss, reorder,
+> duplicate and timeout faults across six SDKs. See
+> [Alpha.19 Current Status](Alpha19-Current-Status).
 
 NOP is the orchestration layer of NPS — a combination of SMTP, message queue, and workflow engine at the wire level. It defines how Agents coordinate multi-step tasks: breaking work into DAGs, delegating subtasks to Worker Agents with bounded scope, synchronizing partial results at fan-in barriers, and streaming progress back to the Orchestrator. NOP depends on NCP (framing), NWP (action invocation), and NIP (scope enforcement at every delegation step).
 
 Related: [Protocol NIP](Protocol-NIP) | [Reference: Cognon Budget](Reference-Cognon-Budget) | [SDK Building an Anchor Node](SDK-Building-an-Anchor-Node)
 
-> **alpha.18 candidate:** NOP v0.9 defines the portable orchestrator profile. It requires bounded DAG validation, deterministic dispatch/status/cancel behavior, lease-safe L3 execution, and CR-0009 HA re-resolution after leadership or lease changes. CR-0007 is implemented; NOP remains above NWP and does not introduce a separate model-serving wire contract.
+> **alpha.18 release:** NOP v0.9 defines the portable orchestrator profile. It requires bounded DAG validation, deterministic dispatch/status/cancel behavior, lease-safe L3 execution, and CR-0009 HA re-resolution after leadership or lease changes. CR-0007 is implemented; NOP remains above NWP and does not introduce a separate model-serving wire contract.
 
 ---
 
@@ -409,4 +414,5 @@ callers can audit which side effects were reversed.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Released page reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
+on 2026-09-05.*

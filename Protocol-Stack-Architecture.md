@@ -1,12 +1,17 @@
 # Protocol Stack Architecture
 
 > **Audience:** Newcomers and protocol designers
-> **Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+> **Status:** ✅ Released alpha.18 architecture; 🚧 alpha.19 source candidate reconciled
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 This page explains *how* the five NPS layers relate to each other and *why* the boundaries are drawn where they are. For per-protocol reference, see the individual [Protocol-NCP](Protocol-NCP), [Protocol-NWP](Protocol-NWP), [Protocol-NIP](Protocol-NIP), [Protocol-NDP](Protocol-NDP), and [Protocol-NOP](Protocol-NOP) pages.
 
-**alpha.18 candidate versions:** NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9. The candidate adds portable server profiles, HA fencing, directional Bridge discovery, and the Draft CR-0011 context contract without changing the five-layer ownership model.
+**Released alpha.18 versions:** NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9. The release adds portable server profiles, HA fencing, directional Bridge discovery, and the CR-0011 context contract without changing the five-layer ownership model.
+
+> **Alpha.19 source candidate (not published):** NCP 0.12 · NWP 0.22 ·
+> NIP 0.15 · NDP 0.13 · NOP 0.10. The five-layer ownership model is unchanged;
+> hardening deltas and six-SDK/daemon status are summarized in
+> [Alpha.19 Current Status](Alpha19-Current-Status).
 
 ---
 
@@ -200,4 +205,5 @@ The key distinction is that HTTP and gRPC are general-purpose RPC mechanisms tha
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Released architecture reviewed at v1.0.0-alpha.18; alpha.19 source status
+reconciled through NPS-Dev PR #115 on 2026-09-05.*

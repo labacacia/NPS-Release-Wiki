@@ -2,6 +2,12 @@
 
 **Status:** ✅ Latest published SDK packages — v1.0.0-alpha.18 (released 2026-08-15)
 
+> **Alpha.19 source candidate (not published):** all six SDK source trees execute
+> the 47 shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15,
+> NDP 0.13 and NOP 0.10. The install commands below intentionally remain on
+> alpha.18 until separately approved publication. See
+> [Alpha.19 Current Status](Alpha19-Current-Status).
+
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
 > **Time to first frame:** 10–15 minutes.
 > **Source-of-truth precedence:** `spec/` documents in the NPS-Release repository win over this page if they disagree.

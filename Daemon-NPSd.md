@@ -2,6 +2,12 @@
 
 **Status:** ✅ Latest published package — v1.0.0-alpha.18
 
+> **Alpha.19 source candidate (not published):** native NCP now coexists with
+> the HTTP control API; inbox/ack/TTL/priority state is durable SQLite; managed
+> sub-NIDs renew in place and emit signed ephemeral NDP announcements with
+> restart-stable key/sequence state. Resident/hybrid push and full Node L1
+> certification remain unclaimed. See [Alpha.19 Current Status](Alpha19-Current-Status).
+
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
@@ -123,7 +129,7 @@ npsd:
 
 ---
 
-## Scaling
+## Scaling (published alpha.18)
 
 `npsd` is designed as a **single instance per machine**. Its state — the root keypair and the sub-NID SQLite database — are host-local by design. There is no built-in HA replication; each machine in a cluster runs its own `npsd`.
 
@@ -133,13 +139,17 @@ For high-availability scenarios where a machine hosts multiple workers, the inbo
 
 ---
 
-## Not yet implemented (alpha.5+)
+## Alpha.19 source-candidate disposition
 
-Tracked in `docs/daemons/architecture.md` under the per-daemon phasing table:
-
-- Push delivery from inbox to resident agent sockets (inbox → agent socket, rather than agent polling).
-- AnnounceFrame emission to the local NDP registry.
-- Sub-NID renewal — currently revoke + reissue only.
+- Push delivery to resident/hybrid agent sockets remains optional future scope;
+  this profile advertises ephemeral HTTP pull with durable acknowledgement.
+- Managed agents now emit publisher-signed AnnounceFrames with persistent
+  monotonic `graph_seq`; BYO-key agents remain an explicit opt-out because
+  npsd does not possess their private key.
+- Eligible managed sub-NIDs now renew in place. Too-early, revoked and expired
+  credentials fail closed.
+- The exhaustive 20-case L1 manifest retains incomplete required cases, so no
+  full Node L1 certification is claimed.
 
 ---
 
@@ -162,7 +172,7 @@ The recipient NID's inbox has hit `NPSD_MAX_INBOX_DEPTH_PER_NID` (default 1024).
 ## Spec references
 
 - [NPS-Node Profile](https://github.com/labacacia/NPS-Release/blob/main/spec/services/NPS-Node-Profile.md) — compliance specification this daemon targets
-- [NPS-Node-L1 conformance suite](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — 21 `TC-N1-*` cases
+- [NPS-Node-L1 conformance suite](https://github.com/labacacia/NPS-Release/blob/main/spec/services/conformance/NPS-Node-L1.md) — 20 `TC-N1-*` case headings
 - [Protocol NCP](Protocol-NCP) — wire layer
 - [Protocol NIP](Protocol-NIP) — root keypair / IdentFrame semantics
 

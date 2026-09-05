@@ -2,10 +2,21 @@
 
 **Status:** ✅ Latest published package — v1.0.0-alpha.18
 
+> **Alpha.19 source candidate (not published):** the daemon terminates native
+> TLS 1.3 NCP with ALPN `nps/1.0`, default-on mTLS, inline certificate/session
+> NID binding, bounded admission and full-duplex backend proxying. Its four
+> real-socket TLS cases are role-scoped evidence, not full Node L2
+> certification. See [Alpha.19 Current Status](Alpha19-Current-Status).
+
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-`nps-ingress` is the public Internet ingress daemon for the NPS suite. It accepts NCP-over-HTTP (and, in production, NCP-over-TLS) connections from external clients, terminates TLS, performs rate limiting and authentication, and forwards frames upstream to [Daemon NPSd](Daemon-NPSd) at port 17433. Unlike `npsd` — which binds loopback only — `nps-ingress` is intentionally Internet-facing.
+`nps-ingress` is the public Internet ingress daemon for the NPS suite. Published
+alpha.18 accepts NCP-over-HTTP and relies on an external TLS proxy. The
+alpha.19 source candidate adds the native TLS/mTLS transport boundary described
+above. Rate limiting, NeuronHub authentication, CGN debit, reputation and broad
+DDoS controls are product/AaaS/optional-composition/deployment concerns, not
+transport capabilities advertised by this daemon.
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ingress/`
 - **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
@@ -25,13 +36,22 @@ When `nps-ingress` proxies a `GET /.nwm` manifest fetch, it preserves the upstre
 
 ---
 
-## Implementation status
+## Published alpha.18 implementation status
 
 The original Phase 1 skeleton — a public HTTP listener with a `/health` endpoint and a stable deployment surface (process name, Docker image tag, port) — has been present since alpha.3 to keep the deployment topology stable from the beginning of the daemon ecosystem.
 
 As of alpha.13, `nps-ingress` ships working **HTTP-mode ingress**: it accepts NCP-over-HTTP frame requests on its public listener, applies the configured `X-Forwarded-For` / `X-Forwarded-Proto` handling, and forwards frames upstream to `npsd` at port 17433 (single-node) or to the node selected via `nps-registry` (multi-node). It also exposes the operability endpoints `/healthz`, `/readyz`, and `/metrics` (see below), and preserves the `X-NWM-Version` response header on proxied `GET /.nwm` fetches (NWP v0.14).
 
 Some advanced ingress logic — rate limiting, NeuronHub-customer authentication, CGN debit triggering, NPS-RFC-0004 reputation checks, and Anchor Node middleware wiring per NPS-CR-0001 — remains in progress. The `nps-ingress` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring is deferred until the Anchor Node middleware is stable. TLS is terminated by a reverse proxy in front of this daemon (see below). The release docs also align the native NCP TLS/mTLS contract at the SDK/spec layer; daemon endpoint wiring remains a follow-up.
+
+### Alpha.19 source-candidate disposition
+
+Native TLS endpoint wiring is implemented and tested. The other items in the
+preceding alpha.18 paragraph are not reclassified as missing transport
+features: their product/AaaS/optional-composition/deployment ownership is
+explicit, and `nps-ingress` does not advertise those capabilities. Topology,
+Bridge, HA and Registry conformance families belong to other IUT roles, so the
+daemon retains only claim-scoped TLS evidence.
 
 The `/healthz`·`/readyz` probes are rendered by the transport-neutral `HealthProbeRenderer` (alpha.14) shared across the daemon set.
 
@@ -57,7 +77,7 @@ This is the **process** called `nps-ingress`. The spec-level role of "cluster co
 
 ---
 
-## TLS termination
+## Published alpha.18 TLS termination
 
 The `nps-ingress` container itself speaks plain HTTP on port 8080. Production deployments place a TLS-terminating reverse proxy in front:
 

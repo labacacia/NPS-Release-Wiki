@@ -2,11 +2,16 @@
 
 **Status:** ✅ Latest published artifact — v1.0.0-alpha.18 (released 2026-08-15)
 
+> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
+> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
+> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+
 Java client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
 ---
 
-## Capability set (current — accumulated through alpha.18)
+## Published capability set (accumulated through alpha.18)
 
 The Java SDK tracks the suite feature train; everything in this section is present in the published `1.0.0-alpha.18` artifact, and the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, it carries the following capability-level additions (exact type names may differ by language — see the source):
 

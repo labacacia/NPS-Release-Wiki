@@ -2,6 +2,12 @@
 
 **Status:** ✅ Latest published package — v1.0.0-alpha.18
 
+> **Alpha.19 source candidate (not published):** portable OCI SpawnSpec and
+> reference resolution, durable shared-file SQLite leases/terminal dedup,
+> restart fencing/reclaim and lease-loss worker cancellation are implemented.
+> Full TaskFrame DAG/Saga L3 certification and generic cross-host filesystem
+> guarantees remain unclaimed. See [Alpha.19 Current Status](Alpha19-Current-Status).
+
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
@@ -25,7 +31,7 @@ One `npsd` may serve any number of `nps-runner` instances. Each registers its ow
 
 ---
 
-## NOP L3 runtime integration (CR-0007)
+## Published alpha.18 NOP L3 runtime integration (CR-0007)
 
 As of alpha.13 `nps-runner` implements the [NPS-CR-0007](https://github.com/labacacia/NPS-Release/blob/main/spec/cr/NPS-CR-0007-nop-l3-runtime-integration.md) NOP Layer-3 runtime integration (NOP v0.7, NPS-Node Profile L3). This standardizes how a runner claims, resolves, and bounds NOP `TaskFrame` work so that multiple runners can share an inbox without double-execution.
 
@@ -38,7 +44,11 @@ A runner claims the head of a per-NID inbox by issuing an **atomic lease** rathe
 - **Conflict** — if the task is already `LEASED` by a live lease, the claim is rejected with `NOP-CLAIM-CONFLICT` (→ `NPS-CLIENT-CONFLICT`, HTTP 409). The other runner already owns it.
 - **Reclaim** — if the prior lease has expired, a new claim succeeds; the `dedup_key` ensures a terminal node is never re-run (at-least-once execution with a dedup guard).
 
-A runner is stateless beyond its active lease set: a crash releases its leases after the lease TTL, allowing another runner to reclaim the task.
+In the published alpha.18 behavior described here, a runner is stateless beyond
+its active lease set: a crash releases its leases after the lease TTL. The
+alpha.19 source candidate replaces that boundary with durable shared-file
+claims, process-instance fencing and persistent terminal dedup; see the status
+banner above.
 
 ### `spawn_spec_ref` → SpawnSpec resolution
 

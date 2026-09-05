@@ -4,6 +4,12 @@
 > **Status:** ✅ Latest published packages — v1.0.0-alpha.18
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
+> **Alpha.19 source candidate (not published):** npsd native NCP/durable
+> inbox/renewal/Announce, runner durable OCI lease execution, ingress native
+> TLS/mTLS admission and the reconciled standalone bundle are implemented with
+> claim-scoped manifests. See [Alpha.19 Current Status](Alpha19-Current-Status).
+> The alpha.18 package/image examples below remain the published contract.
+
 This page is the single-page reference for all NPS daemons. Four daemons ship publicly in the `labacacia/NPS-Daemons` bundle; two additional daemons are private to the NPS Cloud platform.
 
 > **Docker images are built locally, never pulled.** The project publishes **no** container
@@ -96,11 +102,16 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 - **Development**: single instance is sufficient.
 - **HA**: `npsd` is a host-local daemon by design. Run one instance per machine. For shared state across instances, configure `NPSD_DATA_DIR` to point at a shared volume (SQLite WAL mode) or replace the storage backend with an external store. Sub-NID records are append-only so WAL mode performs well in most cases.
 
-### Not yet implemented (alpha.5+)
+### Alpha.19 source-candidate disposition
 
-- Push delivery from inbox to resident agent sockets.
-- `AnnounceFrame` emission to the local NDP registry.
-- Sub-NID renewal (current path: revoke + reissue).
+- Resident/hybrid socket push remains optional future scope; the profile
+  advertises ephemeral HTTP pull with durable acknowledgement.
+- Managed agents emit signed ephemeral AnnounceFrames with persistent sequence
+  state; BYO-key agents remain an explicit opt-out.
+- Eligible managed sub-NIDs renew in place; too-early, revoked and expired
+  requests fail closed.
+- The 20-case L1 manifest is exhaustive but still exposes incomplete required
+  cases, so full Node L1 certification is not claimed.
 
 ---
 
@@ -114,7 +125,12 @@ This page is the single-page reference for all NPS daemons. Four daemons ship pu
 
 ### Purpose
 
-`nps-runner` is the task scheduler and FaaS runtime. It watches the local npsd inbox for JSON spawn-spec messages, spawns worker subprocesses on demand, and manages their full lifecycle — stdout/stderr capture, idle timeout, max-runtime deadline, concurrency cap, and completion notifications. It does not bind a server port; all communication is outbound to npsd.
+Published alpha.18 `nps-runner` is the task scheduler and FaaS runtime. The
+alpha.19 source candidate additionally implements portable OCI SpawnSpec,
+durable shared-file SQLite claims/terminal dedup, restart fencing/reclaim and
+lease-loss cancellation. It does not bind a protocol server port; all protocol
+communication is outbound to npsd. Full TaskFrame DAG/Saga L3 certification is
+not claimed.
 
 Typical ratio: **1 npsd : N runners** (N = number of machines or worker pools).
 
@@ -168,7 +184,7 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 
 ---
 
-## nps-ingress — HTTP-mode Ingress
+## nps-ingress — Ingress
 
 | Property | Value |
 |----------|-------|
@@ -178,13 +194,25 @@ Workers share a single concurrency pool capped by `NPS_RUNNER_MAX_CONCURRENT_WOR
 
 ### Purpose
 
-`nps-ingress` is the public-facing NPS Internet ingress. It terminates NCP HTTP-mode traffic from the Internet and routes it upstream to the local `npsd`. When fully implemented, it handles TLS termination, rate limiting, NeuronHub-customer authentication, CGN debit triggering, and NPS-RFC-0004 reputation checks.
+Published alpha.18 routes public NCP HTTP-mode traffic to npsd. The alpha.19
+source candidate additionally terminates native TLS 1.3 NCP with ALPN
+`nps/1.0`, default-on mTLS and inline certificate/session-NID binding. Rate
+limiting, NeuronHub authentication, CGN debit, reputation and broad DDoS
+controls are not advertised transport capabilities; their ownership is
+product/AaaS/optional-composition/deployment scope.
 
 > **Naming note.** The spec-level role of "cluster control plane that routes NPS frames into NOP" is called **Anchor Node** (renamed from Gateway Node by NPS-CR-0001). The `nps-ingress` process MAY host an Anchor Node middleware via `NPS.NWP.Anchor`; that wiring remains in progress as of alpha.13.
 
 ### Current status (latest published alpha.18)
 
 Published alpha.18 keeps the public-facing HTTP listener with `/health` as the OSS baseline. Real ingress logic (rate limiting, auth, CGN debit, reputation lookup, Anchor Node middleware) is still being phased in. The docs align the native NCP TLS/mTLS contract at the SDK/spec layer; direct daemon endpoint wiring remains a follow-up. The deployment surface (process name, Docker image tag, port) is stable.
+
+### Alpha.19 source-candidate disposition
+
+Native endpoint wiring is now implemented: bounded preamble/Hello/Ident
+admission, TLS 1.3 + ALPN, client-chain validation, NID binding, full-duplex
+proxying and four real-socket TLS cases. This is transport-IUT evidence only;
+topology, Bridge, HA and Registry families do not become full-L2 claims.
 
 The MCP, A2A, and gRPC **ingress compatibility packages** (`LabAcacia.McpIngress` / `LabAcacia.A2aIngress` / `LabAcacia.GrpcIngress`) shipped on the suite train from alpha.15 and are now **deprecated** — they are skipped from alpha.18 onward in favour of the bidirectional `LabAcacia.NPS.NWP.Bridge` package (CR-0010). See [nps-ingress](Daemon-NPS-Ingress) for the per-package detail and last published versions.
 
@@ -195,7 +223,7 @@ The MCP, A2A, and gRPC **ingress compatibility packages** (`LabAcacia.McpIngress
 | `NPSINGRESS_HOST` | `0.0.0.0` | Bind address. The ingress daemon is intentionally Internet-facing, unlike npsd. |
 | `NPSINGRESS_PORT` | `8080` | TCP port. Production deployments terminate TLS on `:443` via a reverse proxy. |
 
-### TLS termination
+### Published alpha.18 TLS termination
 
 The container exposes plain HTTP on port 8080. Place it behind nginx, Caddy, or Traefik for TLS. Set `NPSINGRESS_PORT` on the host side to control the exposed port; the container always binds 8080 internally.
 
@@ -262,7 +290,10 @@ By default, `nps-registry` runs with an ephemeral in-memory store. Set `NPSREGIS
 
 ### Scaling
 
-Run one `nps-registry` instance per cluster, fronted by an internal load balancer. L2 cross-machine federation (gossip / HA cluster mode) is planned for alpha.6+.
+Run one `nps-registry` instance per cluster. It supports NDP §9 federation
+forwarding and highest-epoch Anchor resolution, but does not provide replicated
+database state between co-located replicas; that HA boundary remains future
+work rather than an alpha.6+ current promise.
 
 ---
 
@@ -458,4 +489,5 @@ it is a preview surface and not yet a production component.
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Released suite reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
+through NPS-Dev PR #115 on 2026-09-05.*

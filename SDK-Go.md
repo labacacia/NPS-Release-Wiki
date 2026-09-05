@@ -2,11 +2,16 @@
 
 **Status:** ✅ Latest published module — v1.0.0-alpha.18 (released 2026-08-15)
 
+> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
+> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
+> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+
 Go reference implementation of the Neural Protocol Suite. Covers all five sub-protocols: NCP, NWP, NIP, NDP, and NOP.
 
 ---
 
-## Capability set (current — accumulated through alpha.18)
+## Published capability set (accumulated through alpha.18)
 
 Everything in this section is present in the published `v1.0.0-alpha.18` module; the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, the Go SDK carries the following capability-level additions (exact identifier names may differ by language — see the source):
 

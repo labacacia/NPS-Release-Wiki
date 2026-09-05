@@ -2,6 +2,12 @@
 
 **Status:** ✅ Latest published package — v1.0.0-alpha.18
 
+> **Alpha.19 source candidate (not published):** all four standalone daemon
+> trees, Docker contexts, built-in non-root health checks, compose wiring and
+> canonical repository names reconcile with NPS-Dev. Candidate image builds
+> were local validation only; no image registry publication occurred. See
+> [Alpha.19 Current Status](Alpha19-Current-Status).
+
 > **Audience:** Operators and release shepherds
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
