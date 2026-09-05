@@ -489,5 +489,6 @@ it is a preview surface and not yet a production component.
 
 ---
 
-*Released suite reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
-through NPS-Dev PR #115 on 2026-09-05.*
+> Last reviewed at suite version: v1.0.0-alpha.19
+>
+> Alpha.19 source status reconciled through NPS-Dev PR #115 on 2026-09-05.

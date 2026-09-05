@@ -228,4 +228,4 @@ Protocol versions at the alpha.18 pin: **NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*

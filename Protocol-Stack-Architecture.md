@@ -205,5 +205,6 @@ The key distinction is that HTTP and gRPC are general-purpose RPC mechanisms tha
 
 ---
 
-*Released architecture reviewed at v1.0.0-alpha.18; alpha.19 source status
-reconciled through NPS-Dev PR #115 on 2026-09-05.*
+> Last reviewed at suite version: v1.0.0-alpha.19
+>
+> Alpha.19 source status reconciled through NPS-Dev PR #115 on 2026-09-05.

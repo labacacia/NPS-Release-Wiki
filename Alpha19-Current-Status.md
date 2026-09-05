@@ -80,7 +80,11 @@ the latest published Wiki.
 
 ## What happens next
 
-The remaining alpha.19 work includes English/Chinese parity, the documented Go
-runtime version-constant decision, release/security/package dry-runs and
+English/Chinese parity is reconciled in NPS-Dev PR #116 and NPS-Release PR
+#16. The Go runtime-version gap is also closed in the alpha.19 source candidate
+by the tested `core.Version` API; the published alpha.18 module remains
+unchanged. Remaining alpha.19 work is release/security/package dry-runs and
 independent pre-release review. Publication still requires separate explicit
 approval.
+
+> Last reviewed at suite version: v1.0.0-alpha.19

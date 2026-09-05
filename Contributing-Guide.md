@@ -157,4 +157,4 @@ Do not disclose publicly until a patch has been prepared and a coordinated discl
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.19 candidate*

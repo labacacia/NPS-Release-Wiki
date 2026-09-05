@@ -167,4 +167,4 @@ The peer's tree appears to have regressed (its `tree_size` is lower than the las
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*

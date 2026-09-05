@@ -127,5 +127,6 @@ See [CR Process](CR-Process) for the full description and authoring guide.
 
 ---
 
-*Released suite reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
-through NPS-Dev PR #115 on 2026-09-05.*
+> Last reviewed at suite version: v1.0.0-alpha.19
+>
+> Alpha.19 source status reconciled through NPS-Dev PR #115 on 2026-09-05.

@@ -460,4 +460,4 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*

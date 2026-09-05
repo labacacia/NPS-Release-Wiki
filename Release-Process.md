@@ -132,4 +132,4 @@ Fix: Assertion B in `check-source-of-truth.py` now blocks the release if any SDK
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*

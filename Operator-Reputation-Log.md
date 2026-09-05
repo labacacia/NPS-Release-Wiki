@@ -280,4 +280,4 @@ Peer operators must reciprocally add your endpoint to their `NPSLEDGER_PEERS` li
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.18*
+*Last reviewed at suite version: v1.0.0-alpha.19*
