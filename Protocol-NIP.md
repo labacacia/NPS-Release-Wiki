@@ -349,5 +349,6 @@ A three-tier Registration Authority (RA) model (NPS-CR-0005, stub) adds opt-in e
 
 ---
 
-*Released page reviewed at v1.0.0-alpha.18; alpha.19 source status reconciled
-on 2026-09-05.*
+> Last reviewed at suite version: v1.0.0-alpha.18
+>
+> Alpha.19 source status reconciled on 2026-09-05.
