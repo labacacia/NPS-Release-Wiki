@@ -1,6 +1,6 @@
 # Reference: Error Codes
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Reviewed for v1.0.0-alpha.19 release
 
 NPS uses a two-level error system. This page documents the **protocol error codes** — the fine-grained layer. Each code names exactly what went wrong in a specific protocol domain. The coarser layer, NPS status codes, classifies the error for transport routing; see [Reference: Status Codes](Reference-Status-Codes).
 
@@ -413,4 +413,4 @@ Use this code when the error is "I don't know how to handle this type of operati
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.19 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.19 release*

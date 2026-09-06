@@ -1,11 +1,10 @@
 # SDK Quickstart
 
-**Status:** ✅ Latest published SDK packages — v1.0.0-alpha.18 (released 2026-08-15)
+**Status:** ✅ Latest published SDK packages — v1.0.0-alpha.19 (released 2026-09-06)
 
-> **Alpha.19 source candidate (not published):** all six SDK source trees execute
-> the 47 shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15,
-> NDP 0.13 and NOP 0.10. The install commands below intentionally remain on
-> alpha.18 until separately approved publication. See
+> **Alpha.19 release:** all six SDKs execute the 47 shared P19-1
+> hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15,
+> NDP 0.13 and NOP 0.10. The install commands below pin the published alpha.19 packages. See
 > [Alpha.19 Current Status](Alpha19-Current-Status).
 
 > **Audience:** Developers building Agents or Nodes against NPS for the first time.
@@ -28,20 +27,20 @@ Pin the entire suite to a single version. Mixing patch versions within the same 
 
 | Language | Install command | Current pin |
 |----------|-----------------|-------------|
-| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.18` | `1.0.0-alpha.18` |
-| Python | `pip install nps-lib==1.0.0a18` | `1.0.0a18` |
-| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.18` | `1.0.0-alpha.18` |
-| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.18")` | `1.0.0-alpha.18` |
-| Rust | `nps-sdk = "=1.0.0-alpha.18"` | `=1.0.0-alpha.18` (exact pin) |
-| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.18` | `v1.0.0-alpha.18` |
+| .NET / C# | `dotnet add package LabAcacia.NPS.Core --version 1.0.0-alpha.19` | `1.0.0-alpha.19` |
+| Python | `pip install nps-lib==1.0.0a19` | `1.0.0a19` |
+| TypeScript / Node | `npm install @labacacia/nps-sdk@1.0.0-alpha.19` | `1.0.0-alpha.19` |
+| Java | `implementation("com.labacacia.nps:nps-java:1.0.0-alpha.19")` | `1.0.0-alpha.19` |
+| Rust | `nps-sdk = "=1.0.0-alpha.19"` | `=1.0.0-alpha.19` (exact pin) |
+| Go | `go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.19` | `v1.0.0-alpha.19` |
 
 > **Python package name:** The PyPI distribution name is `nps-lib` (not `nps-sdk` — that name is taken by an unrelated package). The Python import namespace is `nps_sdk`.
 
 > **Rust pinning:** Use the `=` prefix for alpha releases to prevent Cargo from silently upgrading to a later alpha.
 
-> **npm tags:** `@labacacia/nps-sdk@alpha` resolves to `1.0.0-alpha.18`; the unqualified npm `latest` tag intentionally remains on alpha.7. Pin `1.0.0-alpha.18` for reproducible alpha builds.
+> **npm tags:** `@labacacia/nps-sdk@alpha` resolves to `1.0.0-alpha.19`; the unqualified npm `latest` tag intentionally remains on alpha.7. Pin `1.0.0-alpha.19` for reproducible alpha builds.
 
-> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.18 is the current published SDK pin.
+> **Release note:** alpha.12 was withdrawn (vulnerable `MessagePack 3.0.300` / NU1903 plus a native-mode handshake bug). alpha.13 superseded it with `MessagePack 3.1.7`; alpha.19 is the current published SDK pin.
 
 > **alpha.18 (2026-08-15) — published on every registry.** It ships NPS-CR-0011 / NWP 0.21 stateful LLM context (owner-bound context IDs, create/append/fork/reset/status/release, compare-and-swap versions, atomic cancellation, NWM 0.2 discovery, NIP 0.14 `llm:context` authorization) in all six SDKs, plus official NWP LLM usage telemetry with unary `CapsFrame.request_id` correlation and the `NPS-LIMIT-RESOURCE` code. Protocol versions at this pin: NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9.
 
@@ -158,7 +157,7 @@ Tier-1 JSON is convenient for debugging but produces roughly 2.5× more bytes th
 
 ### Ignoring the `AssuranceLevel` empty-string case
 
-`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.18`.
+`AssuranceLevel.from_wire("")` (Python), `AssuranceLevel.fromWire("")` (TypeScript, Java), and equivalent calls in other SDKs must return `ANONYMOUS` — not raise an exception. This was a bug fixed in alpha.5. If you are on an older pin and see `ValueError` or `Unknown` for empty assurance levels, upgrade to `1.0.0-alpha.19`.
 
 ### Mixing suite versions
 
@@ -166,9 +165,9 @@ All NuGet/PyPI/npm/Maven/crates.io packages within the same language SDK are ver
 
 ---
 
-## Published feature set (accumulated through alpha.18)
+## Published feature set (accumulated through alpha.19)
 
-This section is cumulative: every capability listed below is present in the current `1.0.0-alpha.18` packages. The release tag in each block is the release the capability first landed in.
+This section is cumulative: every capability listed below is present in the current `1.0.0-alpha.19` packages. The release tag in each block is the release the capability first landed in.
 
 All six SDKs (Python, TypeScript, Go, Java, Rust, .NET) ship the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions:
 
@@ -224,7 +223,7 @@ Protocol versions at the alpha.18 pin: **NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.18*
+*Last reviewed for published packages: v1.0.0-alpha.19*
 
 ---
 

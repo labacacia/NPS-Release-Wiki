@@ -1,10 +1,10 @@
 # Protocol: NWP — Neural Web Protocol
 
-**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
+**Status:** ✅ Released alpha.19 reference
 
-**Released spec**: `spec/NPS-2-NWP.md` v0.21 · **Port**: 17433 (shared) / 17434 (optional dedicated)
+**Released spec**: `spec/NPS-2-NWP.md` v0.22 · **Port**: 17433 (shared) / 17434 (optional dedicated)
 
-> **Alpha.19 source candidate (not published): NWP 0.22 Proposed.** It closes
+> **Alpha.19 release: NWP 0.22 Proposed.** It closes
 > NWM normalization, renewable subscription lease/SLA/billing metadata and
 > related failure paths across six SDKs. See [Alpha.19 Current Status](Alpha19-Current-Status).
 

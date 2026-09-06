@@ -1,10 +1,10 @@
 # Protocol: NCP — Neural Communication Protocol
 
-**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
+**Status:** ✅ Released alpha.19 reference
 
-**Released spec**: `spec/NPS-1-NCP.md` v0.11 · **Port**: 17433 (shared, suite-wide)
+**Released spec**: `spec/NPS-1-NCP.md` v0.12 · **Port**: 17433 (shared, suite-wide)
 
-> **Alpha.19 source candidate (not published): NCP 0.12 Proposed.** It adds
+> **Alpha.19 release: NCP 0.12 Proposed.** It adds
 > executable runtime keepalive/dead-peer closure plus deterministic QUIC
 > migration, 0-RTT rejection, flow-control and backpressure policy. Six SDKs
 > execute the shared fault vectors. See [Alpha.19 Current Status](Alpha19-Current-Status).

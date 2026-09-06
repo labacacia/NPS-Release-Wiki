@@ -1,11 +1,10 @@
 # SDK — TypeScript
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18 (released 2026-08-15)
+**Status:** ✅ Latest published package — v1.0.0-alpha.19 (released 2026-09-06)
 
-> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> **Alpha.19 release:** this SDK executes all 47
 > shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
-> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
-> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+> and NOP 0.10. The install command below pins the published alpha.19 package. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP. Dual ESM + CJS build; works in Node.js 22+ and in the browser via the ESM bundle.
 
@@ -14,12 +13,12 @@ TypeScript / Node.js SDK for the Neural Protocol Suite. Covers all five protocol
 ## Installation
 
 ```bash
-npm install @labacacia/nps-sdk@1.0.0-alpha.18
+npm install @labacacia/nps-sdk@1.0.0-alpha.19
 ```
 
 **Requirements:** Node.js 22+. The ESM build also works in modern browsers (Chrome 120+, Firefox 121+, Safari 17+) via a bundler.
 
-> **`alpha` dist-tag:** `npm install @labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.18`; the unqualified npm `latest` tag intentionally remains on alpha.7. alpha.12 was withdrawn; pin the explicit version for reproducible builds.
+> **`alpha` dist-tag:** `npm install @labacacia/nps-sdk@alpha` currently resolves to `1.0.0-alpha.19`; the unqualified npm `latest` tag intentionally remains on alpha.7. alpha.12 was withdrawn; pin the explicit version for reproducible builds.
 
 **Tests:** 284+ passing, ≥ 98% coverage.
 
@@ -176,9 +175,9 @@ node node_modules/tsup/dist/cli-default.js
 
 ---
 
-## Feature set (accumulated through alpha.18)
+## Feature set (accumulated through alpha.19)
 
-This section is cumulative: everything listed below is present in the published `1.0.0-alpha.18` package. The release tag on each block is where the capability first landed.
+This section is cumulative: everything listed below is present in the published `1.0.0-alpha.19` package. The release tag on each block is where the capability first landed.
 
 The TypeScript SDK ships the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions:
 

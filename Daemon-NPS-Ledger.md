@@ -1,6 +1,6 @@
 # Daemon: nps-ledger
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18
+**Status:** ✅ Latest published package — v1.0.0-alpha.19
 
 > **Audience:** Operators running a reputation log instance; AaaS operators peering with one
 > **Distribution note:** `labacacia/NPS-Ledger` is a **private** repository. This page documents the protocol surface only.
@@ -12,7 +12,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-ledger/`
 - **Distribution:** `labacacia/NPS-Ledger` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `labacacia/nps-ledger:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; operators with repository access build it from the repo `Dockerfile` (`docker build -t labacacia/nps-ledger:1.0.0-alpha.18 .`).
+- **Docker image:** `labacacia/nps-ledger:1.0.0-alpha.19` — a local build tag only. No image is pushed to any registry, private or public; operators with repository access build it from the repo `Dockerfile` (`docker build -t labacacia/nps-ledger:1.0.0-alpha.19 .`).
 - **Default port:** `:17440`
 - **Layer:** L3
 
@@ -54,7 +54,7 @@ The `/healthz`·`/readyz` probes are rendered by the transport-neutral `HealthPr
 {
   "status": "ok",
   "daemon": "nps-ledger",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "layer": 3,
   "role": "CT-style NID reputation log",
   "phase": 3,

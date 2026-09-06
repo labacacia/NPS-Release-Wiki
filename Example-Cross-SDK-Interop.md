@@ -1,6 +1,6 @@
 # Example: Cross-SDK Interop
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18
+**Status:** ✅ Reviewed for v1.0.0-alpha.19
 
 **Repo:** `labacacia/NPS-Examples`, directory: `cross-sdk-interop/` (source in NPS-Dev `demos/cross-sdk-interop/`)
 
@@ -120,7 +120,7 @@ The fix was to add Java and Go to the parity matrix before tagging alpha.5. Now 
 
 ## Six-SDK Feature Parity (alpha.18)
 
-As of v1.0.0-alpha.18, all six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship the same protocol feature set — including the CR-0011 stateful LLM context / delta completion contract — and the cross-SDK matrix exercises each of these for byte- and behavior-level parity:
+As of v1.0.0-alpha.19, all six SDKs (Python / TypeScript / Go / Java / Rust / .NET) ship the same protocol feature set — including the CR-0011 stateful LLM context / delta completion contract — and the cross-SDK matrix exercises each of these for byte- and behavior-level parity:
 
 - **NCP `NopFrame` (0x07)** — zero-payload keepalive/heartbeat (NCP v0.8); either peer MAY send it after the handshake. Paired with `HelloFrame.ping_interval_ms` (uint32, 0 = disabled).
 - **NCP Tier-3 `binary_vector.v1`** — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame` (NCP v0.9). Negotiated via caps; used only when both peers advertise `binary_vector.v1`. Layout is a 16-byte prefix (`NPBV` magic, version, vector_count, metadata_len) + MessagePack metadata + per-vector `dim` (uint32 BE) + float32-LE segments. Malformed payloads return documented client errors (`NCP-BINARY-VECTOR-MALFORMED` / `-DIM-MISMATCH` / `-INDEX-INVALID` / `-DTYPE-UNSUPPORTED` / `-TRUNCATED` → `NPS-CLIENT-BAD-FRAME`); the reserved tier `0b11` → `NCP-FRAME-FLAGS-INVALID`.

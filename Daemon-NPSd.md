@@ -1,8 +1,8 @@
 # Daemon: npsd
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18
+**Status:** ✅ Latest published package — v1.0.0-alpha.19
 
-> **Alpha.19 source candidate (not published):** native NCP now coexists with
+> **Alpha.19 release:** native NCP now coexists with
 > the HTTP control API; inbox/ack/TTL/priority state is durable SQLite; managed
 > sub-NIDs renew in place and emit signed ephemeral NDP announcements with
 > restart-stable key/sequence state. Resident/hybrid push and full Node L1
@@ -15,7 +15,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/npsd/`
 - **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/npsd:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `npsd/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
+- **Docker image:** `labacacia/npsd:1.0.0-alpha.19` — the tag Compose applies to the image it **builds** from `npsd/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `127.0.0.1:17433` (loopback only — never expose directly to the Internet)
 - **Layer:** L1
 
@@ -69,7 +69,7 @@
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "layer": 1,
   "role": "protocol-access-host",
   "port": 17433,
@@ -108,7 +108,7 @@ npsd:
   build:
     context: ./npsd
     dockerfile: Dockerfile
-  image: labacacia/npsd:1.0.0-alpha.18
+  image: labacacia/npsd:1.0.0-alpha.19
   restart: unless-stopped
   ports:
     - "127.0.0.1:17433:17433"   # loopback only — public ingress is nps-ingress
@@ -122,7 +122,7 @@ npsd:
 
 > Because the service declares `build:`, the `image:` line only names the artefact Compose
 > builds locally from `npsd/Dockerfile` — the project publishes no container images, so
-> `docker pull labacacia/npsd:1.0.0-alpha.18` will not resolve. Start with
+> `docker pull labacacia/npsd:1.0.0-alpha.19` will not resolve. Start with
 > `docker compose up -d --build`.
 
 > The compose service uses `NPSD_HOST: 0.0.0.0` because Docker networking provides its own isolation. The `ports` binding pins host-side to `127.0.0.1` so the container port is still not reachable from outside the machine.
@@ -139,7 +139,7 @@ For high-availability scenarios where a machine hosts multiple workers, the inbo
 
 ---
 
-## Alpha.19 source-candidate disposition
+## Alpha.19 release disposition
 
 - Push delivery to resident/hybrid agent sockets remains optional future scope;
   this profile advertises ephemeral HTTP pull with durable acknowledgement.

@@ -1,6 +1,6 @@
 # Repository Topology
 
-**Status:** ✅ Latest published topology — v1.0.0-alpha.18
+**Status:** ✅ Latest published topology — v1.0.0-alpha.19
 
 This page maps every NPS-related repository, its role, and how it relates to the central source monorepo.
 
@@ -125,7 +125,7 @@ All public labacacia repos are mirrored to Gitee (`gitee.com/labacacia/`) via `t
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.18*
+*Last reviewed for published packages: v1.0.0-alpha.19*
 
 ---
 

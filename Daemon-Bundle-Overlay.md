@@ -1,8 +1,8 @@
 # Daemon: bundle-overlay
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18
+**Status:** ✅ Latest published package — v1.0.0-alpha.19
 
-> **Alpha.19 source candidate (not published):** all four standalone daemon
+> **Alpha.19 release:** all four standalone daemon
 > trees, Docker contexts, built-in non-root health checks, compose wiring and
 > canonical repository names reconcile with NPS-Dev. Candidate image builds
 > were local validation only; no image registry publication occurred. See
@@ -30,7 +30,7 @@
 
 ---
 
-## docker-compose.yml (at v1.0.0-alpha.18)
+## docker-compose.yml (at v1.0.0-alpha.19)
 
 ```yaml
 services:
@@ -39,7 +39,7 @@ services:
     build:
       context: ./npsd
       dockerfile: Dockerfile
-    image: labacacia/npsd:1.0.0-alpha.18
+    image: labacacia/npsd:1.0.0-alpha.19
     restart: unless-stopped
     ports:
       - "127.0.0.1:17433:17433"
@@ -54,7 +54,7 @@ services:
     build:
       context: ./nps-runner
       dockerfile: Dockerfile
-    image: labacacia/nps-runner:1.0.0-alpha.18
+    image: labacacia/nps-runner:1.0.0-alpha.19
     restart: unless-stopped
     depends_on:
       - npsd
@@ -63,7 +63,7 @@ services:
     build:
       context: ./nps-ingress
       dockerfile: Dockerfile
-    image: labacacia/nps-ingress:1.0.0-alpha.18
+    image: labacacia/nps-ingress:1.0.0-alpha.19
     restart: unless-stopped
     ports:
       - "${NPS_INGRESS_PORT:-8080}:8080"
@@ -74,7 +74,7 @@ services:
     build:
       context: ./nps-registry
       dockerfile: Dockerfile
-    image: labacacia/nps-registry:1.0.0-alpha.18
+    image: labacacia/nps-registry:1.0.0-alpha.19
     restart: unless-stopped
     ports:
       - "${NPS_REGISTRY_PORT:-17436}:17436"
@@ -100,7 +100,7 @@ Key notes:
 
 Every image tag in `docker-compose.yml` must equal the suite version oracle. CI Assertion C enforces this:
 
-- CI reads the suite version from the oracle (e.g. `1.0.0-alpha.18`).
+- CI reads the suite version from the oracle (e.g. `1.0.0-alpha.19`).
 - It scans every `image:` line in `docker-compose.yml` for tags.
 - It fails if any tag does not match the oracle.
 
@@ -143,7 +143,7 @@ The per-daemon `CHANGELOG.md` files remain the source of truth for individual da
 
 ## Release history note: alpha.12 withdrawn
 
-The current bundle pins the **alpha.18** daemon set, built against `MessagePack 3.1.7`. **alpha.12 was withdrawn** before general use: its NuGet packages shipped the vulnerable `MessagePack 3.0.300` (NU1903). **alpha.13 superseded it**, rebuilding the daemon set against `MessagePack 3.1.7` (carried forward through alpha.14–alpha.18); operators must skip alpha.12 entirely and pin `1.0.0-alpha.18`.
+The current bundle pins the **alpha.19** daemon set, built against `MessagePack 3.1.7`. **alpha.12 was withdrawn** before general use: its NuGet packages shipped the vulnerable `MessagePack 3.0.300` (NU1903). **alpha.13 superseded it**, rebuilding the daemon set against `MessagePack 3.1.7` (carried forward through alpha.19); operators must skip alpha.12 entirely and pin `1.0.0-alpha.19`.
 
 ---
 

@@ -1,19 +1,18 @@
 # SDK — Go
 
-**Status:** ✅ Latest published module — v1.0.0-alpha.18 (released 2026-08-15)
+**Status:** ✅ Latest published module — v1.0.0-alpha.19 (released 2026-09-06)
 
-> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> **Alpha.19 release:** this SDK executes all 47
 > shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
-> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
-> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+> and NOP 0.10. The install command below pins the published alpha.19 package. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 Go reference implementation of the Neural Protocol Suite. Covers all five sub-protocols: NCP, NWP, NIP, NDP, and NOP.
 
 ---
 
-## Published capability set (accumulated through alpha.18)
+## Published capability set (accumulated through alpha.19)
 
-Everything in this section is present in the published `v1.0.0-alpha.18` module; the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, the Go SDK carries the following capability-level additions (exact identifier names may differ by language — see the source):
+Everything in this section is present in the published `v1.0.0-alpha.19` module; the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, the Go SDK carries the following capability-level additions (exact identifier names may differ by language — see the source):
 
 - **NCP Tier-3 BinaryVector (`binary_vector.v1`)** (NCP v0.9, alpha.14) — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame`. Negotiated via caps and only used when both peers advertise `binary_vector.v1`. Malformed payloads surface as documented client errors (`NCP-BINARY-VECTOR-*` → `NPS-CLIENT-BAD-FRAME`); the reserved tier bits return `NCP-FRAME-FLAGS-INVALID`. The Go native-serving path was hardened in alpha.15 (correct extended-header bit, no shared-tier mutation, rejects non-finite float32).
 - **Inbound NWP Bridge server adapters** (alpha.14) — lets external MCP / A2A clients call local NPS actions (the inverse of the outbound Bridge Node). Secure-by-default: valid `X-NWP-Agent` NID + a configured verifier, bounded request bodies (→ 413), dispatch timeout (→ 504), sanitized client errors, and an action allowlist. See [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node).
@@ -30,15 +29,14 @@ Everything in this section is present in the published `v1.0.0-alpha.18` module;
 ## Installation
 
 ```bash
-go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.18
+go get github.com/labacacia/NPS-sdk-go@v1.0.0-alpha.19
 ```
 
 **Requirements:** Go 1.23+ (alpha.18 lowered the support floor from 1.25 and pinned the newest compatible `golang.org/x/crypto` line; the minimum toolchain is covered by the release gate).
 
 **Tests:** 106 passing.
 
-**Runtime version boundary:** the published alpha.18 module does not export a
-version constant. The alpha.19 source candidate closes that gap with the
+**Runtime version boundary:** the published alpha.19 module exports the
 compile-time `core.Version` API:
 
 ```go
@@ -48,10 +46,8 @@ fmt.Println(core.Version)
 ```
 
 The constant is mechanically checked against the module `VERSION` file and is
-updated with it during release preparation. Until alpha.19 is separately
-approved and published, applications pinned to alpha.18 should use Go build
-information (`runtime/debug.ReadBuildInfo`) or their application-owned module
-pin when they need dependency-version diagnostics.
+updated with it during release preparation. Applications may also use Go build
+information (`runtime/debug.ReadBuildInfo`) for dependency-version diagnostics.
 
 ---
 

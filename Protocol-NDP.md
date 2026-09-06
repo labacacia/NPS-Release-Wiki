@@ -1,10 +1,10 @@
 # Protocol: NDP — Neural Discovery Protocol
 
-**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
+**Status:** ✅ Released alpha.19 reference
 
-**Released spec**: `spec/NPS-4-NDP.md` v0.12 · **Port**: 17433 (shared) / 17436 (optional dedicated)
+**Released spec**: `spec/NPS-4-NDP.md` v0.13 · **Port**: 17433 (shared) / 17436 (optional dedicated)
 
-> **Alpha.19 source candidate (not published): NDP 0.13 Proposed.** It closes
+> **Alpha.19 release: NDP 0.13 Proposed.** It closes
 > durable sequence/epoch recovery plus restart/partition/stale/equal-epoch
 > fault handling across six SDKs. DNS TXT lookup/parse/fallback is implemented
 > in all six. See [Alpha.19 Current Status](Alpha19-Current-Status).

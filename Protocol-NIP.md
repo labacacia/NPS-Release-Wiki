@@ -1,10 +1,10 @@
 # Protocol: NIP — Neural Identity Protocol
 
-**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
+**Status:** ✅ Released alpha.19 reference
 
-**Released spec**: `spec/NPS-3-NIP.md` v0.14 · **Port**: 17433 (shared) / 17435 (optional dedicated)
+**Released spec**: `spec/NPS-3-NIP.md` v0.15 · **Port**: 17433 (shared) / 17435 (optional dedicated)
 
-> **Alpha.19 source candidate (not published): NIP 0.15 Proposed.** It closes
+> **Alpha.19 release: NIP 0.15 Proposed.** It closes
 > certificate renewal and signed CRL/OCSP freshness/fail-closed behavior across
 > six SDKs. Phase-3 enforcement remains advisory; the beta.1 flag day is not
 > activated. See [Alpha.19 Current Status](Alpha19-Current-Status).

@@ -1,8 +1,8 @@
 # Daemon: nps-registry
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18
+**Status:** ✅ Latest published package — v1.0.0-alpha.19
 
-> **Alpha.19 source candidate (not published):** the SQLite registry retains
+> **Alpha.19 release:** the SQLite registry retains
 > Announce/Resolve/Graph, highest-epoch Anchor selection and federated cluster
 > tuple ingest, and interoperates with npsd managed-agent signed announcements.
 > Announce signature/IdentFrame cryptographic validation and replicated-database
@@ -11,11 +11,11 @@
 > **Audience:** Operators
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
-`nps-registry` is the cross-machine NDP (Neural Discovery Protocol, NPS-4 **v0.12**) registry for an NPS cluster. Where `npsd` knows only about its own host-local sessions, `nps-registry` aggregates AnnounceFrame records from multiple machines and answers NDP `Resolve` and `Graph` queries cluster-wide. It is the topology store that Anchor Node middleware queries to serve NWP `topology.snapshot` and `topology.stream` requests, and it is required for AaaS L2 conformance requirement L2-08.
+`nps-registry` is the cross-machine NDP (Neural Discovery Protocol, NPS-4 **v0.13**) registry for an NPS cluster. Where `npsd` knows only about its own host-local sessions, `nps-registry` aggregates AnnounceFrame records from multiple machines and answers NDP `Resolve` and `Graph` queries cluster-wide. It is the topology store that Anchor Node middleware queries to serve NWP `topology.snapshot` and `topology.stream` requests, and it is required for AaaS L2 conformance requirement L2-08.
 
 - **Source:** `NPS-Dev/tools/daemons/nps-registry/`
 - **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-registry:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `nps-registry/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
+- **Docker image:** `labacacia/nps-registry:1.0.0-alpha.19` — the tag Compose applies to the image it **builds** from `nps-registry/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Default port:** `:17436` (NDP optional-dedicated port per NPS-4)
 - **Layer:** L2
 
@@ -59,7 +59,7 @@ As of NDP v0.9 the AnnounceFrame carries two additional fields the registry hono
 {
   "status": "ok",
   "daemon": "nps-registry",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "layer": 2,
   "role": "NDP cross-machine discovery registry",
   "storage": "sqlite",
@@ -90,7 +90,7 @@ nps-registry:
   build:
     context: ./nps-registry
     dockerfile: Dockerfile
-  image: labacacia/nps-registry:1.0.0-alpha.18
+  image: labacacia/nps-registry:1.0.0-alpha.19
   restart: unless-stopped
   ports:
     - "${NPS_REGISTRY_PORT:-17436}:17436"
@@ -107,7 +107,7 @@ nps-registry:
   build:
     context: ./nps-registry
     dockerfile: Dockerfile
-  image: labacacia/nps-registry:1.0.0-alpha.18
+  image: labacacia/nps-registry:1.0.0-alpha.19
   restart: unless-stopped
   ports:
     - "17436:17436"

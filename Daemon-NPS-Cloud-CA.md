@@ -1,6 +1,6 @@
 # Daemon: nps-cloud-ca
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18
+**Status:** ✅ Latest published package — v1.0.0-alpha.19
 
 > **Audience:** NPS Cloud subscribers and operators
 > **Distribution note:** `labacacia/NPS-Cloud-CA` is a **private** repository. This page documents only the protocol-visible interface. Internal product and billing details are in the private repo.
@@ -10,7 +10,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-cloud-ca/`
 - **Distribution:** `labacacia/NPS-Cloud-CA` — **PRIVATE** (NPS Cloud product)
-- **Docker image:** `labacacia/nps-cloud-ca:1.0.0-alpha.18` — a local build tag only. No image is pushed to any registry, private or public; subscribers with repository access build it from the repo `Dockerfile` (`docker build -t labacacia/nps-cloud-ca:1.0.0-alpha.18 .`).
+- **Docker image:** `labacacia/nps-cloud-ca:1.0.0-alpha.19` — a local build tag only. No image is pushed to any registry, private or public; subscribers with repository access build it from the repo `Dockerfile` (`docker build -t labacacia/nps-cloud-ca:1.0.0-alpha.19 .`).
 - **Default port:** `:17435` (NIP optional-dedicated per NPS-3 §1)
 - **Layer:** L3
 - **Timeline:** Ships publicly with NPS Cloud GA, planned 2027 Q1+
@@ -81,7 +81,7 @@ These endpoints define the public protocol surface. Internal product behaviour (
 {
   "status": "ok",
   "daemon": "nps-cloud-ca",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "layer": 3,
   "role": "NPS Cloud NID Certificate Authority",
   "port": 17435

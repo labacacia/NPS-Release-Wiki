@@ -1,6 +1,6 @@
 # Release Process
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18
+**Status:** ✅ Reviewed for v1.0.0-alpha.19
 
 This page documents how an NPS suite release is prepared and published. The process is designed around a single-oracle version model: one file is authoritative, and all other files must match it.
 
@@ -37,7 +37,7 @@ This rule was codified after the alpha.5.2 incident, where some distribution rep
 
 **Alpha has no sub-versions.** Since alpha.6 the suite policy is to advance `1.0.0-alpha.N` → `1.0.0-alpha.N+1` for *every* release, including hotfixes and re-cuts. The old `1.0.0-alpha.N.M` hotfix format (e.g. `1.0.0-alpha.5.1`) was retired after the alpha.5.2 drift incident — there is no `alpha.5.x` going forward. A patch on top of an alpha simply becomes the next whole alpha.
 
-The current latest released suite version is **v1.0.0-alpha.18** (released 2026-08-15). All releases bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
+The current latest released suite version is **v1.0.0-alpha.19** (released 2026-09-06). All releases bump the suite-wide version uniformly. There are no partial hotfixes that touch only one repo.
 
 ---
 

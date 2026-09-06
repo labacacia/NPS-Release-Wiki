@@ -1,11 +1,10 @@
 # SDK — Python
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18 (released 2026-08-15)
+**Status:** ✅ Latest published package — v1.0.0-alpha.19 (released 2026-09-06)
 
-> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> **Alpha.19 release:** this SDK executes all 47
 > shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
-> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
-> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+> and NOP 0.10. The install command below pins the published alpha.19 package. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 Python client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
@@ -14,13 +13,13 @@ Python client library for the Neural Protocol Suite. Covers all five protocols: 
 ## Installation
 
 ```bash
-pip install nps-lib==1.0.0a18
+pip install nps-lib==1.0.0a19
 ```
 
 For development extras (pytest, coverage, linting):
 
 ```bash
-pip install "nps-lib[dev]==1.0.0a18"
+pip install "nps-lib[dev]==1.0.0a19"
 ```
 
 > **Package name:** The PyPI distribution is `nps-lib`. The name `nps-sdk` is taken by an unrelated package (Ingenico). The Python import namespace is always `nps_sdk`.
@@ -29,7 +28,7 @@ pip install "nps-lib[dev]==1.0.0a18"
 
 **Tests:** 221+ passing, ≥ 90% coverage target.
 
-> **Suite version:** This SDK tracks suite `v1.0.0-alpha.18` (NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9). alpha.12 was withdrawn; pin `nps-lib==1.0.0a18`.
+> **Suite version:** This SDK tracks suite `v1.0.0-alpha.19` (NCP 0.11 · NWP 0.21 · NIP 0.14 · NDP 0.12 · NOP 0.9). alpha.12 was withdrawn; pin `nps-lib==1.0.0a19`.
 
 ---
 
@@ -217,9 +216,9 @@ pytest -k test_nip     # NIP tests only
 
 ---
 
-## Feature set (accumulated through alpha.18)
+## Feature set (accumulated through alpha.19)
 
-This section is cumulative: everything listed below is present in the published `1.0.0a18` package. The release tag on each block is where the capability first landed.
+This section is cumulative: everything listed below is present in the published `1.0.0a19` package. The release tag on each block is where the capability first landed.
 
 The Python SDK ships the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions:
 

@@ -1,6 +1,6 @@
 # Daemon: nip-ca-server
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18
+**Status:** ✅ Latest published package — v1.0.0-alpha.19
 
 > **Audience:** Operators running a self-hosted NIP Certificate Authority
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
@@ -50,7 +50,7 @@ curl http://localhost:17435/health
 the image on its own, without Compose:
 
 ```bash
-docker build -t nip-ca-server:1.0.0-alpha.18 .
+docker build -t nip-ca-server:1.0.0-alpha.19 .
 ```
 
 ---

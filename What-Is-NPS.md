@@ -1,7 +1,7 @@
 # What Is NPS?
 
 > **Audience:** Newcomers — no prior knowledge of NPS required
-> **Status:** ✅ Reviewed for v1.0.0-alpha.18
+> **Status:** ✅ Reviewed for v1.0.0-alpha.19
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 ---

@@ -1,8 +1,8 @@
 # Daemon: nps-runner
 
-**Status:** ✅ Latest published package — v1.0.0-alpha.18
+**Status:** ✅ Latest published package — v1.0.0-alpha.19
 
-> **Alpha.19 source candidate (not published):** portable OCI SpawnSpec and
+> **Alpha.19 release:** portable OCI SpawnSpec and
 > reference resolution, durable shared-file SQLite leases/terminal dedup,
 > restart fencing/reclaim and lease-loss worker cancellation are implemented.
 > Full TaskFrame DAG/Saga L3 certification and generic cross-host filesystem
@@ -15,7 +15,7 @@
 
 - **Source:** `NPS-Dev/tools/daemons/nps-runner/`
 - **Distribution:** `labacacia/NPS-Daemons` (public), assembled via `tools/release/sync-nps-daemons.sh`
-- **Docker image:** `labacacia/nps-runner:1.0.0-alpha.18` — the tag Compose applies to the image it **builds** from `nps-runner/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
+- **Docker image:** `labacacia/nps-runner:1.0.0-alpha.19` — the tag Compose applies to the image it **builds** from `nps-runner/Dockerfile`. No image is published to any registry; use `docker compose up -d --build`.
 - **Exposed port:** none for protocol traffic — `nps-runner` communicates entirely through the `npsd` inbox. As of alpha.13 it exposes operability endpoints (`/healthz`, `/readyz`, `/metrics`) on a local management port for probes and scraping.
 - **Layer:** L1
 
@@ -46,7 +46,7 @@ A runner claims the head of a per-NID inbox by issuing an **atomic lease** rathe
 
 In the published alpha.18 behavior described here, a runner is stateless beyond
 its active lease set: a crash releases its leases after the lease TTL. The
-alpha.19 source candidate replaces that boundary with durable shared-file
+alpha.19 release replaces that boundary with durable shared-file
 claims, process-instance fencing and persistent terminal dedup; see the status
 banner above.
 
@@ -155,7 +155,7 @@ nps-runner:
   build:
     context: ./nps-runner
     dockerfile: Dockerfile
-  image: labacacia/nps-runner:1.0.0-alpha.18
+  image: labacacia/nps-runner:1.0.0-alpha.19
   restart: unless-stopped
   depends_on:
     - npsd

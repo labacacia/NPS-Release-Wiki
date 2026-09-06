@@ -1,11 +1,11 @@
 # Protocol: NOP — Neural Orchestration Protocol
 
-**Status:** ✅ Released alpha.18 reference; 🚧 alpha.19 source candidate reconciled
+**Status:** ✅ Released alpha.19 reference
 
-**Released spec**: `spec/NPS-5-NOP.md` v0.9 · **Port**: 17433 (shared) / 17437 (optional dedicated)
+**Released spec**: `spec/NPS-5-NOP.md` v0.10 · **Port**: 17433 (shared) / 17437 (optional dedicated)
 **Supersedes**: NCP AlignFrame (0x05) — deprecated, removed in NPS v1.0
 
-> **Alpha.19 source candidate (not published): NOP 0.10 Proposed.** It closes
+> **Alpha.19 release: NOP 0.10 Proposed.** It closes
 > bounded replay/eviction, TTL and aggregation semantics under loss, reorder,
 > duplicate and timeout faults across six SDKs. See
 > [Alpha.19 Current Status](Alpha19-Current-Status).

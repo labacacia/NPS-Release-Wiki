@@ -1,6 +1,6 @@
 **[Home](Home)**
 
-**[Alpha.19 Current Status](Alpha19-Current-Status)** *(source candidate; not published)*
+**[Alpha.19 Release Status](Alpha19-Current-Status)** *(published 2026-09-06)*
 
 **Concepts**
 - [What Is NPS](What-Is-NPS)

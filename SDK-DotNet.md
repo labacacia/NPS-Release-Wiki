@@ -1,11 +1,10 @@
 # SDK — .NET / C#
 
-**Status:** ✅ Latest published packages — v1.0.0-alpha.18 (released 2026-08-15)
+**Status:** ✅ Latest published packages — v1.0.0-alpha.19 (released 2026-09-06)
 
-> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> **Alpha.19 release:** this SDK executes all 47
 > shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
-> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
-> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+> and NOP 0.10. The install command below pins the published alpha.19 package. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 C# / .NET 10 reference implementation for the Neural Protocol Suite. The .NET SDK is the canonical reference implementation for the suite — all spec changes are validated here first.
 
@@ -17,17 +16,17 @@ The published family is exactly **11 packages**, all at the same version. Pin th
 
 | Package | Version | Description |
 |---------|---------|-------------|
-| `LabAcacia.NPS.Core` | 1.0.0-alpha.18 | Shared frame types (`AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame`, `NopFrame` keepalive/heartbeat), JSON/MsgPack/BinaryVector codecs, `AnchorFrameCache`, `FrameRegistry`; NCP native-mode transport (`NcpNativeClient`/`NcpServer`/`NcpSession`, added in alpha.11); NCP Tier-3 BinaryVector codec (`Tier3BinaryVectorCodec`, alpha.14) |
-| `LabAcacia.NPS.NWP` | 1.0.0-alpha.18 | Neural Web Protocol — NWM manifest, `QueryFrame`/`ActionFrame`/`SubscribeFrame`/`DiffFrame`, Memory/Action/Complex node middleware; native-mode serving (`NwpNativeNodeServer`); inbound Bridge server adapters (`AddBridgeServer`/`UseBridgeServer`, `McpServerBridge`/`A2aServerBridge`); stateful LLM context contract and LLM usage telemetry (CR-0011, alpha.18) |
-| `LabAcacia.NPS.NWP.Anchor` | 1.0.0-alpha.18 | NWP Anchor Node: stateless AaaS entry point translating `ActionFrame`s to NOP `TaskFrame`s; `AnchorNodeMiddleware`, `AnchorActionSpec`, `AnchorNodeClient` for `topology.snapshot` / `topology.stream` |
-| `LabAcacia.NPS.NWP.Bridge` | 1.0.0-alpha.18 | NWP Bridge Node: stateless translator from NPS frames to non-NPS protocols (HTTP / gRPC / MCP / A2A target adapters). This is the migration target for the retired MCP / A2A / gRPC compatibility ingress packages |
-| `LabAcacia.NPS.NIP` | 1.0.0-alpha.18 | Neural Identity Protocol — CA, Ed25519 key generation, `IdentFrame` issuance/revocation, OCSP, CRL; X.509 + ACME `agent-01` challenge (RFC-0002); typed remote CA client (`NipCaClient`) |
-| `LabAcacia.NPS.NIP.Storage.Sqlite` | 1.0.0-alpha.18 | SQLite-backed NIP CA store (`SqliteNipCaStore`) for single-node deployments |
-| `LabAcacia.NPS.NIP.Storage.Postgres` | 1.0.0-alpha.18 | PostgreSQL-backed NIP CA store for multi-node / HA deployments |
-| `LabAcacia.NPS.NDP` | 1.0.0-alpha.18 | Neural Discovery Protocol — announce/resolve frames (`AnnounceFrame.spawn_spec_ref` structured schema object, `heartbeat_interval_ms`), in-memory registry, Ed25519 validation; DNS TXT fallback (`ResolveViaDns`, `IDnsTxtLookup`, `SystemDnsTxtLookup`) |
-| `LabAcacia.NPS.NOP` | 1.0.0-alpha.18 | Neural Orchestration Protocol — `TaskFrame` (incl. `result_ttl_seconds`)/`DelegateFrame`/`SyncFrame`/`AlignStreamFrame`, DAG validator, orchestration engine |
-| `LabAcacia.NPS.Daemon.Observability` | 1.0.0-alpha.18 | Transport-neutral health/readiness probe rendering (`HealthProbeRenderer`) for `/healthz` · `/readyz`, plus ASP.NET endpoint helpers |
-| `LabAcacia.NPS.Conformance` | 1.0.0-alpha.18 | Node L1/L2 case catalogs, run manifests, and validation helpers (TC-N1 / TC-N2 entry points) for CI self-certification |
+| `LabAcacia.NPS.Core` | 1.0.0-alpha.19 | Shared frame types (`AnchorFrame`, `DiffFrame`, `StreamFrame`, `CapsFrame`, `HelloFrame`, `ErrorFrame`, `NopFrame` keepalive/heartbeat), JSON/MsgPack/BinaryVector codecs, `AnchorFrameCache`, `FrameRegistry`; NCP native-mode transport (`NcpNativeClient`/`NcpServer`/`NcpSession`, added in alpha.11); NCP Tier-3 BinaryVector codec (`Tier3BinaryVectorCodec`, alpha.14) |
+| `LabAcacia.NPS.NWP` | 1.0.0-alpha.19 | Neural Web Protocol — NWM manifest, `QueryFrame`/`ActionFrame`/`SubscribeFrame`/`DiffFrame`, Memory/Action/Complex node middleware; native-mode serving (`NwpNativeNodeServer`); inbound Bridge server adapters (`AddBridgeServer`/`UseBridgeServer`, `McpServerBridge`/`A2aServerBridge`); stateful LLM context contract and LLM usage telemetry (CR-0011, alpha.18) |
+| `LabAcacia.NPS.NWP.Anchor` | 1.0.0-alpha.19 | NWP Anchor Node: stateless AaaS entry point translating `ActionFrame`s to NOP `TaskFrame`s; `AnchorNodeMiddleware`, `AnchorActionSpec`, `AnchorNodeClient` for `topology.snapshot` / `topology.stream` |
+| `LabAcacia.NPS.NWP.Bridge` | 1.0.0-alpha.19 | NWP Bridge Node: stateless translator from NPS frames to non-NPS protocols (HTTP / gRPC / MCP / A2A target adapters). This is the migration target for the retired MCP / A2A / gRPC compatibility ingress packages |
+| `LabAcacia.NPS.NIP` | 1.0.0-alpha.19 | Neural Identity Protocol — CA, Ed25519 key generation, `IdentFrame` issuance/revocation, OCSP, CRL; X.509 + ACME `agent-01` challenge (RFC-0002); typed remote CA client (`NipCaClient`) |
+| `LabAcacia.NPS.NIP.Storage.Sqlite` | 1.0.0-alpha.19 | SQLite-backed NIP CA store (`SqliteNipCaStore`) for single-node deployments |
+| `LabAcacia.NPS.NIP.Storage.Postgres` | 1.0.0-alpha.19 | PostgreSQL-backed NIP CA store for multi-node / HA deployments |
+| `LabAcacia.NPS.NDP` | 1.0.0-alpha.19 | Neural Discovery Protocol — announce/resolve frames (`AnnounceFrame.spawn_spec_ref` structured schema object, `heartbeat_interval_ms`), in-memory registry, Ed25519 validation; DNS TXT fallback (`ResolveViaDns`, `IDnsTxtLookup`, `SystemDnsTxtLookup`) |
+| `LabAcacia.NPS.NOP` | 1.0.0-alpha.19 | Neural Orchestration Protocol — `TaskFrame` (incl. `result_ttl_seconds`)/`DelegateFrame`/`SyncFrame`/`AlignStreamFrame`, DAG validator, orchestration engine |
+| `LabAcacia.NPS.Daemon.Observability` | 1.0.0-alpha.19 | Transport-neutral health/readiness probe rendering (`HealthProbeRenderer`) for `/healthz` · `/readyz`, plus ASP.NET endpoint helpers |
+| `LabAcacia.NPS.Conformance` | 1.0.0-alpha.19 | Node L1/L2 case catalogs, run manifests, and validation helpers (TC-N1 / TC-N2 entry points) for CI self-certification |
 
 > **Retired packages:** the compatibility ingress packages (`LabAcacia.McpIngress`, `LabAcacia.A2aIngress`, `LabAcacia.GrpcIngress`) were last published at 1.0.0-alpha.16 (2026-07-23); an alpha.17 deprecation build was prepared but never published, and from alpha.18 they are no longer part of the synchronized release train. Migrate to `LabAcacia.NPS.NWP.Bridge`.
 
@@ -41,7 +40,7 @@ The published family is exactly **11 packages**, all at the same version. Pin th
 
 > **alpha.17 release delta:** NativeAOT-safe frame codecs plus publish validation for the official package family; portable language-neutral profiles and shared conformance vectors (NCP 0.11 native-server handshakes, NWP 0.20 Node/Bridge serving, NIP 0.13 CA/revocation, NDP 0.12 registry admission, NOP 0.9 orchestration) that all six SDKs now execute; the CR-0007 shared implementation gate with portable OCI SpawnSpec resolution, lease renewal, and lifecycle enforcement. A deprecation build of the MCP / A2A / gRPC ingress packages was prepared in this cycle but never published — those packages remain at 1.0.0-alpha.16.
 
-> **alpha.18 release delta (current pin):** NPS-CR-0011 / NWP 0.21 stateful LLM context; official NWP LLM usage telemetry with unary `CapsFrame.request_id` correlation; `NPS-LIMIT-RESOURCE` and `LlmUsageDto.WireInputBytes`; a NativeAOT MessagePack resolver fix for nullable `UInt64` (restoring Tier-2 round trips for NDP `AnnounceFrame.cluster_epoch`); and an 11-package NuGet family aligned in the workflow/family checker. NuGet install examples on this page are pinned to alpha.18. See the [feature set](#feature-set-accumulated-through-alpha18) below for the accumulated surface.
+> **alpha.18 release delta:** NPS-CR-0011 / NWP 0.21 stateful LLM context; official NWP LLM usage telemetry with unary `CapsFrame.request_id` correlation; `NPS-LIMIT-RESOURCE` and `LlmUsageDto.WireInputBytes`; a NativeAOT MessagePack resolver fix for nullable `UInt64` (restoring Tier-2 round trips for NDP `AnnounceFrame.cluster_epoch`); and an 11-package NuGet family aligned in the workflow/family checker. NuGet install examples on this page now pin alpha.19. See the [feature set](#feature-set-accumulated-through-alpha19) below for the accumulated surface.
 
 ---
 
@@ -281,9 +280,9 @@ dotnet test
 
 ---
 
-## Feature set (accumulated through alpha.18)
+## Feature set (accumulated through alpha.19)
 
-This section is cumulative: everything described below is present in the published `1.0.0-alpha.18` packages, and the release tag on each block is where the capability first landed. The reference SDK ships the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions. The API names below are the .NET reference surface.
+This section is cumulative: everything described below is present in the published `1.0.0-alpha.19` packages, and the release tag on each block is where the capability first landed. The reference SDK ships the alpha.13 parity surface plus the alpha.14 and alpha.15 release additions. The API names below are the .NET reference surface.
 
 ### NCP Tier-3 BinaryVector (`binary_vector.v1`)
 
@@ -355,7 +354,7 @@ The Ed25519-signed payload of `TrustFrame` and `RevokeFrame` now covers the curr
 
 - Transport-neutral `HealthProbeRenderer` for `/healthz` · `/readyz` probes.
 - `LabAcacia.NPS.Conformance` package with the Node L1/L2 case catalogs (TC-N1/TC-N2 entry points).
-- The NuGet family at the time shipped 11 SDK packages plus 3 compatibility ingress packages (`McpIngress` / `A2aIngress` / `GrpcIngress`). The ingress packages were deprecated after their last published build, 1.0.0-alpha.16 (the prepared alpha.17 deprecation build was never published); **the current alpha.18 family is exactly the 11 SDK packages listed at the top of this page**.
+- The NuGet family at the time shipped 11 SDK packages plus 3 compatibility ingress packages (`McpIngress` / `A2aIngress` / `GrpcIngress`). The ingress packages were deprecated after their last published build, 1.0.0-alpha.16 (the prepared alpha.17 deprecation build was never published); **the current alpha.19 family is exactly the 11 SDK packages listed at the top of this page**.
 
 ### Stateful LLM context — CR-0011 / NWP 0.21 (alpha.18)
 
@@ -385,7 +384,7 @@ alpha.17 added NativeAOT-safe frame codecs plus publish validation for the offic
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.18*
+*Last reviewed for published packages: v1.0.0-alpha.19*
 
 ---
 

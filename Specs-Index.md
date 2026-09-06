@@ -1,6 +1,6 @@
 # Specs Index
 
-**Status:** ✅ Released alpha.18 index; 🚧 alpha.19 source candidate reconciled 2026-09-05
+**Status:** ✅ Released alpha.19 index, verified 2026-09-06
 
 This page is an index of all NPS protocol specifications, shared reference documents, RFCs, and CRs. It is a navigation aid only.
 
@@ -8,13 +8,13 @@ This page is an index of all NPS protocol specifications, shared reference docum
 
 The canonical spec files are in the `spec/` directory of [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) (distribution) and their source in [`labacacia/NPS-Dev`](https://github.com/labacacia/NPS-Dev/tree/main/spec) (authoring). Both are identical for released versions.
 
-For unreleased source truth, see [Alpha.19 Current Status](Alpha19-Current-Status).
-NPS-Release remains the normative source for the published alpha.18 suite until
-alpha.19 publication is separately approved.
+For the alpha.19 release boundary and verification record, see
+[Alpha.19 Current Status](Alpha19-Current-Status). NPS-Release is the normative
+distribution source for the published alpha.19 suite.
 
-## Alpha.19 Source Candidate
+## Alpha.19 Release
 
-| Spec | Version | Status | Candidate focus |
+| Spec | Version | Status | Release focus |
 |---|---|---|---|
 | NPS-1 NCP | **0.12** | Proposed | Runtime keepalive/closure and QUIC/backpressure policy |
 | NPS-2 NWP | **0.22** | Proposed | NWM normalization and renewable subscription metadata |

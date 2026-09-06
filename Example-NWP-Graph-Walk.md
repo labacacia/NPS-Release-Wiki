@@ -1,6 +1,6 @@
 # Example: NWP Graph Walk
 
-**Status:** ✅ Reviewed for v1.0.0-alpha.18 candidate
+**Status:** ✅ Reviewed for v1.0.0-alpha.19 release
 
 **Repo:** `labacacia/NPS-Examples`, directory: `nwp-graph-walk/` (source in NPS-Dev `demos/nwp-graph-walk/`)
 
@@ -220,4 +220,4 @@ The captured output above was recorded on 2026-04-21. Output snapshots must be r
 
 ---
 
-*Last reviewed at suite version: v1.0.0-alpha.19 candidate*
+*Last reviewed at suite version: v1.0.0-alpha.19 release*

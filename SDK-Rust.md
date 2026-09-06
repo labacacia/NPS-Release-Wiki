@@ -1,19 +1,18 @@
 # SDK — Rust
 
-**Status:** ✅ Latest published crates — v1.0.0-alpha.18 (released 2026-08-15)
+**Status:** ✅ Latest published crates — v1.0.0-alpha.19 (released 2026-09-06)
 
-> **Alpha.19 source candidate (not published):** this SDK source executes all 47
+> **Alpha.19 release:** this SDK executes all 47
 > shared P19-1 hardening vectors for NCP 0.12, NWP 0.22, NIP 0.15, NDP 0.13
-> and NOP 0.10. Keep using the alpha.18 package pin shown below until a
-> separately approved publication occurs. See [Alpha.19 Current Status](Alpha19-Current-Status).
+> and NOP 0.10. The install command below pins the published alpha.19 package. See [Alpha.19 Current Status](Alpha19-Current-Status).
 
 Rust client library for the Neural Protocol Suite. Covers all five protocols: NCP, NWP, NIP, NDP, and NOP.
 
 ---
 
-## Published capability set (accumulated through alpha.18)
+## Published capability set (accumulated through alpha.19)
 
-Everything in this section is present in the published `1.0.0-alpha.18` crates; the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, the Rust SDK carries the following capability-level additions (exact type/path names may differ by language — see the source):
+Everything in this section is present in the published `1.0.0-alpha.19` crates; the release tag on each entry is where that capability first landed. Beyond the alpha.13 client baseline, the Rust SDK carries the following capability-level additions (exact type/path names may differ by language — see the source):
 
 - **NCP Tier-3 BinaryVector (`binary_vector.v1`)** (NCP v0.9, alpha.14) — a third encoding tier for compact float-vector (embedding) payloads on `QueryFrame`. Negotiated via caps and only used when both peers advertise `binary_vector.v1`. Malformed payloads surface as documented client errors (`NCP-BINARY-VECTOR-*` → `NPS-CLIENT-BAD-FRAME`); the reserved tier bits return `NCP-FRAME-FLAGS-INVALID`.
 - **Inbound NWP Bridge server adapters** (alpha.14) — lets external MCP / A2A clients call local NPS actions (the inverse of the outbound Bridge Node). Secure-by-default: valid `X-NWP-Agent` NID + a configured verifier, bounded request bodies (→ 413), dispatch timeout (→ 504), sanitized client errors, and an action allowlist. See [SDK Building a Bridge Node](SDK-Building-a-Bridge-Node).
@@ -33,7 +32,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nps-sdk = "=1.0.0-alpha.18"
+nps-sdk = "=1.0.0-alpha.19"
 tokio   = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
 
@@ -58,7 +57,7 @@ tokio   = { version = "1", features = ["rt-multi-thread", "macros"] }
 | `nps-conformance` | Shared conformance fixtures and harness entry points (Node L1/L2 catalogs, portable cross-language vectors) |
 | `nps-sdk` | Re-export umbrella crate — all protocols under `nps_sdk::` namespace |
 
-Eight crates are published to crates.io at `1.0.0-alpha.18` (`nps-conformance` joined the published set in the alpha.18 train). All crates are in the same Cargo workspace. You can depend on the umbrella `nps-sdk` crate or on individual crates if you only need specific protocols.
+Eight crates are published to crates.io at `1.0.0-alpha.19` (`nps-conformance` joined the published set in the alpha.18 train). All crates are in the same Cargo workspace. You can depend on the umbrella `nps-sdk` crate or on individual crates if you only need specific protocols.
 
 ---
 

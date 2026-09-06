@@ -1,17 +1,16 @@
 # NPS — Neural Protocol Suite Wiki
 
-> **Status:** ✅ Wiki reviewed for the released v1.0.0-alpha.18 suite.
+> **Status:** ✅ Wiki reviewed for the released v1.0.0-alpha.19 suite.
 >
-> Latest published SDK suite: **v1.0.0-alpha.18** (2026-08-15). The public
+> Latest published SDK suite: **v1.0.0-alpha.19** (2026-09-06). The public
 > daemon bundle and `nip-ca-server` are published on the same train and are
-> also at **v1.0.0-alpha.18**.
+> also at **v1.0.0-alpha.19**.
 >
-> **Alpha.19 source candidate:** protocol authoring versions are NCP 0.12,
+> **Alpha.19 release:** protocol versions are NCP 0.12,
 > NWP 0.22, NIP 0.15, NDP 0.13 and NOP 0.10; all six SDK source trees execute
 > the shared hardening vectors, and the four public daemon source trees have
-> completed their debt-closure reconciliation. See
-> [Alpha.19 Current Status](Alpha19-Current-Status). This is not a package,
-> image, tag or release announcement.
+> completed their debt-closure reconciliation. See the verified boundary and
+> explicit non-claims in [Alpha.19 Current Status](Alpha19-Current-Status).
 
 > 🌐 New to NPS? Start at the [overview site](https://nps.labacacia.com) for a 5-minute orientation, then come back here for deep-dives.
 
@@ -61,7 +60,7 @@ document.
 
 - [npsd](Daemon-NPSd) — host-local identity, inbox, and protocol daemon
 - [nps-runner](Daemon-NPS-Runner) — task executor
-- [nps-ingress](Daemon-NPS-Ingress) — published HTTP mode; native TLS/mTLS source candidate
+- [nps-ingress](Daemon-NPS-Ingress) — native TLS/mTLS NCP ingress
 - [nps-registry](Daemon-NPS-Registry) — node / member registry
 - [nps-ledger](Daemon-NPS-Ledger) — NID reputation log + STH gossip
 - [nps-cloud-ca](Daemon-NPS-Cloud-CA) — private NPS Cloud CA
@@ -72,22 +71,21 @@ document.
 
 This wiki tracks the suite version declared in
 [`NPS-Release/version.yaml`](https://github.com/labacacia/NPS-Release/blob/main/version.yaml)
-— latest published SDK packages are **v1.0.0-alpha.18**. This Wiki is reviewed
-against the **released v1.0.0-alpha.18 suite** (2026-08-15): NCP 0.11, NWP 0.21,
-NIP 0.14, NDP 0.12, and NOP 0.9. It covers the portable six-SDK
-server/runtime baseline, multi-Anchor HA, bidirectional Bridge semantics, and
-the CR-0011 stateful LLM context contract, which is implemented across all six
-SDKs.
+— latest published SDK packages are **v1.0.0-alpha.19**. This Wiki is reviewed
+against the **released v1.0.0-alpha.19 suite** (2026-09-06): NCP 0.12, NWP 0.22,
+NIP 0.15, NDP 0.13, and NOP 0.10. It covers the portable six-SDK runtime,
+current hardening vectors, daemon debt closure, multi-Anchor HA, bidirectional
+Bridge semantics, and the CR-0011 stateful LLM context contract.
 
 Pages are re-reviewed at each suite release. Normative protocol details always
 come from `NPS-Release/spec`; package availability comes from the relevant
 registry or GitHub release.
 
-For the unreleased source candidate, use [Alpha.19 Current Status](Alpha19-Current-Status);
-the alpha.18 versions above remain the installable/published contract.
+For the release boundary, verification evidence, and explicit non-claims, see
+[Alpha.19 Current Status](Alpha19-Current-Status).
 
-*Wiki current-status reconciliation: alpha.19 source candidate through NPS-Dev
-PR #115; latest published suite remains v1.0.0-alpha.18 (2026-09-05).*
+*Wiki current-status reconciliation: released v1.0.0-alpha.19 through NPS-Dev
+PR #122 (2026-09-06).*
 
 ---
 

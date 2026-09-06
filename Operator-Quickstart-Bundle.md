@@ -1,7 +1,7 @@
 # Operator Quickstart: Daemon Bundle
 
 > **Audience:** Operators (devops / SREs deploying NPS infrastructure)
-> **Status:** ✅ Latest published bundle — v1.0.0-alpha.18
+> **Status:** ✅ Latest published bundle — v1.0.0-alpha.19
 > **Source-of-truth precedence:** `spec/` documents in [`labacacia/NPS-Release`](https://github.com/labacacia/NPS-Release/tree/main/spec) win over this page if they disagree.
 
 The `nps-daemons` bundle packages the four OSS NPS daemons — **npsd**, **nps-runner**, **nps-ingress**, and **nps-registry** — in a single git repository with a reference `docker-compose.yml`. This is the recommended starting point for operators who want to run a self-hosted NPS cluster. (The private daemons **nps-ledger** and **nps-cloud-ca** ship separately; see [Operator Daemons Reference](Operator-Daemons-Reference).)
@@ -46,7 +46,7 @@ The repository root contains:
 > **No `deploy/` tree and no `Makefile`.** Earlier revisions of this page listed
 > `deploy/docker-compose/`, `deploy/systemd/`, and `make up` / `make down` /
 > `make install-systemd` shortcuts. Those have never existed in the published
-> bundle — verified against `v1.0.0-alpha.18`. Use the root `docker-compose.yml`
+> bundle — verified against `v1.0.0-alpha.19`. Use the root `docker-compose.yml`
 > directly (Option A) or build and install from source (Option B).
 
 ---
@@ -55,7 +55,7 @@ The repository root contains:
 
 The compose file defines one service per daemon. Every service declares **both** a `build:`
 stanza (pointing at that daemon's `Dockerfile`) and an `image:` tag such as
-`labacacia/npsd:1.0.0-alpha.18`. Because `build:` is present, the `image:` value is only the
+`labacacia/npsd:1.0.0-alpha.19`. Because `build:` is present, the `image:` value is only the
 name Compose gives the **locally built** artifact — it is not pulled from a registry, and no
 such image exists on Docker Hub or GHCR. Always bring the stack up with `--build`.
 
@@ -167,7 +167,7 @@ Expected npsd response shape:
 {
   "status": "ok",
   "daemon": "npsd",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "layer": "L1",
   "role": "node",
   "port": 17433,
@@ -235,16 +235,16 @@ cp -a /var/lib/docker/volumes/nps-daemons_npsd-data/_data /backup/npsd-data-$(da
    you run, because the images are built locally from these sources:
 
    ```bash
-   git fetch --tags && git checkout v1.0.0-alpha.18
+   git fetch --tags && git checkout v1.0.0-alpha.19
    ```
 
 2. Confirm the local build tags in `docker-compose.yml` match that suite version:
 
    ```yaml
-   image: labacacia/npsd:1.0.0-alpha.18        # change to target version
-   image: labacacia/nps-runner:1.0.0-alpha.18
-   image: labacacia/nps-ingress:1.0.0-alpha.18
-   image: labacacia/nps-registry:1.0.0-alpha.18
+   image: labacacia/npsd:1.0.0-alpha.19        # change to target version
+   image: labacacia/nps-runner:1.0.0-alpha.19
+   image: labacacia/nps-ingress:1.0.0-alpha.19
+   image: labacacia/nps-registry:1.0.0-alpha.19
    ```
 
    These are **local** tags applied to the images Compose builds; there is no registry to
@@ -284,7 +284,7 @@ Native packages are self-contained binaries — no Docker, no .NET runtime insta
 
 > **⚠️ No native packages are published for the current suite train.** The
 > [nps-daemons releases page](https://github.com/labacacia/NPS-Daemons/releases) attaches **no**
-> `.deb` / `.rpm` / `.msi` assets to v1.0.0-alpha.18 (nor to alpha.15 / alpha.16). The last
+> `.deb` / `.rpm` / `.msi` assets to v1.0.0-alpha.19 (nor to alpha.15 / alpha.16). The last
 > release that carried native installers was **v1.0.0-alpha.5**, and those predate the
 > `nps-gateway` → `nps-ingress` rename, so they are not usable for a current deployment. No
 > Windows MSI has ever been published.
@@ -295,7 +295,7 @@ Native packages are self-contained binaries — no Docker, no .NET runtime insta
 >
 > ```bash
 > git clone https://github.com/labacacia/NPS-Daemons && cd nps-daemons
-> git checkout v1.0.0-alpha.18
+> git checkout v1.0.0-alpha.19
 > for d in npsd nps-runner nps-ingress nps-registry; do
 >     dotnet publish "$d" -c Release -r linux-x64 --self-contained -o "out/$d"
 > done
@@ -309,8 +309,8 @@ Native packages are self-contained binaries — no Docker, no .NET runtime insta
 
 ```bash
 # Set the suite version (Debian format: ~ separates pre-release)
-DEB_VER="1.0.0~alpha.18"
-SUITE_VER="1.0.0-alpha.18"
+DEB_VER="1.0.0~alpha.19"
+SUITE_VER="1.0.0-alpha.19"
 
 for pkg in npsd nps-runner nps-ingress nps-registry; do
     # Substitute your own package artefacts — these URLs are not published upstream.
@@ -363,9 +363,9 @@ Data directories under `/var/lib/nps/` are not removed on uninstall (`apt purge`
 ### Fedora / RHEL (x86_64)
 
 ```bash
-SUITE_VER="1.0.0-alpha.18"
+SUITE_VER="1.0.0-alpha.19"
 RPM_VER="1.0.0"
-RPM_REL="0.alpha.18"   # for stable releases: "1"
+RPM_REL="0.alpha.19"   # for stable releases: "1"
 
 for pkg in npsd nps-runner nps-ingress nps-registry; do
     # Substitute your own package artefacts — these are not published upstream.
@@ -397,7 +397,7 @@ build one from the daemon sources (WiX over `dotnet publish -r win-x64 --self-co
 before running the steps below. Run as Administrator.
 
 ```powershell
-$ver = "1.0.0-alpha.18"
+$ver = "1.0.0-alpha.19"
 
 foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
     # Substitute your own MSI — none is published upstream.
@@ -456,7 +456,7 @@ foreach ($pkg in @("npsd","nps-runner","nps-ingress","nps-registry")) {
 
 ---
 
-*Last reviewed for published packages: v1.0.0-alpha.18*
+*Last reviewed for published packages: v1.0.0-alpha.19*
 
 ---
 
